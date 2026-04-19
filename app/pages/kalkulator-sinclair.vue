@@ -14,6 +14,21 @@ const coefficient = computed(() => {
   return sinclairCoefficient(bw, gender.value)
 })
 
+// W <script setup> dodaj to:
+const bodyweightRaw = ref('')
+
+// I watcher, który reaguje na zmiany tekstu:
+watch(bodyweightRaw, (newVal) => {
+  const normalized = newVal.replace(',', '.')
+  const parsed = parseFloat(normalized)
+  // Liczymy tylko jeśli to faktycznie liczba i nie kończy się kropką/przecinkiem (żeby dało się pisać dalej)
+  if (!isNaN(parsed) && !newVal.endsWith(',') && !newVal.endsWith('.')) {
+    bodyweight.value = parsed
+  } else if (newVal === '') {
+    bodyweight.value = undefined
+  }
+})
+
 const sinclairResult = computed(() => {
   const bw = bodyweight.value
   const t = total.value
@@ -26,7 +41,7 @@ const sinclairResult = computed(() => {
   return sinclairTotal(t, bw, gender.value)
 })
 
-function fmt (n: number | null, digits = 3) {
+function fmt(n: number | null, digits = 3) {
   if (n === null || Number.isNaN(n)) return '—'
   return n.toLocaleString('pl-PL', {
     minimumFractionDigits: 0,
@@ -79,11 +94,16 @@ useSeoMeta({
               label="Masa ciała z ważenia"
               description="kg — rzeczywista masa w zawodach"
             >
-              <UInputNumber
-                v-model="bodyweight"
-                :min="20"
-                :max="200"
+              <UInput
+                v-model="bodyweightRaw"
+                inputmode="decimal"
                 placeholder="np. 81,4"
+                class="w-full"
+                @update:model-value="val => {
+                  // To wymusi przeliczenie Sinclaira natychmiast
+                  const n = parseFloat(val.replace(',', '.'));
+                  if (!isNaN(n)) bodyweight.value = n;
+                }"
               />
             </UFormField>
 
@@ -93,6 +113,7 @@ useSeoMeta({
             >
               <UInputNumber
                 v-model="total"
+                class="w-full"
                 :min="0"
                 :max="600"
                 placeholder="np. 280"
@@ -131,7 +152,7 @@ useSeoMeta({
               </p>
               <p class="mt-2 font-mono text-4xl font-bold tabular-nums text-highlighted sm:text-5xl">
                 {{ fmt(sinclairResult, 2) }}
-                <span class="text-xl font-semibold text-muted">kg</span>
+                <span class="text-xl font-semibold text-muted">pkt</span>
               </p>
             </div>
           </div>

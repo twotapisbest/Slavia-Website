@@ -24,7 +24,7 @@ useSeoMeta({
   twitterCard: 'summary_large_image'
 })
 
-async function logout () {
+async function logout() {
   auth.logout()
   await navigateTo('/')
 }

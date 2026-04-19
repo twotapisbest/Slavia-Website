@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const auth = useAuth()
 
-async function logoutFromMenu () {
+async function logoutFromMenu() {
   auth.logout()
   await navigateTo('/')
 }

@@ -27,7 +27,7 @@ export const sinclair2025_2028 = {
   }
 } as const
 
-export function sinclairCoefficient (bodyweightKg: number, gender: SinclairGender): number {
+export function sinclairCoefficient(bodyweightKg: number, gender: SinclairGender): number {
   if (!Number.isFinite(bodyweightKg) || bodyweightKg <= 0) {
     return Number.NaN
   }
@@ -39,7 +39,7 @@ export function sinclairCoefficient (bodyweightKg: number, gender: SinclairGende
   return 10 ** (A * logRatio * logRatio)
 }
 
-export function sinclairTotal (
+export function sinclairTotal(
   competitionTotalKg: number,
   bodyweightKg: number,
   gender: SinclairGender

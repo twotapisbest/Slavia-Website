@@ -1,3 +1,5 @@
+[![Netlify Status](https://api.netlify.com/api/v1/badges/2f120ea0-eb2d-49be-8bb5-f57867ff9930/deploy-status)](https://app.netlify.com/projects/cksslavia/deploys)
+
 # Nuxt Starter Template
 
 [![Nuxt UI](https://img.shields.io/badge/Made%20with-Nuxt%20UI-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
