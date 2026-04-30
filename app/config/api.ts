@@ -15,8 +15,12 @@ export const apiRoutes = {
   athletes: {
     list: '/api/athletes'
   },
+  players: {
+    list: '/api/athletes'
+  },
   admin: {
     athletes: '/api/athletes',
+    players: '/api/athletes',
     results: '/api/results',
     competitions: '/api/competitions'
   },
@@ -30,6 +34,10 @@ export const apiRoutes = {
 
 export function urlAdminAthlete (id: string) {
   return `${apiRoutes.admin.athletes}/${id}`
+}
+
+export function urlAdminPlayer (id: string) {
+  return urlAdminAthlete(id)
 }
 
 export function urlSuperadminAdmin (id: string) {

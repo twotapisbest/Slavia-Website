@@ -19,6 +19,18 @@ export default defineNuxtConfig({
     enabled: true
   },
 
+  nitro: {
+    externals: {
+      inline: ['@nuxt/nitro-server']
+    }
+  },
+
+  vite: {
+    build: {
+      sourcemap: false
+    }
+  },
+
   css: ['~/assets/css/main.css'],
 
   routeRules: {
