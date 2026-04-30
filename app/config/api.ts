@@ -9,22 +9,27 @@
  */
 export const apiRoutes = {
   auth: {
-    login: '/auth/login',
-    me: '/auth/me'
+    login: '/api/auth/login',
+    me: '/api/auth/me'
   },
-  players: {
-    list: '/players'
+  athletes: {
+    list: '/api/athletes'
   },
   admin: {
-    players: '/admin/players'
+    athletes: '/api/athletes',
+    results: '/api/results',
+    competitions: '/api/competitions'
   },
   superadmin: {
-    admins: '/superadmin/admins'
+    admins: '/api/admins'
+  },
+  posts: {
+    list: '/api/posts'
   }
 } as const
 
-export function urlAdminPlayer (id: string) {
-  return `${apiRoutes.admin.players}/${id}`
+export function urlAdminAthlete (id: string) {
+  return `${apiRoutes.admin.athletes}/${id}`
 }
 
 export function urlSuperadminAdmin (id: string) {

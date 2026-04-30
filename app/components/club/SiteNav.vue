@@ -10,10 +10,13 @@ const items = computed(() => {
   const main = [
     { label: 'Strona główna', to: '/' },
     { label: 'Zawodnicy', to: '/zawodnicy' },
-    { label: 'Kalkulator Sinclair', to: '/kalkulator-sinclair' }
+    { label: 'Kalendarz', to: '/kalendarz' },
+    { label: 'Blog', to: '/blog' },
+    { label: 'Ranking', to: '/ranking' },
+    { label: 'Kalkulator', to: '/kalkulator-sinclair' }
   ]
   if (auth.isAdmin.value) {
-    main.push({ label: 'Panel admina', to: '/admin/zawodnicy' })
+    main.push({ label: 'Panel admina', to: '/admin' })
   }
   if (auth.isSuperAdmin.value) {
     main.push({ label: 'Superadmin', to: '/superadmin' })

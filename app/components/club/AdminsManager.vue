@@ -10,7 +10,7 @@ const loading = ref(true)
 
 const modalOpen = ref(false)
 const saving = ref(false)
-const email = ref('')
+const username = ref('')
 const password = ref('')
 
 const deleteModalOpen = ref(false)
@@ -33,21 +33,21 @@ async function loadAdmins () {
 }
 
 function openCreate () {
-  email.value = ''
+  username.value = ''
   password.value = ''
   modalOpen.value = true
 }
 
 async function saveAdmin () {
-  if (!email.value.trim() || !password.value) {
-    toast.add({ title: 'Podaj e-mail i hasło', color: 'warning' })
+  if (!username.value.trim() || !password.value) {
+    toast.add({ title: 'Podaj nazwę użytkownika i hasło', color: 'warning' })
     return
   }
   saving.value = true
   try {
     await api(apiRoutes.superadmin.admins, {
       method: 'POST',
-      body: { email: email.value.trim(), password: password.value }
+      body: { username: username.value.trim(), password: password.value }
     })
     toast.add({ title: 'Dodano administratora', color: 'success', icon: 'i-lucide-check' })
     modalOpen.value = false
@@ -118,7 +118,7 @@ onMounted(() => {
           <thead class="border-b border-default bg-muted/30">
             <tr>
               <th class="px-4 py-3 text-left font-semibold text-muted">
-                E-mail
+                Użytkownik
               </th>
               <th class="px-4 py-3 text-left font-semibold text-muted">
                 Rola
@@ -147,7 +147,7 @@ onMounted(() => {
               class="hover:bg-muted/20"
             >
               <td class="px-4 py-3 font-medium">
-                {{ a.email }}
+                {{ a.username }}
               </td>
               <td class="px-4 py-3">
                 <UBadge
@@ -195,8 +195,7 @@ onMounted(() => {
               required
             >
               <UInput
-                v-model="email"
-                type="email"
+                v-model="username"
                 autocomplete="username"
               />
             </UFormField>
@@ -243,7 +242,7 @@ onMounted(() => {
             v-if="pendingDelete"
             class="text-muted"
           >
-            Czy na pewno usunąć konto {{ pendingDelete.email }}?
+            Czy na pewno usunąć konto {{ pendingDelete.username }}?
           </p>
           <template #footer>
             <div class="flex justify-end gap-2">

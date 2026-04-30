@@ -3,27 +3,27 @@ const auth = useAuth()
 const route = useRoute()
 const toast = useToast()
 
-const email = ref('')
+const username = ref('')
 const password = ref('')
 const loading = ref(false)
 
 useSeoMeta({
   title: 'Logowanie — Slavia Ruda Śląska',
-  description: 'Logowanie do panelu klubowego LKS Slavia.'
+  description: 'Logowanie do panelu klubowego CKS Slavia.'
 })
 
-async function submit () {
+async function submit() {
   loading.value = true
   try {
-    const user = await auth.login(email.value.trim(), password.value)
+    const user = await auth.login(username.value.trim(), password.value)
     const raw = route.query.redirect
     const redirect = typeof raw === 'string' ? raw : undefined
     if (redirect) {
       await navigateTo(redirect)
-    } else if (user.role === 'superadmin') {
+    } else if (user.role === 'SuperAdmin') {
       await navigateTo('/superadmin')
-    } else if (user.role === 'admin') {
-      await navigateTo('/admin/zawodnicy')
+    } else if (user.role === 'Admin') {
+      await navigateTo('/admin')
     } else {
       await navigateTo('/')
     }
@@ -67,12 +67,11 @@ async function submit () {
           @submit.prevent="submit"
         >
           <UFormField
-            label="E-mail"
+            label="Użytkownik"
             required
           >
             <UInput
-              v-model="email"
-              type="email"
+              v-model="username"
               autocomplete="username"
               size="lg"
             />

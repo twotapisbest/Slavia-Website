@@ -9,7 +9,7 @@
       }"
     >
       <template #title>
-        LKS Slavia Ruda Śląska
+        CKS Slavia Ruda Śląska
       </template>
       <template #description>
         Klub podnoszenia ciężarów z tradycją i pasją. Trenujemy młodzież i dorosłych — od pierwszych kroków na platformie po starty w zawodach ogólnopolskich.

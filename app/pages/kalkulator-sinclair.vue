@@ -101,8 +101,8 @@ useSeoMeta({
                 class="w-full"
                 @update:model-value="val => {
                   // To wymusi przeliczenie Sinclaira natychmiast
-                  const n = parseFloat(val.replace(',', '.'));
-                  if (!isNaN(n)) bodyweight.value = n;
+                  const n = parseFloat(String(val).replace(',', '.'));
+                  if (!isNaN(n)) bodyweight = n;
                 }"
               />
             </UFormField>

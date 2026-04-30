@@ -2,30 +2,43 @@
  * Kształt JSON z zewnętrznego backendu — dopasuj pola do odpowiedzi z Rust.
  * Ścieżki HTTP: `app/config/api.ts` + `NUXT_PUBLIC_API_BASE_URL`.
  */
-export type UserRole = 'admin' | 'superadmin'
+export type UserRole = 'Athlete' | 'Admin' | 'SuperAdmin'
 
 export interface AuthUser {
   id: string
-  email: string
+  username: string
   role: UserRole
 }
 
 export interface LoginResponse {
-  access_token: string
-  token_type?: string
-  user: AuthUser
+  token: string
+  role: UserRole
+  user_id: string
 }
 
-export interface Player {
+export interface Athlete {
   id: string
-  full_name: string
-  birth_year?: number | null
-  weight_category?: string | null
-  best_snatch_kg?: number | null
-  best_clean_jerk_kg?: number | null
-  total_kg?: number | null
-  notes?: string | null
-  is_active?: boolean
+  user_id: string
+  first_name: string
+  last_name: string
+}
+
+export interface Competition {
+  id: string
+  title: string
+  date: string
+  location: string
+  description?: string
+}
+
+export interface CompetitionResult {
+  id: string
+  athlete_id: string
+  snatch: number
+  clean_and_jerk: number
+  total: number
+  status: 'Pending' | 'Approved'
+  date: string
 }
 
 export interface AdminAccount extends AuthUser {
@@ -44,6 +57,6 @@ export interface PlayerPayload {
 }
 
 export interface CreateAdminPayload {
-  email: string
+  username: string
   password: string
 }

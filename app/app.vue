@@ -43,8 +43,8 @@ async function logout() {
       <template #right>
         <div class="hidden items-center gap-2 sm:flex">
           <template v-if="auth.isLoggedIn.value">
-            <span class="max-w-[140px] truncate text-xs text-muted lg:max-w-[200px] lg:text-sm">
-              {{ auth.user.value?.email }}
+            <span class="max-w-35 truncate text-xs text-muted lg:max-w-50 lg:text-sm">
+              {{ auth.user.value?.username }}
             </span>
             <UButton
               color="neutral"

@@ -16,8 +16,8 @@ export function useAuth () {
   const apiBase = computed(() => (config.public.apiBase as string).replace(/\/$/, ''))
 
   const isLoggedIn = computed(() => !!token.value)
-  const isAdmin = computed(() => user.value?.role === 'admin' || user.value?.role === 'superadmin')
-  const isSuperAdmin = computed(() => user.value?.role === 'superadmin')
+  const isAdmin = computed(() => user.value?.role === 'Admin' || user.value?.role === 'SuperAdmin')
+  const isSuperAdmin = computed(() => user.value?.role === 'SuperAdmin')
 
   async function fetchMe (): Promise<AuthUser | null> {
     if (!token.value) {
@@ -37,14 +37,21 @@ export function useAuth () {
     }
   }
 
-  async function login (email: string, password: string) {
+  async function login (username: string, password: string) {
     const res = await $fetch<LoginResponse>(`${apiBase.value}${apiRoutes.auth.login}`, {
       method: 'POST',
-      body: { email, password }
+      body: { username, password }
     })
-    token.value = res.access_token
-    user.value = res.user
-    return res.user
+    token.value = res.token
+    
+    // Po zalogowaniu pobieramy dane usera /me (albo ustawiamy tymczasowe jesli login zwraca info)
+    // Backend LoginResponse zwraca role i user_id, wiec mozemy ustawić wstępny stan
+    user.value = {
+      id: res.user_id,
+      username,
+      role: res.role
+    }
+    return user.value
   }
 
   function logout () {

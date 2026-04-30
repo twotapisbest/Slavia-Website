@@ -1,18 +1,33 @@
 <script setup lang="ts">
+import AtheleteCard, { type Athlete } from '~/components/AtheleteCard.vue'
 import { apiRoutes } from '~/config/api'
-import type { Player } from '~/types/models'
+import type { Athlete as AthleteModel } from '~/types/models'
 
 const api = useApi()
 
 const { data: players, status, refresh, error } = await useAsyncData(
   'players-public',
-  () => api<Player[]>(apiRoutes.players.list),
+  () => api<AthleteModel[]>(apiRoutes.athletes.list),
   { default: () => [] }
 )
 
 useSeoMeta({
   title: 'Zawodnicy — Slavia Ruda Śląska',
   description: 'Lista zawodników CKS Slavia Ruda Śląska: kategorie wagowe i wyniki.'
+})
+
+const jacek = ref<Athlete>({
+  name: 'Jakub Kowalski',
+  birthYear: 1995,
+  weightCategory: 81,
+  snatch: 120,
+  cleanAndJerk: 150,
+  total: 270, // 120 + 150
+  sinclair: 350.42,
+  description: 'Specjalista od technicznych podejść w rwaniu. Wielokrotny medalista Mistrzostw Śląska, znany z niesamowitej dynamiki i spokoju na pomoście.',
+  photo: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=1000&auto=format&fit=crop', // Przykładowe zdjęcie
+  history: [240, 250, 255, 260, 265, 270],
+  maxHistory: 300 // Skala wykresu
 })
 </script>
 
@@ -29,6 +44,8 @@ useSeoMeta({
         Poniżej znajdziesz aktualną listę zawodników powiązaną z naszym systemem — dane pochodzą z serwera klubowego.
       </p>
     </div>
+
+    <AtheleteCard v-model="jacek"/>
 
     <UAlert
       v-if="error"
