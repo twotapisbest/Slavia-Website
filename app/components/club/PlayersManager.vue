@@ -41,7 +41,7 @@ function resetForm () {
 async function loadPlayers () {
   loading.value = true
   try {
-    players.value = await api<Player[]>(apiRoutes.players.list)
+    players.value = await api<Player[]>(apiRoutes.athletes.listAdmin)
   } catch (e) {
     toast.add({
       title: 'Nie udało się wczytać zawodników',
@@ -271,23 +271,12 @@ onMounted(() => {
       </div>
     </UCard>
 
-    <UModal v-model:open="modalOpen">
+    <UModal
+      v-model:open="modalOpen"
+      :title="editingId ? 'Edycja zawodnika' : 'Nowy zawodnik'"
+    >
       <template #content>
-        <UCard>
-          <template #header>
-            <div class="flex items-center justify-between gap-4">
-              <h3 class="text-lg font-semibold text-highlighted">
-                {{ editingId ? 'Edycja zawodnika' : 'Nowy zawodnik' }}
-              </h3>
-              <UButton
-                color="neutral"
-                variant="ghost"
-                icon="i-lucide-x"
-                @click="modalOpen = false"
-              />
-            </div>
-          </template>
-
+        <div class="p-4 sm:p-6 space-y-4">
           <form
             class="space-y-4"
             @submit.prevent="savePlayer"
@@ -299,6 +288,7 @@ onMounted(() => {
               <UInput
                 v-model="form.full_name"
                 autocomplete="name"
+                class="w-full"
               />
             </UFormField>
 
@@ -309,12 +299,14 @@ onMounted(() => {
                   :min="1950"
                   :max="new Date().getFullYear()"
                   placeholder="np. 2010"
+                  class="w-full"
                 />
               </UFormField>
               <UFormField label="Kategoria wagowa">
                 <UInput
                   v-model="form.weight_category"
                   placeholder="np. 73 kg"
+                  class="w-full"
                 />
               </UFormField>
             </div>
@@ -325,6 +317,7 @@ onMounted(() => {
                   v-model="form.best_snatch_kg"
                   :min="0"
                   placeholder="—"
+                  class="w-full"
                 />
               </UFormField>
               <UFormField label="Podrzut (kg)">
@@ -332,6 +325,7 @@ onMounted(() => {
                   v-model="form.best_clean_jerk_kg"
                   :min="0"
                   placeholder="—"
+                  class="w-full"
                 />
               </UFormField>
               <UFormField label="Suma (kg)">
@@ -339,6 +333,7 @@ onMounted(() => {
                   v-model="form.total_kg"
                   :min="0"
                   placeholder="—"
+                  class="w-full"
                 />
               </UFormField>
             </div>
@@ -349,6 +344,7 @@ onMounted(() => {
                 :rows="3"
                 autoresize
                 placeholder="Opcjonalnie…"
+                class="w-full"
               />
             </UFormField>
 
@@ -374,43 +370,40 @@ onMounted(() => {
               </div>
             </div>
           </form>
-        </UCard>
+        </div>
       </template>
     </UModal>
 
-    <UModal v-model:open="deleteModalOpen">
+    <UModal
+      v-model:open="deleteModalOpen"
+      title="Usunąć zawodnika?"
+      description="Tej operacji nie cofniesz."
+    >
       <template #content>
-        <UCard>
-          <template #header>
-            <h3 class="text-lg font-semibold text-highlighted">
-              Usunąć zawodnika?
-            </h3>
-          </template>
+        <div class="p-4 sm:p-6 space-y-4">
           <p
             v-if="pendingDelete"
             class="text-muted"
           >
-            Czy na pewno usunąć „{{ pendingDelete.full_name }}”? Tej operacji nie cofniesz.
+            Czy na pewno usunąć „{{ pendingDelete.full_name }}”?
           </p>
-          <template #footer>
-            <div class="flex justify-end gap-2">
-              <UButton
-                color="neutral"
-                variant="outline"
-                @click="cancelDelete"
-              >
-                Wróć
-              </UButton>
-              <UButton
-                color="error"
-                :loading="deleting"
-                @click="confirmDelete"
-              >
-                Usuń
-              </UButton>
-            </div>
-          </template>
-        </UCard>
+          <div class="flex justify-end gap-2">
+            <UButton
+              color="neutral"
+              variant="outline"
+              @click="cancelDelete"
+            >
+              Wróć
+            </UButton>
+            <UButton
+              color="error"
+              :loading="deleting"
+              @click="confirmDelete"
+            >
+              Usuń
+            </UButton>
+          </div>
+        </div>
       </template>
     </UModal>
   </div>

@@ -12,15 +12,21 @@ const items = computed(() => {
     { label: 'Zawodnicy', to: '/zawodnicy' },
     { label: 'Kalendarz', to: '/kalendarz' },
     { label: 'Blog', to: '/blog' },
-    { label: 'Ranking', to: '/ranking' },
-    { label: 'Kalkulator', to: '/kalkulator-sinclair' }
+    { label: 'Ranking', to: '/ranking' }
   ]
-  if (auth.isAdmin.value) {
-    main.push({ label: 'Panel admina', to: '/admin' })
+  
+  if (auth.isLoggedIn.value) {
+    if (auth.isSuperAdmin.value) {
+      main.push({ label: 'Superadmin', to: '/superadmin' })
+    } else if (auth.isAdmin.value) {
+      main.push({ label: 'Panel admina', to: '/admin' })
+    } else {
+      main.push({ label: 'Mój Panel', to: '/athlete' })
+    }
   }
-  if (auth.isSuperAdmin.value) {
-    main.push({ label: 'Superadmin', to: '/superadmin' })
-  }
+  
+  main.push({ label: 'Kalkulator', to: '/kalkulator-sinclair' })
+  
   return main
 })
 </script>

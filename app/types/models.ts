@@ -18,10 +18,19 @@ export interface LoginResponse {
 
 export interface Athlete {
   id: string
-  user_id: string
-  first_name: string
-  last_name: string
+  user_id?: string | null
+  full_name: string
+  birth_year?: number | null
+  weight_category?: string | null
+  best_snatch_kg?: number | null
+  best_clean_jerk_kg?: number | null
+  total_kg?: number | null
+  notes?: string | null
+  is_active: boolean
 }
+
+/** Alias for Athlete used in management components */
+export type Player = Athlete
 
 export interface Competition {
   id: string

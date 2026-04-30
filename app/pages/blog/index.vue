@@ -122,30 +122,55 @@ function formatDate(dateStr: string) {
     </div>
 
     <!-- Modal do dodawania -->
-    <UModal v-model="isModalOpen">
-      <UCard>
-        <template #header>
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-highlighted">Nowy wpis</h3>
-            <UButton color="neutral" variant="ghost" icon="i-lucide-x" class="-my-1" @click="isModalOpen = false" />
-          </div>
-        </template>
-        
-        <form @submit.prevent="savePost" class="space-y-4">
-          <UFormField label="Tytuł" required>
-            <UInput v-model="formState.title" placeholder="Wpisz chwytliwy tytuł..." />
-          </UFormField>
-          
-          <UFormField label="Treść" required>
-            <UTextarea v-model="formState.content" placeholder="O czym chcesz napisać?" :rows="8" />
-          </UFormField>
-          
-          <div class="flex justify-end gap-3 mt-6">
-            <UButton color="neutral" variant="soft" @click="isModalOpen = false">Anuluj</UButton>
-            <UButton type="submit" color="primary" :loading="isSubmitting">Opublikuj</UButton>
-          </div>
-        </form>
-      </UCard>
+    <UModal v-model:open="isModalOpen" title="Nowy wpis">
+      <template #content>
+        <div class="p-4 sm:p-6 space-y-4">
+          <form
+            class="space-y-4"
+            @submit.prevent="savePost"
+          >
+            <UFormField
+              label="Tytuł"
+              required
+            >
+              <UInput
+                v-model="formState.title"
+                placeholder="Wpisz chwytliwy tytuł..."
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField
+              label="Treść"
+              required
+            >
+              <UTextarea
+                v-model="formState.content"
+                placeholder="O czym chcesz napisać?"
+                :rows="8"
+                class="w-full"
+              />
+            </UFormField>
+
+            <div class="flex justify-end gap-3 mt-6">
+              <UButton
+                color="neutral"
+                variant="soft"
+                @click="isModalOpen = false"
+              >
+                Anuluj
+              </UButton>
+              <UButton
+                type="submit"
+                color="primary"
+                :loading="isSubmitting"
+              >
+                Opublikuj
+              </UButton>
+            </div>
+          </form>
+        </div>
+      </template>
     </UModal>
   </UContainer>
 </template>

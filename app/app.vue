@@ -1,6 +1,12 @@
 <script setup lang="ts">
 const auth = useAuth()
 
+const dashboardLink = computed(() => {
+  if (auth.isSuperAdmin.value) return '/superadmin'
+  if (auth.isAdmin.value) return '/admin'
+  return '/athlete'
+})
+
 const title = 'CKS Slavia Ruda Śląska — podnoszenie ciężarów'
 const description = 'Klub sportowy Slavia Ruda Śląska: zawodnicy, wyniki i społeczność skupiona wokół sportów siłowych.'
 
@@ -36,16 +42,19 @@ async function logout() {
       <template #left>
         <div class="flex items-center gap-4 lg:gap-8">
           <ClubBrand />
-          <SiteNav />
+          <ClubSiteNav />
         </div>
       </template>
 
       <template #right>
         <div class="hidden items-center gap-2 sm:flex">
           <template v-if="auth.isLoggedIn.value">
-            <span class="max-w-35 truncate text-xs text-muted lg:max-w-50 lg:text-sm">
+            <NuxtLink 
+              :to="dashboardLink"
+              class="max-w-35 truncate text-xs font-medium text-primary hover:underline lg:max-w-50 lg:text-sm"
+            >
               {{ auth.user.value?.username }}
-            </span>
+            </NuxtLink>
             <UButton
               color="neutral"
               variant="outline"
@@ -83,7 +92,7 @@ async function logout() {
       </template>
       <template #right>
         <p class="text-xs text-muted">
-          Frontend Nuxt · API zewnętrzne
+          Neution Studio © {{ new Date().getFullYear() }}  · Jakub Gawron © {{ new Date().getFullYear() }} 
         </p>
       </template>
     </UFooter>

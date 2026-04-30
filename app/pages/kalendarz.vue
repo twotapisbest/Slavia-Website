@@ -54,7 +54,7 @@ async function saveEvent() {
   try {
     if (editingId.value) {
       await apiFetch(`/api/competitions/${editingId.value}`, {
-        method: 'PUT',
+        method: 'PATCH',
         body: formState
       })
       toast.add({ title: 'Wydarzenie zaktualizowane', color: 'success' })
@@ -197,42 +197,74 @@ function formatDate(dateStr: string) {
     </div>
 
     <!-- Event Modal -->
-    <UModal v-model="isModalOpen">
-      <UCard>
-        <template #header>
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-highlighted">
-              {{ editingId ? 'Edytuj wydarzenie' : 'Dodaj nowe wydarzenie' }}
-            </h3>
-            <UButton color="neutral" variant="ghost" icon="i-lucide-x" class="-my-1" @click="isModalOpen = false" />
-          </div>
-        </template>
-        
-        <form @submit.prevent="saveEvent" class="space-y-4">
-          <UFormField label="Nazwa wydarzenia" required>
-            <UInput v-model="formState.title" placeholder="Np. Mistrzostwa Śląska" />
-          </UFormField>
-          
-          <UFormField label="Data" required>
-            <UInput v-model="formState.date" type="date" />
-          </UFormField>
-          
-          <UFormField label="Lokalizacja" required>
-            <UInput v-model="formState.location" placeholder="Np. Piekary Śląskie" />
-          </UFormField>
-          
-          <UFormField label="Opis">
-            <UTextarea v-model="formState.description" placeholder="Dodatkowe informacje..." :rows="4" />
-          </UFormField>
-          
-          <div class="flex justify-end gap-3 mt-6">
-            <UButton color="neutral" variant="soft" @click="isModalOpen = false">Anuluj</UButton>
-            <UButton type="submit" color="primary" :loading="isSubmitting">
-              {{ editingId ? 'Zapisz zmiany' : 'Dodaj' }}
-            </UButton>
-          </div>
-        </form>
-      </UCard>
+    <UModal v-model:open="isModalOpen" :title="editingId ? 'Edytuj wydarzenie' : 'Dodaj nowe wydarzenie'">
+      <template #content>
+        <div class="p-4 sm:p-6 space-y-4">
+          <form
+            class="space-y-4"
+            @submit.prevent="saveEvent"
+          >
+            <UFormField
+              label="Nazwa wydarzenia"
+              required
+            >
+              <UInput
+                v-model="formState.title"
+                placeholder="Np. Mistrzostwa Śląska"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField
+              label="Data"
+              required
+            >
+              <UInput
+                v-model="formState.date"
+                type="date"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField
+              label="Lokalizacja"
+              required
+            >
+              <UInput
+                v-model="formState.location"
+                placeholder="Np. Piekary Śląskie"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField label="Opis">
+              <UTextarea
+                v-model="formState.description"
+                placeholder="Dodatkowe informacje..."
+                :rows="4"
+                class="w-full"
+              />
+            </UFormField>
+
+            <div class="flex justify-end gap-3 mt-6">
+              <UButton
+                color="neutral"
+                variant="soft"
+                @click="isModalOpen = false"
+              >
+                Anuluj
+              </UButton>
+              <UButton
+                type="submit"
+                color="primary"
+                :loading="isSubmitting"
+              >
+                {{ editingId ? 'Zapisz zmiany' : 'Dodaj' }}
+              </UButton>
+            </div>
+          </form>
+        </div>
+      </template>
     </UModal>
   </UContainer>
 </template>

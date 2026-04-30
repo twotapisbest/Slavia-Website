@@ -178,14 +178,9 @@ onMounted(() => {
       </div>
     </UCard>
 
-    <UModal v-model:open="modalOpen">
+    <UModal v-model:open="modalOpen" title="Nowy administrator">
       <template #content>
-        <UCard>
-          <template #header>
-            <h3 class="text-lg font-semibold text-highlighted">
-              Nowy administrator
-            </h3>
-          </template>
+        <div class="p-4 sm:p-6 space-y-4">
           <form
             class="space-y-4"
             @submit.prevent="saveAdmin"
@@ -197,6 +192,7 @@ onMounted(() => {
               <UInput
                 v-model="username"
                 autocomplete="username"
+                class="w-full"
               />
             </UFormField>
             <UFormField
@@ -207,6 +203,7 @@ onMounted(() => {
                 v-model="password"
                 type="password"
                 autocomplete="new-password"
+                class="w-full"
               />
             </UFormField>
             <div class="flex justify-end gap-2">
@@ -226,43 +223,36 @@ onMounted(() => {
               </UButton>
             </div>
           </form>
-        </UCard>
+        </div>
       </template>
     </UModal>
 
-    <UModal v-model:open="deleteModalOpen">
+    <UModal v-model:open="deleteModalOpen" title="Usunąć administratora?">
       <template #content>
-        <UCard>
-          <template #header>
-            <h3 class="text-lg font-semibold text-highlighted">
-              Usunąć administratora?
-            </h3>
-          </template>
+        <div class="p-4 sm:p-6 space-y-4">
           <p
             v-if="pendingDelete"
             class="text-muted"
           >
             Czy na pewno usunąć konto {{ pendingDelete.username }}?
           </p>
-          <template #footer>
-            <div class="flex justify-end gap-2">
-              <UButton
-                color="neutral"
-                variant="outline"
-                @click="cancelDelete"
-              >
-                Wróć
-              </UButton>
-              <UButton
-                color="error"
-                :loading="deleting"
-                @click="confirmDelete"
-              >
-                Usuń
-              </UButton>
-            </div>
-          </template>
-        </UCard>
+          <div class="flex justify-end gap-2">
+            <UButton
+              color="neutral"
+              variant="outline"
+              @click="cancelDelete"
+            >
+              Wróć
+            </UButton>
+            <UButton
+              color="error"
+              :loading="deleting"
+              @click="confirmDelete"
+            >
+              Usuń
+            </UButton>
+          </div>
+        </div>
       </template>
     </UModal>
   </div>

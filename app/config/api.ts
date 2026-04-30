@@ -13,7 +13,8 @@ export const apiRoutes = {
     me: '/api/auth/me'
   },
   athletes: {
-    list: '/api/athletes'
+    list: '/api/athletes',
+    listAdmin: '/api/athletes/admin'
   },
   players: {
     list: '/api/athletes'

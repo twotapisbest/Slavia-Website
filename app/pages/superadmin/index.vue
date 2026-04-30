@@ -21,15 +21,15 @@ const competitionsCount = computed(() => Array.isArray(competitions.value) ? com
 const quickLinks = [
   {
     title: 'Zarządzanie Adminami',
-    description: 'Dodawaj i usuwaj uprawnienia administracyjne',
+    description: 'Dodawaj i usuwaj konta administratorów',
     icon: 'i-lucide-shield-alert',
-    to: '/superadmin/zawodnicy', // Możemy tam dodać zakładkę lub stworzyć osobną stronę
+    to: '/superadmin/administratorzy',
     color: 'text-red-500',
     bg: 'bg-red-500/10'
   },
   {
-    title: 'Zawodnicy',
-    description: 'Pełny dostęp do bazy zawodników',
+    title: 'Baza Zawodników',
+    description: 'Pełny dostęp do edycji bazy zawodników',
     icon: 'i-lucide-users',
     to: '/superadmin/zawodnicy',
     color: 'text-blue-500',
@@ -44,12 +44,12 @@ const quickLinks = [
     bg: 'bg-purple-500/10'
   },
   {
-    title: 'Ustawienia strony',
-    description: 'Globalne parametry klubu',
-    icon: 'i-lucide-settings',
-    to: '/superadmin', // Do rozbudowy
-    color: 'text-gray-500',
-    bg: 'bg-gray-500/10'
+    title: 'Aktualności (Blog)',
+    description: 'Zarządzaj wpisami na blogu',
+    icon: 'i-lucide-newspaper',
+    to: '/blog',
+    color: 'text-orange-500',
+    bg: 'bg-orange-500/10'
   }
 ]
 </script>
