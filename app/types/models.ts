@@ -21,10 +21,13 @@ export interface Athlete {
   user_id?: string | null
   full_name: string
   birth_year?: number | null
+  gender?: string | null // 'male' or 'female'
   weight_category?: string | null
+  bodyweight?: number | null
   best_snatch_kg?: number | null
   best_clean_jerk_kg?: number | null
   total_kg?: number | null
+  image_url?: string | null
   notes?: string | null
   is_active: boolean
 }

@@ -8,6 +8,66 @@ useSeoMeta({
 
 const updates = [
   {
+    version: 'v1.5.0',
+    date: '1 Maj 2026',
+    title: 'UX, SEO i porządki kodu',
+    features: [
+      'Kalendarz: kliknięcie pustego dnia otwiera dodawanie wydarzenia (tylko Admin/SuperAdmin).',
+      'Blog: dodawanie wpisów i usuwanie wpisów zabezpieczone dla ról Admin/SuperAdmin.',
+      'Naprawiono wykrywanie roli na froncie (zgodność z rolami "Admin" i "SuperAdmin").',
+      'Przeprojektowano karty zawodników, aby tekst i wartości nie rozjeżdżały się w ramkach.',
+      'Rozszerzono SEO dla strony głównej, bloga i kalendarza (Open Graph/Twitter/meta).',
+      'Porządki: usunięcie zbędnych importów i drobne poprawki stabilności UI.'
+    ],
+    type: 'feature'
+  },
+  {
+    version: 'v1.4.0',
+    date: '1 Maj 2026',
+    title: 'Zabezpieczenia i Uprawnienia',
+    features: [
+      'Kalendarz — dodawanie/edytowanie wydarzeń tylko dla zalogowanych (roli Admin/SuperAdmin).',
+      'Blog — dodawanie/usuwanie wpisów tylko dla zalogowanych (roli Admin/SuperAdmin).',
+      'Dodano middleware auth do stron kalendarza i blogu — niezalogowani są przekierowywani do logowania.',
+      'Wszystkie endpointy API wymagają odpowiedniej roli (Admin/SuperAdmin) dla operacji CRUD.',
+      'Panel admina (/admin/*) chroniony przez middleware admin.',
+      'Panel superadmina (/superadmin/*) chroniony przez middleware superadmin.'
+    ],
+    type: 'feature'
+  },
+  {
+    version: 'v1.3.0',
+    date: '1 Maj 2026',
+    title: 'Ulepszenia Kart Zawodników i Systemu Wyników',
+    features: [
+      'Naprawiono wyświetlanie etykiety "pkt" w karcie zawodnika — teraz mieści się w ramce.',
+      'Przeprojektowano sekcję statystyk w kartach zawodników — gradienty, hover effects, większe czcionki.',
+      'System dodawania wyników z zawodów — admin może dodawać wyniki, które automatycznie aktualizują wykres progresji zawodnika.',
+      'Wyniki z statusem "Approved" są widoczne w publicznym API i wpływają na ranking zawodników.',
+      'Zawodnicy mogą zgłaszać własne wyniki (status "Pending" do zatwierdzenia przez admina).'
+    ],
+    type: 'feature'
+  },
+  {
+    version: 'v1.2.0',
+    date: '1 Maj 2026',
+    title: 'Kalendarz, Konta Zawodników i Ulepszenia Panelu',
+    features: [
+      'Nowy wizualny Kalendarz — siatka miesięczna z nawigacją i kolorowymi kategoriami wydarzeń.',
+      'Kategorie wydarzeń: Mistrzostwa (czerwone), Liga (żółte), Klubowe (zielone), Treningi (niebieskie).',
+      'Treningi klubowe (Pn, Śr, Pt 15-18) wyświetlane automatycznie w kalendarzu.',
+      'Kliknięcie na każdy wpis w kalendarzu otwiera formularz dodawania/edycji wydarzenia.',
+      'System wiązania zawodnika z kontem użytkownika — admin może założyć konto bezpośrednio z karty zawodnika.',
+      'Automatyczne obliczanie sumy dwuboju (rwanie + podrzut) w czasie rzeczywistym.',
+      'Ikona konta przy nazwisku zawodnika posiadającego powiązane konto.',
+      'SuperAdmin widzi w Panelu Admina przycisk przejścia do Panelu SuperAdmin.',
+      'Nawigacja dostosowana do roli — SuperAdmin, Admin i Zawodnik widzą własne skróty.',
+      'Adres klubu (ul. Konopnickiej 13) i godziny treningów widoczne w stopce i na stronie głównej.',
+      'Przekierowanie /ranking → /zawodnicy (strony zostały połączone).'
+    ],
+    type: 'feature'
+  },
+  {
     version: 'v1.1.0',
     date: '30 Kwi 2026',
     title: 'Wielka Aktualizacja Funkcjonalności',

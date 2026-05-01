@@ -8,90 +8,144 @@ async function logoutFromMenu() {
 
 const items = computed(() => {
   const main = [
-    { label: 'Strona główna', to: '/' },
     { label: 'Zawodnicy', to: '/zawodnicy' },
     { label: 'Kalendarz', to: '/kalendarz' },
     { label: 'Blog', to: '/blog' },
-    { label: 'Ranking', to: '/ranking' }
+    { label: 'Kalkulator', to: '/kalkulator-sinclair' }
   ]
-  
+
+  const management = []
   if (auth.isLoggedIn.value) {
-    if (auth.isSuperAdmin.value) {
-      main.push({ label: 'Superadmin', to: '/superadmin' })
-    } else if (auth.isAdmin.value) {
-      main.push({ label: 'Panel admina', to: '/admin' })
-    } else {
-      main.push({ label: 'Mój Panel', to: '/athlete' })
+    if (auth.user.value?.role === 'superadmin') {
+      management.push({ label: 'SuperAdmin', to: '/superadmin', color: 'primary' })
+      management.push({ label: 'Admin Panel', to: '/admin', color: 'neutral' })
+    } else if (auth.user.value?.role === 'admin') {
+      management.push({ label: 'Panel Admina', to: '/admin', color: 'primary' })
+    } else if (auth.user.value?.role === 'athlete') {
+      management.push({ label: 'Mój Profil', to: '/athlete', color: 'primary' })
     }
   }
   
-  main.push({ label: 'Kalkulator', to: '/kalkulator-sinclair' })
-  
-  return main
+  return { main, management }
 })
 </script>
 
 <template>
   <nav
-    class="hidden items-center gap-0.5 md:flex"
+    class="hidden items-center gap-1 md:flex"
     aria-label="Główna nawigacja"
   >
     <UButton
-      v-for="link in items"
+      v-for="link in items.main"
       :key="link.to"
       :to="link.to"
       variant="ghost"
       color="neutral"
-      class="font-medium"
+      class="text-sm font-semibold transition-colors hover:bg-primary/5 hover:text-primary"
+      active-class="text-primary bg-primary/10"
     >
       {{ link.label }}
     </UButton>
+    
+    <div v-if="items.management.length > 0" class="flex items-center gap-1 ml-2 pl-2 border-l border-default">
+      <UButton
+        v-for="link in items.management"
+        :key="link.to"
+        :to="link.to"
+        variant="subtle"
+        :color="link.color as any"
+        size="sm"
+        class="font-bold"
+      >
+        {{ link.label }}
+      </UButton>
+    </div>
   </nav>
 
-  <UDrawer
-    class="md:hidden"
-    title="Menu"
-  >
-    <UButton
-      icon="i-lucide-menu"
-      color="neutral"
-      variant="ghost"
-      aria-label="Otwórz menu"
-    />
+  <div class="md:hidden">
+    <UDrawer
+      title="Menu Slavia"
+    >
+      <UButton
+        icon="i-lucide-menu"
+        color="neutral"
+        variant="ghost"
+        size="lg"
+        aria-label="Otwórz menu"
+      />
 
-    <template #body>
-      <nav class="flex flex-col gap-1 p-2">
-        <UButton
-          v-for="link in items"
-          :key="link.to + '-m'"
-          :to="link.to"
-          variant="ghost"
-          color="neutral"
-          block
-          class="justify-start"
-        >
-          {{ link.label }}
-        </UButton>
-        <USeparator class="my-2" />
-        <UButton
-          v-if="!auth.isLoggedIn.value"
-          to="/logowanie"
-          icon="i-lucide-log-in"
-          block
-        >
-          Zaloguj się
-        </UButton>
-        <UButton
-          v-else
-          color="neutral"
-          variant="outline"
-          icon="i-lucide-log-out"
-          block
-          @click="logoutFromMenu"
-        >
-          Wyloguj
-        </UButton>
-      </nav>
-    </template>
-  </UDrawer>
+      <template #body>
+        <nav class="flex flex-col gap-2 p-4">
+          <UButton
+            to="/"
+            variant="ghost"
+            color="neutral"
+            block
+            class="justify-start text-lg font-medium"
+          >
+            Strona Główna
+          </UButton>
+          
+          <UButton
+            v-for="link in items.main"
+            :key="link.to + '-m'"
+            :to="link.to"
+            variant="ghost"
+            color="neutral"
+            block
+            class="justify-start text-lg font-medium"
+          >
+            {{ link.label }}
+          </UButton>
+          
+          <template v-if="items.management.length > 0">
+            <USeparator class="my-2" />
+            <UButton
+              v-for="link in items.management"
+              :key="link.to + '-m-adm'"
+              :to="link.to"
+              variant="soft"
+              :color="link.color as any"
+              block
+              class="justify-start text-lg font-bold"
+            >
+              {{ link.label }}
+            </UButton>
+          </template>
+          
+          <USeparator class="my-4" />
+          
+          <template v-if="!auth.isLoggedIn.value">
+            <UButton
+              to="/logowanie"
+              icon="i-lucide-log-in"
+              size="lg"
+              block
+            >
+              Zaloguj się
+            </UButton>
+          </template>
+          <template v-else>
+            <div class="mb-4 px-3 py-2 rounded-lg bg-muted/30">
+              <p class="text-xs text-muted uppercase font-bold tracking-wider mb-1">Zalogowany jako</p>
+              <div class="flex items-center justify-between">
+                <p class="font-bold text-highlighted">{{ auth.user.value?.username }}</p>
+                <UBadge size="xs" variant="subtle" color="primary" class="uppercase text-[10px]">{{ auth.user.value?.role }}</UBadge>
+              </div>
+            </div>
+            <UButton
+              color="error"
+              variant="soft"
+              icon="i-lucide-log-out"
+              size="lg"
+              block
+              @click="logoutFromMenu"
+            >
+              Wyloguj
+            </UButton>
+          </template>
+        </nav>
+      </template>
+    </UDrawer>
+  </div>
 </template>

@@ -71,13 +71,18 @@
       :features="[
         {
           icon: 'i-lucide-map-pin',
-          title: 'Lokalizacja',
-          description: 'Ruda Śląska — klub dla mieszkańców aglomeracji i okolic. Szczegóły treningów ustalamy bezpośrednio z trenerem.'
+          title: 'Gdzie jesteśmy?',
+          description: 'CKS Slavia Ruda Śląska, ul. Konopnickiej 13, 41-700 Ruda Śląska. Zapraszamy do wspólnych treningów na profesjonalnej sali.'
         },
         {
           icon: 'i-lucide-calendar-days',
-          title: 'Sezon i zajęcia',
-          description: 'Treningi i zgrupowania organizujemy zgodnie z kalendarzem związku — o aktualnościach informujemy na miejscu i w korespondencji z klubem.'
+          title: 'Godziny treningów',
+          description: 'Treningi odbywają się w poniedziałki, środy i piątki w godzinach 15:00 - 18:00 pod okiem wykwalifikowanej kadry trenerskiej.'
+        },
+        {
+          icon: 'i-lucide-phone',
+          title: 'Kontakt',
+          description: 'Masz pytania? Skontaktuj się z nami bezpośrednio w godzinach treningów lub poprzez nasze media społecznościowe na Facebooku.'
         }
       ]"
     />

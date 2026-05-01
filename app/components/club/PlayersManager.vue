@@ -15,28 +15,47 @@ const deleting = ref(false)
 
 const editingId = ref<string | null>(null)
 
-const form = reactive<PlayerPayload>({
+const form = reactive({
   full_name: '',
   birth_year: null,
+  gender: 'male',
   weight_category: null,
+  bodyweight: null,
   best_snatch_kg: null,
   best_clean_jerk_kg: null,
   total_kg: null,
+  image_url: null,
   notes: null,
-  is_active: true
+  is_active: true,
+  // Account fields
+  create_account: false,
+  username: '',
+  password: ''
 })
+
+const uploadLoading = ref(false)
 
 function resetForm () {
   editingId.value = null
   form.full_name = ''
   form.birth_year = null
+  form.gender = 'male'
   form.weight_category = null
+  form.bodyweight = null
   form.best_snatch_kg = null
   form.best_clean_jerk_kg = null
   form.total_kg = null
+  form.image_url = null
   form.notes = null
   form.is_active = true
+  form.create_account = false
+  form.username = ''
+  form.password = ''
 }
+
+watch(() => [form.best_snatch_kg, form.best_clean_jerk_kg], ([snatch, cj]) => {
+  form.total_kg = (snatch || 0) + (cj || 0)
+})
 
 async function loadPlayers () {
   loading.value = true
@@ -62,13 +81,39 @@ function openEdit (p: Player) {
   editingId.value = p.id
   form.full_name = p.full_name
   form.birth_year = p.birth_year ?? null
+  form.gender = (p as any).gender || 'male'
   form.weight_category = p.weight_category ?? null
+  form.bodyweight = (p as any).bodyweight ?? null
   form.best_snatch_kg = p.best_snatch_kg ?? null
   form.best_clean_jerk_kg = p.best_clean_jerk_kg ?? null
   form.total_kg = p.total_kg ?? null
+  form.image_url = (p as any).image_url || null
   form.notes = p.notes ?? null
   form.is_active = p.is_active !== false
   modalOpen.value = true
+}
+
+async function onFileChange (e: Event) {
+  const input = e.target as HTMLInputElement
+  if (!input.files?.length) return
+  
+  const file = input.files[0]
+  const formData = new FormData()
+  formData.append('file', file)
+  
+  uploadLoading.value = true
+  try {
+    const res = await api<{ url: string }>('/api/upload', {
+      method: 'POST',
+      body: formData
+    })
+    form.image_url = res.url
+    toast.add({ title: 'Zdjęcie przesłane', color: 'success' })
+  } catch (err) {
+    toast.add({ title: 'Błąd uploadu', description: getApiErrorMessage(err), color: 'error' })
+  } finally {
+    uploadLoading.value = false
+  }
 }
 
 async function savePlayer () {
@@ -78,15 +123,20 @@ async function savePlayer () {
   }
   saving.value = true
   try {
-    const body: PlayerPayload = {
+    const body: any = {
       full_name: form.full_name.trim(),
       birth_year: form.birth_year,
+      gender: form.gender,
       weight_category: form.weight_category || null,
+      bodyweight: form.bodyweight,
       best_snatch_kg: form.best_snatch_kg,
       best_clean_jerk_kg: form.best_clean_jerk_kg,
       total_kg: form.total_kg,
+      image_url: form.image_url,
       notes: form.notes || null,
-      is_active: form.is_active
+      is_active: form.is_active,
+      username: form.create_account ? form.username : undefined,
+      password: form.create_account ? form.password : undefined
     }
     if (editingId.value) {
       await api(urlAdminPlayer(editingId.value), { method: 'PATCH', body })
@@ -208,13 +258,25 @@ onMounted(() => {
               class="hover:bg-muted/20"
             >
               <td class="px-4 py-3 font-medium">
-                {{ p.full_name }}
+                <div class="flex items-center gap-3">
+                  <UAvatar :src="(p as any).image_url" size="xs" />
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <p>{{ p.full_name }}</p>
+                      <UTooltip v-if="p.user_id" text="Konto powiązane">
+                        <UIcon name="i-lucide-user-check" class="size-3.5 text-primary" />
+                      </UTooltip>
+                    </div>
+                    <p class="text-[10px] uppercase font-bold text-muted">{{ (p as any).gender === 'male' ? 'Mężczyzna' : 'Kobieta' }}</p>
+                  </div>
+                </div>
               </td>
               <td class="px-4 py-3 text-center tabular-nums text-muted">
                 {{ p.birth_year ?? '—' }}
               </td>
               <td class="px-4 py-3 text-center text-muted">
                 {{ p.weight_category ?? '—' }}
+                <span v-if="(p as any).bodyweight" class="block text-[10px]">({{ (p as any).bodyweight }} kg)</span>
               </td>
               <td class="px-4 py-3 text-center tabular-nums">
                 {{ p.best_snatch_kg ?? '—' }}
@@ -293,6 +355,19 @@ onMounted(() => {
             </UFormField>
 
             <div class="grid gap-4 sm:grid-cols-2">
+              <UFormField label="Płeć" required>
+                <USelect v-model="form.gender" :options="[{ label: 'Mężczyzna', value: 'male' }, { label: 'Kobieta', value: 'female' }]" class="w-full" />
+              </UFormField>
+              <UFormField label="Zdjęcie (URL lub Upload)">
+                <div class="flex gap-2 items-center">
+                  <UInput v-model="form.image_url" placeholder="https://..." class="grow" />
+                  <UButton icon="i-lucide-upload" color="neutral" variant="ghost" :loading="uploadLoading" @click="$refs.fileInput.click()" />
+                  <input ref="fileInput" type="file" hidden accept="image/*" @change="onFileChange" />
+                </div>
+              </UFormField>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-3">
               <UFormField label="Rok urodzenia">
                 <UInputNumber
                   v-model="form.birth_year"
@@ -306,6 +381,16 @@ onMounted(() => {
                 <UInput
                   v-model="form.weight_category"
                   placeholder="np. 73 kg"
+                  class="w-full"
+                />
+              </UFormField>
+              <UFormField label="Waga ciała (kg)">
+                <UInputNumber
+                  v-model="form.bodyweight"
+                  :min="0"
+                  :max="300"
+                  step="0.1"
+                  placeholder="np. 72.5"
                   class="w-full"
                 />
               </UFormField>
@@ -334,8 +419,38 @@ onMounted(() => {
                   :min="0"
                   placeholder="—"
                   class="w-full"
+                  disabled
                 />
               </UFormField>
+            </div>
+
+            <USeparator />
+
+            <!-- Account Section -->
+            <div v-if="!editingId || !(players.find(p => p.id === editingId)?.user_id)" class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h4 class="text-sm font-bold text-highlighted">Konto użytkownika</h4>
+                  <p class="text-xs text-muted">Umożliwia zawodnikowi logowanie i edycję profilu.</p>
+                </div>
+                <USwitch v-model="form.create_account" />
+              </div>
+
+              <div v-if="form.create_account" class="grid gap-4 sm:grid-cols-2">
+                <UFormField label="Login" required>
+                  <UInput v-model="form.username" placeholder="np. jgawron" class="w-full" />
+                </UFormField>
+                <UFormField label="Hasło (opcjonalnie)">
+                  <UInput v-model="form.password" type="password" placeholder="Domyślnie: Slavia2026" class="w-full" />
+                </UFormField>
+              </div>
+            </div>
+            <div v-else class="p-3 rounded-lg bg-primary/5 border border-primary/20 flex items-center gap-3">
+              <UIcon name="i-lucide-user-check" class="size-5 text-primary" />
+              <div>
+                <p class="text-sm font-bold text-primary">Konto powiązane</p>
+                <p class="text-xs text-muted">Ten zawodnik posiada już konto w systemie.</p>
+              </div>
             </div>
 
             <UFormField label="Notatki">

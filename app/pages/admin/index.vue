@@ -8,6 +8,7 @@ useSeoMeta({
 
 const auth = useAuth()
 const apiFetch = useApi()
+const isSuperAdmin = computed(() => auth.user.value?.role === 'superadmin')
 
 // Pobieranie podstawowych statystyk
 const { data: athletes } = await useAsyncData('dashboard-athletes', () => apiFetch('/api/athletes'))
@@ -45,9 +46,9 @@ const quickLinks = [
   },
   {
     title: 'Rankingi',
-    description: 'Przeglądaj i zatwierdzaj wyniki',
+    description: 'Przeglądaj zawodników i wyniki',
     icon: 'i-lucide-trophy',
-    to: '/ranking',
+    to: '/zawodnicy',
     color: 'text-yellow-500',
     bg: 'bg-yellow-500/10'
   },
@@ -74,6 +75,22 @@ const quickLinks = [
       <p class="mt-2 max-w-2xl text-muted">
         To jest twój panel zarządzania klubem CKS Slavia Ruda Śląska. Tutaj masz dostęp do wszystkich kluczowych modułów.
       </p>
+    </div>
+
+    <!-- SuperAdmin Banner -->
+    <div v-if="isSuperAdmin" class="mb-8 p-5 rounded-2xl bg-gradient-to-r from-primary/10 to-purple-500/10 border border-primary/20 flex items-center justify-between gap-4 flex-wrap">
+      <div class="flex items-center gap-4">
+        <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/20 text-primary shrink-0">
+          <UIcon name="i-lucide-shield-check" class="size-6" />
+        </div>
+        <div>
+          <p class="text-sm font-bold text-primary uppercase tracking-wider">Tryb SuperAdmin</p>
+          <p class="text-sm text-muted">Masz dostęp do zaawansowanych narzędzi systemowych.</p>
+        </div>
+      </div>
+      <UButton to="/superadmin" trailing-icon="i-lucide-arrow-right" size="lg" class="shrink-0">
+        Panel SuperAdmin
+      </UButton>
     </div>
 
     <!-- Statystyki -->

@@ -18,6 +18,7 @@ async function submit() {
     const user = await auth.login(username.value.trim(), password.value)
     const raw = route.query.redirect
     const redirect = typeof raw === 'string' ? raw : undefined
+    
     if (redirect) {
       await navigateTo(redirect)
     } else if (user.role === 'SuperAdmin') {
@@ -25,7 +26,7 @@ async function submit() {
     } else if (user.role === 'Admin') {
       await navigateTo('/admin')
     } else {
-      await navigateTo('/')
+      await navigateTo('/athlete')
     }
   } catch (e) {
     toast.add({
@@ -40,73 +41,102 @@ async function submit() {
 </script>
 
 <template>
-  <UContainer class="flex min-h-[60vh] flex-col items-center justify-center py-16">
-    <div class="w-full max-w-md">
-      <div class="mb-8 text-center">
-        <div class="mx-auto mb-4 flex justify-center">
-          <span
-            class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15 text-primary"
-          >
-            <UIcon
-              name="i-lucide-shield"
-              class="size-6"
-            />
-          </span>
-        </div>
-        <h1 class="text-2xl font-bold text-highlighted">
-          Strefa klubu
+  <div class="relative flex min-h-[95vh] items-center justify-center overflow-hidden py-12 px-4 bg-linear-to-br from-background via-background to-primary/5">
+    <!-- Dekoracyjne tło z animowanymi elementami -->
+    <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+      <div class="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-primary/10 blur-3xl animate-pulse" />
+      <div class="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-primary/5 blur-3xl animate-pulse" style="animation-delay: 2s" />
+      
+      <!-- Pływające ikony -->
+      <div class="absolute top-1/4 left-1/10 text-primary/10 animate-bounce" style="animation-duration: 4s">
+        <UIcon name="i-lucide-dumbbell" class="size-20 rotate-12" />
+      </div>
+      <div class="absolute bottom-1/4 right-1/10 text-primary/10 animate-bounce" style="animation-duration: 5s; animation-delay: 1s">
+        <UIcon name="i-lucide-trophy" class="size-24 -rotate-12" />
+      </div>
+      <div class="absolute top-3/4 left-1/4 text-primary/5 animate-pulse">
+        <UIcon name="i-lucide-award" class="size-32" />
+      </div>
+
+      <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5" />
+    </div>
+
+    <div class="relative z-10 w-full max-w-lg transition-all duration-700 transform translate-y-0 opacity-100 scale-100">
+      <div class="mb-10 text-center">
+        <NuxtLink to="/" class="inline-block transition-all duration-500 hover:scale-110 hover:rotate-3">
+          <div class="relative">
+            <div class="absolute -inset-4 bg-primary/20 blur-xl rounded-full animate-pulse" />
+            <img src="/logo.png" alt="Slavia Logo" class="relative mx-auto h-24 w-auto drop-shadow-2xl" />
+          </div>
+        </NuxtLink>
+        <h1 class="mt-8 text-4xl font-black tracking-tighter text-highlighted sm:text-5xl uppercase italic">
+          Panel <span class="text-primary">Klubowy</span>
         </h1>
-        <p class="mt-2 text-muted">
-          Zaloguj się, aby wejść do panelu administratora lub superadministratora.
+        <p class="mt-4 text-lg font-medium text-muted/80">
+          Zaloguj się, aby zarządzać swoimi wynikami.
         </p>
       </div>
 
-      <UCard>
-        <form
-          class="space-y-4"
-          @submit.prevent="submit"
-        >
-          <UFormField
-            label="Użytkownik"
-            required
-          >
+      <UCard 
+        class="border-primary/20 bg-background/40 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] backdrop-blur-2xl ring-1 ring-white/10"
+        :ui="{ body: 'p-8 sm:p-12', header: 'border-b border-white/5', footer: 'border-t border-white/5 bg-white/5' }"
+      >
+        <form class="space-y-8" @submit.prevent="submit">
+          <UFormField label="Nazwa użytkownika" required>
             <UInput
               v-model="username"
               autocomplete="username"
-              size="lg"
+              placeholder="jgawron"
+              size="xl"
+              icon="i-lucide-user"
+              class="w-full"
+              :ui="{ base: 'bg-white/5 border-white/10 focus:ring-primary/50' }"
             />
           </UFormField>
-          <UFormField
-            label="Hasło"
-            required
-          >
+
+          <UFormField label="Hasło" required>
             <UInput
               v-model="password"
               type="password"
               autocomplete="current-password"
-              size="lg"
+              placeholder="••••••••"
+              size="xl"
+              icon="i-lucide-lock"
+              class="w-full"
+              :ui="{ base: 'bg-white/5 border-white/10 focus:ring-primary/50' }"
             />
           </UFormField>
+
           <UButton
             type="submit"
             block
-            size="lg"
+            size="xl"
             :loading="loading"
-            trailing-icon="i-lucide-arrow-right"
+            class="mt-6 font-black uppercase italic tracking-wider transition-all hover:tracking-[0.15em] hover:shadow-[0_0_20px_rgba(var(--color-primary-500),0.4)]"
           >
-            Zaloguj
+            Wejdź do systemu
           </UButton>
         </form>
+
+        <template #footer>
+          <div class="text-center py-2">
+            <p class="text-sm text-muted font-medium">
+              Problemy z dostępem? 
+              <span class="text-primary font-bold">Zgłoś to trenerowi.</span>
+            </p>
+          </div>
+        </template>
       </UCard>
 
-      <p class="mt-6 text-center text-sm text-muted">
+      <div class="mt-10 text-center">
         <NuxtLink
           to="/"
-          class="font-medium text-primary hover:underline"
+          class="group inline-flex items-center gap-3 text-sm font-bold uppercase tracking-widest text-muted transition-all hover:text-primary"
         >
-          ← Wróć na stronę główną
+          <UIcon name="i-lucide-arrow-left" class="size-4 transition-transform group-hover:-translate-x-2" />
+          Strona główna
         </NuxtLink>
-      </p>
+      </div>
     </div>
-  </UContainer>
+  </div>
 </template>

@@ -1,270 +1,377 @@
 <script setup lang="ts">
-import { format, parseISO } from 'date-fns'
+import { 
+  format, 
+  startOfMonth, 
+  endOfMonth, 
+  startOfWeek, 
+  endOfWeek, 
+  eachDayOfInterval, 
+  isSameMonth, 
+  addMonths, 
+  subMonths,
+  isToday,
+  getDay
+} from 'date-fns'
 import { pl } from 'date-fns/locale'
 
 useSeoMeta({
-  title: 'Kalendarz wydarzeń — Slavia Ruda Śląska',
-  description: 'Kalendarz zawodów i wydarzeń w klubie podnoszenia ciężarów CKS Slavia.'
+  title: 'Kalendarz — Slavia Ruda Śląska',
+  description: 'Kalendarz zawodów i treningów CKS Slavia.',
+  ogTitle: 'Kalendarz wydarzeń — CKS Slavia',
+  ogDescription: 'Sprawdź harmonogram treningów, zawodów i wydarzeń klubowych CKS Slavia.',
+  twitterCard: 'summary'
 })
 
 const auth = useAuth()
 const apiFetch = useApi()
 const toast = useToast()
 
-const isAdmin = computed(() => auth.isLoggedIn.value && ['admin', 'superadmin'].includes(auth.user.value?.role || ''))
+// Import zewnętrznych zawodów
+const { competitions: externalCompetitions, loading: externalLoading, fetchAll: fetchExternalCompetitions } = useExternalCompetitions()
 
-const { data: events, refresh, pending } = await useAsyncData('competitions', () => apiFetch('/api/competitions'))
+const isAdmin = computed(() => auth.isAdmin.value || auth.isSuperAdmin.value)
+const { data: competitions, refresh, pending } = await useAsyncData('competitions', () => apiFetch('/api/competitions').catch(() => []))
 
-// Event management state
+// Stan kalendarza
+const currentDate = ref(new Date())
+const monthStart = computed(() => startOfMonth(currentDate.value))
+const monthEnd = computed(() => endOfMonth(monthStart.value))
+const calendarStart = computed(() => startOfWeek(monthStart.value, { weekStartsOn: 1 }))
+const calendarEnd = computed(() => endOfWeek(monthEnd.value, { weekStartsOn: 1 }))
+
+const days = computed(() => {
+  return eachDayOfInterval({
+    start: calendarStart.value,
+    end: calendarEnd.value
+  })
+})
+
+const weekDays = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz']
+
+// Treningi: Poniedziałki, Środy, Piątki 15:00 - 18:00
+const getTrainingsForDay = (date: Date) => {
+  const day = getDay(date) // 0: Ndz, 1: Pon, ..., 5: Pt
+  if ([1, 3, 5].includes(day)) {
+    return [{
+      id: `training-${format(date, 'yyyy-MM-dd')}`,
+      title: 'Trening',
+      time: '15:00 - 18:00',
+      type: 'training'
+    }]
+  }
+  return []
+}
+
+const getEventsForDay = (date: Date) => {
+  const dateStr = format(date, 'yyyy-MM-dd')
+  
+  // Lokalne zawody z bazy danych
+  const comps = (competitions.value || []).filter((e: any) => e.date.startsWith(dateStr)).map((e: any) => ({
+    ...e,
+    type: 'competition'
+  }))
+  
+  // Zewnętrzne zawody z PZPC/SLPC
+  const external = externalCompetitions.value
+    .filter((e: any) => e.date.startsWith(dateStr))
+    .map((e: any) => ({
+      ...e,
+      type: 'external'
+    }))
+  
+  return [...getTrainingsForDay(date), ...comps, ...external]
+}
+
+// Zarządzanie wydarzeniami
 const isModalOpen = ref(false)
 const isSubmitting = ref(false)
 const editingId = ref<string | null>(null)
-
 const formState = reactive({
   title: '',
   date: '',
   location: '',
-  description: ''
+  description: '',
+  category: 'club_event'
 })
 
-function openModal(event?: any) {
-  if (event) {
+const categories = [
+  { value: 'championship', label: '🏆 Mistrzostwa', desc: 'ogólnopol. / śląskie' },
+  { value: 'league', label: '🥈 Liga', desc: 'zawody ligowe' },
+  { value: 'club_event', label: '🌿 Wydarzenie klubowe', desc: 'obóz, zgrupowanie' },
+]
+
+function getEventClasses(event: any) {
+  if (event.type === 'training')
+    return 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+  const cat = event.category || 'club_event'
+  if (cat === 'championship') return 'bg-red-500/15 border-red-500/40 text-red-400 font-bold'
+  if (cat === 'league') return 'bg-amber-500/15 border-amber-500/40 text-amber-400 font-bold'
+  return 'bg-teal-500/15 border-teal-500/40 text-teal-400 font-bold'
+}
+
+function getEventIcon(event: any) {
+  if (event.type === 'training') return 'i-lucide-dumbbell'
+  const cat = event.category || 'club_event'
+  if (cat === 'championship') return 'i-lucide-trophy'
+  if (cat === 'league') return 'i-lucide-medal'
+  return 'i-lucide-star'
+}
+
+function openModal(date?: Date, event?: any) {
+  if (!isAdmin.value) return
+
+  if (event && event.type === 'competition') {
     editingId.value = event.id
     formState.title = event.title
-    formState.date = event.date.substring(0, 10) // Format dla input type="date"
+    formState.date = event.date.substring(0, 10)
     formState.location = event.location
     formState.description = event.description || ''
+    formState.category = event.category || 'club_event'
   } else {
     editingId.value = null
     formState.title = ''
-    formState.date = ''
+    formState.date = date ? format(date, 'yyyy-MM-dd') : ''
     formState.location = ''
     formState.description = ''
+    formState.category = 'club_event'
   }
   isModalOpen.value = true
 }
 
 async function saveEvent() {
-  if (!formState.title || !formState.date || !formState.location) {
-    toast.add({ title: 'Wypełnij wszystkie wymagane pola', color: 'error' })
+  if (!isAdmin.value) {
+    toast.add({ title: 'Brak uprawnień', color: 'error' })
     return
   }
 
+  if (!formState.title || !formState.date || !formState.location) {
+    toast.add({ title: 'Uzupełnij wymagane pola', color: 'error' })
+    return
+  }
   isSubmitting.value = true
   try {
     if (editingId.value) {
-      await apiFetch(`/api/competitions/${editingId.value}`, {
-        method: 'PATCH',
-        body: formState
-      })
-      toast.add({ title: 'Wydarzenie zaktualizowane', color: 'success' })
+      await apiFetch(`/api/competitions/${editingId.value}`, { method: 'PATCH', body: formState })
+      toast.add({ title: 'Zaktualizowano', color: 'success' })
     } else {
-      await apiFetch('/api/competitions', {
-        method: 'POST',
-        body: formState
-      })
-      toast.add({ title: 'Wydarzenie dodane', color: 'success' })
+      await apiFetch('/api/competitions', { method: 'POST', body: formState })
+      toast.add({ title: 'Dodano wydarzenie', color: 'success' })
     }
     isModalOpen.value = false
     await refresh()
-  } catch (error) {
-    toast.add({ title: 'Wystąpił błąd', description: String(error), color: 'error' })
+  } catch (err) {
+    toast.add({ title: 'Błąd zapisu', description: String(err), color: 'error' })
   } finally {
     isSubmitting.value = false
   }
 }
 
 async function deleteEvent(id: string) {
-  if (!confirm('Czy na pewno chcesz usunąć to wydarzenie?')) return
-  
+  if (!isAdmin.value) {
+    toast.add({ title: 'Brak uprawnień', color: 'error' })
+    return
+  }
+
+  if (!confirm('Usunąć?')) return
   try {
     await apiFetch(`/api/competitions/${id}`, { method: 'DELETE' })
-    toast.add({ title: 'Wydarzenie usunięte', color: 'success' })
+    toast.add({ title: 'Usunięto', color: 'success' })
     await refresh()
-  } catch (error) {
-    toast.add({ title: 'Wystąpił błąd podczas usuwania', color: 'error' })
+  } catch (err) {
+    toast.add({ title: 'Błąd usuwania', color: 'error' })
   }
 }
 
-// Sortowanie i grupowanie
-const sortedEvents = computed(() => {
-  if (!events.value || !Array.isArray(events.value)) return []
-  return [...events.value].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-})
+const nextMonth = () => currentDate.value = addMonths(currentDate.value, 1)
+const prevMonth = () => currentDate.value = subMonths(currentDate.value, 1)
+const goToToday = () => currentDate.value = new Date()
 
-const upcomingEvents = computed(() => {
-  const now = new Date()
-  now.setHours(0, 0, 0, 0)
-  return sortedEvents.value.filter(e => new Date(e.date) >= now)
-})
-
-const pastEvents = computed(() => {
-  const now = new Date()
-  now.setHours(0, 0, 0, 0)
-  return sortedEvents.value.filter(e => new Date(e.date) < now).reverse()
-})
-
-function formatDate(dateStr: string) {
-  try {
-    return format(parseISO(dateStr), 'dd MMMM yyyy', { locale: pl })
-  } catch (e) {
-    return dateStr
-  }
+function handleDayClick(day: Date) {
+  if (!isAdmin.value || !isSameMonth(day, monthStart.value)) return
+  openModal(day)
 }
 </script>
 
 <template>
-  <UContainer class="py-12">
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+  <UContainer class="py-10">
+    <div class="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
       <div>
-        <h1 class="text-3xl font-bold tracking-tight text-highlighted">Kalendarz Wydarzeń</h1>
-        <p class="mt-2 text-muted">Zawody, zgrupowania i ważne daty w naszym klubie.</p>
+        <h1 class="text-4xl font-black tracking-tight text-highlighted uppercase italic">
+          Kalendarz <span class="text-primary italic">Slavia</span>
+        </h1>
+        <p class="text-muted mt-1 font-medium">Harmonogram treningów i startów klubowych.</p>
       </div>
-      <UButton v-if="isAdmin" icon="i-lucide-plus" color="primary" @click="openModal()">
-        Dodaj wydarzenie
-      </UButton>
+
+      <div class="flex items-center gap-2 bg-muted/20 p-1.5 rounded-xl border border-default">
+        <UButton icon="i-lucide-chevron-left" variant="ghost" color="neutral" @click="prevMonth" />
+        <UButton variant="ghost" color="neutral" class="min-w-[140px] font-bold text-highlighted" @click="goToToday">
+          {{ format(currentDate, 'MMMM yyyy', { locale: pl }) }}
+        </UButton>
+        <UButton icon="i-lucide-chevron-right" variant="ghost" color="neutral" @click="nextMonth" />
+      </div>
+
+      <div class="flex items-center gap-2">
+        <UButton 
+          v-if="isAdmin" 
+          icon="i-lucide-refresh-ccw" 
+          size="lg" 
+          color="neutral" 
+          variant="ghost"
+          :loading="externalLoading"
+          @click="fetchExternalCompetitions().then(() => toast.add({ title: 'Zewnętrzne zawody załadowane', color: 'success' }))"
+        >
+          Importuj z PZPC
+        </UButton>
+        <UButton v-if="isAdmin" icon="i-lucide-plus" size="lg" @click="openModal()">
+          Dodaj Zawody
+        </UButton>
+      </div>
     </div>
 
-    <div v-if="pending" class="flex justify-center py-10">
-      <UIcon name="i-lucide-loader-2" class="animate-spin size-8 text-primary" />
-    </div>
-
-    <div v-else-if="!sortedEvents.length" class="text-center py-20 border border-dashed border-default rounded-xl bg-muted/5">
-      <UIcon name="i-lucide-calendar-x" class="size-12 mx-auto text-muted/50 mb-4" />
-      <h3 class="text-lg font-medium text-highlighted">Brak wydarzeń</h3>
-      <p class="text-muted mt-1">Obecnie nie ma zaplanowanych żadnych wydarzeń.</p>
-    </div>
-
-    <div v-else class="space-y-16">
-      <!-- Nadchodzące -->
-      <section v-if="upcomingEvents.length > 0">
-        <h2 class="text-xl font-semibold text-highlighted mb-6 flex items-center gap-2">
-          <UIcon name="i-lucide-calendar-clock" class="size-5 text-primary" />
-          Nadchodzące wydarzenia
-        </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <UCard v-for="event in upcomingEvents" :key="event.id" class="flex flex-col relative group overflow-hidden border-primary/20 bg-primary/5">
-            <div class="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-            
-            <div class="flex-1">
-              <div class="text-sm font-bold text-primary mb-2 flex items-center gap-1.5">
-                <UIcon name="i-lucide-calendar" class="size-4" />
-                {{ formatDate(event.date) }}
-              </div>
-              <h3 class="text-xl font-bold text-highlighted mb-2">{{ event.title }}</h3>
-              <p class="text-muted text-sm mb-4 line-clamp-3">{{ event.description }}</p>
-              
-              <div class="flex items-center text-sm font-medium text-muted gap-1.5 mt-auto">
-                <UIcon name="i-lucide-map-pin" class="size-4" />
-                {{ event.location }}
-              </div>
-            </div>
-
-            <!-- Admin controls -->
-            <div v-if="isAdmin" class="mt-6 pt-4 border-t border-default flex items-center justify-end gap-2">
-              <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-edit" @click="openModal(event)">Edytuj</UButton>
-              <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" @click="deleteEvent(event.id)">Usuń</UButton>
-            </div>
-          </UCard>
+    <!-- Calendar Grid -->
+    <div class="border border-default rounded-2xl overflow-hidden bg-card shadow-2xl">
+      <!-- Header -->
+      <div class="grid grid-cols-7 border-b border-default bg-muted/30">
+        <div v-for="day in weekDays" :key="day" class="py-4 text-center text-xs font-black uppercase tracking-widest text-muted">
+          {{ day }}
         </div>
-      </section>
+      </div>
 
-      <!-- Zakończone -->
-      <section v-if="pastEvents.length > 0">
-        <h2 class="text-xl font-semibold text-highlighted mb-6 flex items-center gap-2">
-          <UIcon name="i-lucide-history" class="size-5 text-muted" />
-          Zakończone wydarzenia
-        </h2>
-        <div class="space-y-4">
-          <UCard v-for="event in pastEvents" :key="event.id" class="opacity-75 hover:opacity-100 transition-opacity">
-            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-              <div>
-                <h3 class="text-lg font-bold text-highlighted">{{ event.title }}</h3>
-                <div class="flex items-center text-sm text-muted gap-4 mt-1">
-                  <span class="flex items-center gap-1"><UIcon name="i-lucide-calendar" class="size-3.5" /> {{ formatDate(event.date) }}</span>
-                  <span class="flex items-center gap-1"><UIcon name="i-lucide-map-pin" class="size-3.5" /> {{ event.location }}</span>
-                </div>
+      <!-- Days -->
+      <div class="grid grid-cols-7">
+        <div 
+          v-for="day in days" 
+          :key="day.toString()" 
+          class="min-h-[140px] border-r border-b border-default last:border-r-0 p-2 transition-colors hover:bg-primary/5 group relative"
+          :class="[
+            !isSameMonth(day, monthStart) ? 'bg-muted/10 opacity-30' : '',
+            isToday(day) ? 'bg-primary/5' : ''
+          ]"
+          @click="handleDayClick(day)"
+        >
+          <div class="flex justify-between items-start mb-2">
+            <span 
+              class="text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full"
+              :class="isToday(day) ? 'bg-primary text-white shadow-lg' : 'text-muted'"
+            >
+              {{ format(day, 'd') }}
+            </span>
+            <UButton 
+              v-if="isAdmin && isSameMonth(day, monthStart)" 
+              icon="i-lucide-plus" 
+              variant="ghost" 
+              size="xs" 
+              class="opacity-0 group-hover:opacity-100 transition-opacity" 
+              @click.stop="openModal(day)"
+            />
+          </div>
+
+          <div class="space-y-1 overflow-y-auto max-h-[100px] scrollbar-hide">
+            <div 
+              v-for="event in getEventsForDay(day)" 
+              :key="event.id"
+              class="text-[10px] p-1.5 rounded-lg border flex flex-col leading-tight cursor-pointer transition-all hover:brightness-110"
+              :class="getEventClasses(event)"
+              @click.stop="event.type === 'competition' ? openModal(undefined, event) : openModal(day)"
+            >
+              <div class="flex items-center justify-between gap-1">
+                <span class="truncate">{{ event.title }}</span>
+                <UIcon :name="getEventIcon(event)" class="size-2.5 shrink-0 opacity-80" />
               </div>
-              
-              <div v-if="isAdmin" class="flex items-center gap-2">
-                <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-edit" @click="openModal(event)">Edytuj</UButton>
-                <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" @click="deleteEvent(event.id)">Usuń</UButton>
-              </div>
+              <span class="opacity-60">{{ event.time || event.location }}</span>
             </div>
-          </UCard>
+          </div>
         </div>
-      </section>
+      </div>
     </div>
 
-    <!-- Event Modal -->
-    <UModal v-model:open="isModalOpen" :title="editingId ? 'Edytuj wydarzenie' : 'Dodaj nowe wydarzenie'">
+    <!-- Legenda -->
+    <div class="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 p-5 rounded-2xl bg-muted/10 border border-default">
+      <div class="flex items-center gap-3">
+        <div class="w-3 h-7 rounded-full bg-blue-500/40 border border-blue-500/50 shrink-0"></div>
+        <div>
+          <p class="text-xs font-black text-blue-400 uppercase">Trening</p>
+          <p class="text-[10px] text-muted">Pn, Śr, Pt 15-18</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="w-3 h-7 rounded-full bg-red-500/40 border border-red-500/50 shrink-0"></div>
+        <div>
+          <p class="text-xs font-black text-red-400 uppercase">Mistrzostwa</p>
+          <p class="text-[10px] text-muted">ogólnopol. / śląskie</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="w-3 h-7 rounded-full bg-amber-500/40 border border-amber-500/50 shrink-0"></div>
+        <div>
+          <p class="text-xs font-black text-amber-400 uppercase">Liga</p>
+          <p class="text-[10px] text-muted">zawody ligowe</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="w-3 h-7 rounded-full bg-teal-500/40 border border-teal-500/50 shrink-0"></div>
+        <div>
+          <p class="text-xs font-black text-teal-400 uppercase">Wydarzenie klubowe</p>
+          <p class="text-[10px] text-muted">obóz, zgrupowanie</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal -->
+    <UModal v-model:open="isModalOpen" :title="editingId ? 'Edytuj wydarzenie' : 'Dodaj wydarzenie'">
       <template #content>
-        <div class="p-4 sm:p-6 space-y-4">
-          <form
-            class="space-y-4"
-            @submit.prevent="saveEvent"
-          >
-            <UFormField
-              label="Nazwa wydarzenia"
-              required
-            >
-              <UInput
-                v-model="formState.title"
-                placeholder="Np. Mistrzostwa Śląska"
-                class="w-full"
-              />
-            </UFormField>
-
-            <UFormField
-              label="Data"
-              required
-            >
-              <UInput
-                v-model="formState.date"
-                type="date"
-                class="w-full"
-              />
-            </UFormField>
-
-            <UFormField
-              label="Lokalizacja"
-              required
-            >
-              <UInput
-                v-model="formState.location"
-                placeholder="Np. Piekary Śląskie"
-                class="w-full"
-              />
-            </UFormField>
-
-            <UFormField label="Opis">
-              <UTextarea
-                v-model="formState.description"
-                placeholder="Dodatkowe informacje..."
-                :rows="4"
-                class="w-full"
-              />
-            </UFormField>
-
-            <div class="flex justify-end gap-3 mt-6">
-              <UButton
-                color="neutral"
-                variant="soft"
-                @click="isModalOpen = false"
+        <div class="p-6 space-y-4">
+          <UFormField label="Kategoria" required>
+            <div class="grid grid-cols-3 gap-2">
+              <button
+                v-for="cat in categories"
+                :key="cat.value"
+                type="button"
+                class="p-2.5 rounded-xl border-2 text-[11px] font-bold text-center transition-all"
+                :class="formState.category === cat.value
+                  ? cat.value === 'championship' ? 'bg-red-500/20 border-red-500 text-red-400'
+                    : cat.value === 'league' ? 'bg-amber-500/20 border-amber-500 text-amber-400'
+                    : 'bg-teal-500/20 border-teal-500 text-teal-400'
+                  : 'border-default bg-muted/10 text-muted hover:bg-muted/30'"
+                @click="formState.category = cat.value"
               >
-                Anuluj
-              </UButton>
-              <UButton
-                type="submit"
-                color="primary"
-                :loading="isSubmitting"
-              >
-                {{ editingId ? 'Zapisz zmiany' : 'Dodaj' }}
-              </UButton>
+                {{ cat.label }}
+              </button>
             </div>
-          </form>
+          </UFormField>
+
+          <UFormField label="Nazwa" required>
+            <UInput v-model="formState.title" placeholder="Mistrzostwa Polski..." class="w-full" />
+          </UFormField>
+          <div class="grid grid-cols-2 gap-4">
+            <UFormField label="Data" required>
+              <UInput v-model="formState.date" type="date" class="w-full" />
+            </UFormField>
+            <UFormField label="Lokalizacja" required>
+              <UInput v-model="formState.location" placeholder="Ruda Śląska" class="w-full" />
+            </UFormField>
+          </div>
+          <UFormField label="Opis">
+            <UTextarea v-model="formState.description" placeholder="Szczegóły..." :rows="3" class="w-full" />
+          </UFormField>
+          <div class="flex justify-end gap-3 mt-6">
+            <UButton v-if="editingId" color="error" variant="ghost" icon="i-lucide-trash-2" @click="editingId && deleteEvent(editingId)">Usuń</UButton>
+            <div class="flex-1"></div>
+            <UButton color="neutral" variant="soft" @click="isModalOpen = false">Anuluj</UButton>
+            <UButton :loading="isSubmitting" @click="saveEvent">Zapisz</UButton>
+          </div>
         </div>
       </template>
     </UModal>
   </UContainer>
 </template>
+
+<style scoped>
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+</style>
