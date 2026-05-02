@@ -42,7 +42,7 @@ const assignmentsLoading = ref(false)
 async function loadAthleteAssignments (athleteId: string) {
   assignmentsLoading.value = true
   try {
-    const mine = await api<Competition[]>(`/api/athletes/${athleteId}/competitions`)
+    const mine = await api<Competition[]>(apiRoutes.athletes.competitions(athleteId))
     assignedCompetitionIds.value = mine.map(c => c.id)
   } catch {
     assignedCompetitionIds.value = []
@@ -61,7 +61,7 @@ watch(modalOpen, async (open) => {
     return
   }
   try {
-    const rows = await api<Competition[]>('/api/competitions')
+    const rows = await api<Competition[]>(apiRoutes.competitions.collection)
     competitionsCatalog.value = [...rows].sort((a, b) => a.date.localeCompare(b.date))
   } catch {
     competitionsCatalog.value = []
@@ -159,7 +159,7 @@ async function onFileChange (e: Event) {
   
   uploadLoading.value = true
   try {
-    const res = await api<{ url: string }>('/api/upload', {
+    const res = await api<{ url: string }>(apiRoutes.upload, {
       method: 'POST',
       body: formData
     })
@@ -208,7 +208,7 @@ async function savePlayer () {
 
     if (wasEditing) {
       try {
-        await api(`/api/athletes/${athleteId}/competitions`, {
+        await api(apiRoutes.athletes.competitions(athleteId), {
           method: 'PUT',
           body: { competition_ids: [...assignedCompetitionIds.value] }
         })

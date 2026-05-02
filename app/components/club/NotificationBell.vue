@@ -1,71 +1,17 @@
 <script setup lang="ts">
 import { formatDistanceToNow } from 'date-fns'
 import { pl } from 'date-fns/locale'
-import type { ClubNotification } from '~/composables/useNotifications'
+import type { ClubNotification } from '~/types/notifications'
+import { getApiErrorMessage } from '~/composables/useApi'
 
 const auth = useAuth()
 const toast = useToast()
+const { resolveLink } = useNotificationLinks()
 const { items, loading, refresh, remove, clearLocal } = useNotifications()
 
 const popoverOpen = ref(false)
 
 let pollTimer: ReturnType<typeof setInterval> | undefined
-
-function parsePayload (raw: string | null | undefined): Record<string, string> {
-  if (!raw) return {}
-  try {
-    const o = JSON.parse(raw) as unknown
-    if (!o || typeof o !== 'object') return {}
-    const out: Record<string, string> = {}
-    for (const [k, v] of Object.entries(o as Record<string, unknown>)) {
-      if (typeof v === 'string') out[k] = v
-    }
-    return out
-  } catch {
-    return {}
-  }
-}
-
-/** Opcjonalny skrót do powiązanej podstrony (bez blokowania usuwania). */
-function resolveLink (n: ClubNotification): string | null {
-  const p = parsePayload(n.payload)
-  const competitionId = p.competition_id
-  const athleteId = p.athlete_id
-
-  if (competitionId) {
-    return '/kalendarz'
-  }
-
-  if (
-    n.kind === 'training_log_athlete_note'
-    || n.kind === 'training_log_trainer_note_staff'
-    || (n.kind === 'training_log_trainer_note' && auth.isTrainer.value)
-  ) {
-    if (athleteId) return `/trainer/dziennik/${athleteId}`
-  }
-
-  if (n.kind === 'training_log_trainer_note' && auth.isAthlete.value) {
-    return '/athlete/dziennik'
-  }
-
-  if (n.kind === 'result_pending' || n.kind === 'result_approved_staff') {
-    return '/trainer/wyniki'
-  }
-
-  if (n.kind === 'result_approved' && auth.isAthlete.value) {
-    return '/athlete'
-  }
-
-  if (
-    n.kind.startsWith('admin_')
-    || n.kind.startsWith('blog_')
-  ) {
-    if (auth.isSuperAdmin.value) return '/superadmin'
-    if (auth.isAdmin.value) return '/admin'
-  }
-
-  return null
-}
 
 function relativeTime (iso: string) {
   try {
@@ -128,7 +74,10 @@ onBeforeUnmount(() => {
     v-if="auth.isLoggedIn.value"
     v-model:open="popoverOpen"
     :content="{ side: 'bottom', align: 'end' }"
-    :ui="{ content: 'p-0 overflow-hidden min-w-[min(100vw-2rem,20rem)] max-w-sm' }"
+    :ui="{
+      content:
+        'p-0 overflow-hidden min-w-[min(100vw-2rem,21rem)] max-w-sm rounded-xl shadow-xl ring-1 ring-default/60'
+    }"
   >
     <div class="relative inline-flex">
       <UButton
@@ -138,28 +87,30 @@ onBeforeUnmount(() => {
         icon="i-lucide-bell"
         :aria-label="'Powiadomienia'"
         :loading="loading && items.length === 0"
+        class="rounded-full"
       />
       <span
         v-if="items.length > 0"
-        class="pointer-events-none absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold leading-none text-white ring-2 ring-bg"
+        class="pointer-events-none absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold leading-none text-white shadow-sm ring-2 ring-bg"
       >
         {{ items.length > 99 ? '99+' : items.length }}
       </span>
     </div>
 
     <template #content>
-      <div class="border-b border-default px-3 py-2">
+      <div class="border-b border-default bg-muted/30 px-4 py-2.5">
         <p class="text-xs font-semibold uppercase tracking-wide text-muted">
           Powiadomienia
         </p>
       </div>
 
-      <div class="max-h-[min(70vh,22rem)] overflow-y-auto">
+      <div class="max-h-[min(70vh,24rem)] overflow-y-auto overscroll-contain">
         <div
           v-if="!loading && items.length === 0"
-          class="px-4 py-8 text-center text-sm text-muted"
+          class="flex flex-col items-center gap-2 px-6 py-10 text-center text-sm text-muted"
         >
-          Brak powiadomień
+          <UIcon name="i-lucide-bell-off" class="size-9 opacity-40" />
+          <span>Brak powiadomień</span>
         </div>
 
         <div
@@ -167,19 +118,19 @@ onBeforeUnmount(() => {
           :key="n.id"
           role="button"
           tabindex="0"
-          class="group flex gap-2 border-b border-default px-3 py-2.5 text-left transition-colors last:border-b-0 hover:bg-muted/40"
+          class="group flex gap-2 border-b border-default px-3 py-3 text-left transition-colors last:border-b-0 hover:bg-primary/[0.06]"
           :class="resolveLink(n) ? 'cursor-pointer' : 'cursor-default'"
           @click="onRowClick(n)"
           @keydown.enter="onRowClick(n)"
         >
           <div class="min-w-0 flex-1">
-            <p class="text-sm font-semibold text-highlighted leading-snug">
+            <p class="text-sm font-semibold leading-snug text-highlighted">
               {{ n.title }}
             </p>
-            <p class="mt-0.5 text-xs text-muted leading-snug">
+            <p class="mt-1 text-xs leading-snug text-muted">
               {{ n.body }}
             </p>
-            <p class="mt-1 text-[10px] text-muted/80">
+            <p class="mt-1.5 text-[10px] text-muted/75">
               {{ relativeTime(n.created_at) }}
             </p>
           </div>
@@ -191,7 +142,8 @@ onBeforeUnmount(() => {
             class="shrink-0 opacity-60 hover:opacity-100"
             square
             aria-label="Usuń powiadomienie"
-            @click="onRemove(n.id, $event)"
+            type="button"
+            @click.stop="onRemove(n.id, $event)"
           />
         </div>
       </div>

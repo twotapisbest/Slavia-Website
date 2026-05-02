@@ -14,6 +14,7 @@ import {
   isValid
 } from 'date-fns'
 import { pl } from 'date-fns/locale'
+import { apiRoutes } from '~/config/api'
 import type { Athlete } from '~/types/models'
 import { getApiErrorMessage } from '~/composables/useApi'
 
@@ -41,7 +42,7 @@ const syncLoading = ref(false)
 // Bez SSR: na hostingu Node często nie ma dostępu do API / złego apiBase — strona się wywalała u gości.
 const { data: competitions, refresh, pending: competitionsPending } = await useAsyncData(
   'competitions-public',
-  () => $fetch<unknown[]>(`${publicBase()}/api/competitions`).catch(() => []),
+  () => $fetch<unknown[]>(`${publicBase()}${apiRoutes.competitions.collection}`).catch(() => []),
   { default: () => [], server: false, lazy: true }
 )
 
@@ -54,7 +55,7 @@ async function loadAthletesPickList () {
       athletesPickList.value = []
       return
     }
-    const rows = await apiFetch<Athlete[]>('/api/athletes/admin').catch(() => null)
+    const rows = await apiFetch<Athlete[]>(apiRoutes.athletes.listAdmin).catch(() => null)
     const list = Array.isArray(rows) ? rows : []
     athletesPickList.value = list
       .filter(a => a.is_active !== false)
@@ -158,7 +159,7 @@ async function syncExternalCalendars () {
       stale_import_removed: number
       stale_manual_removed: number
     }>(
-      '/api/competitions/sync-external',
+      apiRoutes.competitions.syncExternal,
       { method: 'POST' }
     )
     await refresh()
@@ -236,7 +237,7 @@ async function openModal (date?: Date, event?: any) {
       readOnlyEvent.value = !canManageEvents.value
       if (canManageEvents.value && event.id) {
         await loadAthletesPickList()
-        const parts = await apiFetch<Array<{ athlete_id: string }>>(`/api/competitions/${event.id}/participants`).catch(() => [])
+        const parts = await apiFetch<Array<{ athlete_id: string }>>(apiRoutes.competitions.participants(event.id)).catch(() => [])
         participantIds.value = parts.map(p => p.athlete_id)
       }
     } else if (event.type === 'training') {
@@ -247,7 +248,7 @@ async function openModal (date?: Date, event?: any) {
       readOnlyEvent.value = !canManageEvents.value
       if (canManageEvents.value && event.id) {
         await loadAthletesPickList()
-        const parts = await apiFetch<Array<{ athlete_id: string }>>(`/api/competitions/${event.id}/participants`).catch(() => [])
+        const parts = await apiFetch<Array<{ athlete_id: string }>>(apiRoutes.competitions.participants(event.id)).catch(() => [])
         participantIds.value = parts.map(p => p.athlete_id)
       }
     }
@@ -283,7 +284,7 @@ async function saveEvent() {
   try {
     let competitionId = editingId.value as string | null
     if (editingId.value) {
-      await apiFetch(`/api/competitions/${editingId.value}`, {
+      await apiFetch(apiRoutes.competitions.one(editingId.value), {
         method: 'PATCH',
         body: {
           title: formState.title,
@@ -299,13 +300,13 @@ async function saveEvent() {
         color: 'success'
       })
     } else {
-      const created = await apiFetch<{ id: string }>('/api/competitions', { method: 'POST', body: formState })
+      const created = await apiFetch<{ id: string }>(apiRoutes.competitions.collection, { method: 'POST', body: formState })
       competitionId = created?.id ?? null
       toast.add({ title: 'Dodano wydarzenie', color: 'success' })
     }
     if (competitionId && !String(competitionId).startsWith('training-')) {
       try {
-        await apiFetch(`/api/competitions/${competitionId}/participants`, {
+        await apiFetch(apiRoutes.competitions.participants(competitionId), {
           method: 'PUT',
           body: { athlete_ids: participantIds.value }
         })
@@ -349,7 +350,7 @@ async function deleteEvent(id: string) {
 
   if (!confirm('Usunąć?')) return
   try {
-    await apiFetch(`/api/competitions/${id}`, { method: 'DELETE' })
+    await apiFetch(apiRoutes.competitions.one(id), { method: 'DELETE' })
     toast.add({ title: 'Usunięto', color: 'success' })
     await refresh()
   } catch (err) {

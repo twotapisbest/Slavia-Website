@@ -58,6 +58,14 @@ export default defineNuxtConfig({
   },
 
   vite: {
+    esbuild: {
+      legalComments: 'none'
+    },
+    server: {
+      warmup: {
+        clientFiles: ['./app/app.vue', './app/pages/index.vue']
+      }
+    },
     build: {
       sourcemap: false,
       /**

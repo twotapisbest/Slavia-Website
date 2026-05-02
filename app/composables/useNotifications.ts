@@ -1,11 +1,7 @@
-export interface ClubNotification {
-  id: string
-  kind: string
-  title: string
-  body: string
-  payload?: string | null
-  created_at: string
-}
+import { apiRoutes } from '~/config/api'
+import type { ClubNotification } from '~/types/notifications'
+
+export type { ClubNotification } from '~/types/notifications'
 
 export function useNotifications () {
   const auth = useAuth()
@@ -18,14 +14,14 @@ export function useNotifications () {
     if (!auth.isLoggedIn.value) return
     loading.value = true
     try {
-      items.value = await api<ClubNotification[]>('/api/notifications')
+      items.value = await api<ClubNotification[]>(apiRoutes.notifications.collection)
     } finally {
       loading.value = false
     }
   }
 
   async function remove (id: string) {
-    await api(`/api/notifications/${encodeURIComponent(id)}`, { method: 'DELETE' })
+    await api(apiRoutes.notifications.one(id), { method: 'DELETE' })
     items.value = items.value.filter(i => i.id !== id)
   }
 

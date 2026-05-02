@@ -8,6 +8,19 @@ useSeoMeta({
 
 const updates = [
   {
+    version: 'v1.9.0',
+    date: '2 Maj 2026',
+    title: 'Porządki zależności i modularna struktura',
+    features: [
+      'Frontend: usunięto nieużywany pakiet `@iconify-json/simple-icons` (ikony Lucide bez zmian).',
+      'Backend: przy `uuid` tylko feature `v4`; przy `chrono` bez zbędnego feature `serde` (nie używamy serializacji typów daty z chrono).',
+      'Backend: składanie tras w osobnym module (`router.rs`), strona powitalna API w `embed/backend_root.html`, powiadomienia — warstwa `repos/` + DTO.',
+      'Frontend: rozszerzony `config/api.ts`, typ `ClubNotification`, composable `useNotificationLinks`; dopieszczony panel dzwonka powiadomień.',
+      'Dev ergonomics: profil Cargo `debug = line-tables-only` (Windows), w Nuxt m.in. `esbuild.legalComments` oraz `vite.server.warmup`.'
+    ],
+    type: 'feature'
+  },
+  {
     version: 'v1.8.0',
     date: '2 Maj 2026',
     title: 'Nawigacja, wyniki kadry i panel trenera',
@@ -26,7 +39,7 @@ const updates = [
     features: [
       'Ikona dzwonka w nagłówku (dla zalogowanych): lista powiadomień z API, licznik na ikonie, usuwanie pojedynczych wpisów.',
       'Frontend: odświeżanie przy otwarciu panelu oraz okresowe w tle; opcjonalne skróty po kliknięciu (kalendarz, dziennik, wyniki, panele admin/superadmin).',
-      'Backend: tabela powiadomień per użytkownik, GET /api/notifications oraz DELETE /api/notifications/:id.',
+      'Backend: tabela powiadomień per użytkownik, GET /api/notifications oraz DELETE /api/notifications/:id (po sukcesie odpowiedź 204 No Content).',
       'Zawodnik: m.in. zatwierdzenie wyniku, przypisanie / cofnięcie zapisu na zawody, notatka trenera w dzienniku.',
       'Kadra treningowa (Trener / TrainerAdmin / Admin / SuperAdmin): m.in. wpis zawodnika w dzienniku, zmiany w kalendarzu zawodów, lista zapisów, synchronizacja zewnętrzna, nowy wynik do zatwierdzenia.',
       'Administratorzy (Admin / TrainerAdmin / SuperAdmin): powiadomienia o zmianach administracyjnych (konta, zawodnicy, blog).',
