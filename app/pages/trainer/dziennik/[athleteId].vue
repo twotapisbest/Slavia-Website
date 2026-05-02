@@ -185,29 +185,35 @@ async function removeEntry (e: TrainingLogEntry) {
       </div>
     </div>
 
-    <UCard class="mb-10 overflow-hidden">
-      <div class="border-b border-default bg-muted/15 px-4 py-3 sm:px-6">
-        <h2 class="text-lg font-semibold text-highlighted">
+    <div class="slavia-form-panel mb-10 shadow-md">
+      <div class="slavia-form-panel__header">
+        <div class="slavia-form-panel__title">
+          <span class="slavia-form-panel__icon">
+            <UIcon name="i-lucide-plus" class="size-4" />
+          </span>
           Nowy wpis
-        </h2>
+        </div>
+        <p class="slavia-form-panel__desc">
+          Wpis widoczny dla zawodnika w panelu i w historii jednostek.
+        </p>
       </div>
-      <div class="space-y-4 p-4 sm:p-6">
-        <div class="grid gap-4 sm:grid-cols-2">
+      <div class="slavia-form-panel__body">
+        <div class="grid gap-5 sm:grid-cols-2">
           <UFormField label="Data jednostki" required>
-            <UInput v-model="newForm.session_date" type="date" class="w-full" />
+            <UInput v-model="newForm.session_date" type="date" size="lg" class="w-full" />
           </UFormField>
           <UFormField label="Temat (opcjonalnie)">
-            <UInput v-model="newForm.title" placeholder="np. Technika rwania" class="w-full" />
+            <UInput v-model="newForm.title" placeholder="np. Technika rwania" size="lg" class="w-full" />
           </UFormField>
         </div>
         <UFormField label="Treść / obciążenia / uwagi" required>
           <UTextarea v-model="newForm.notes" :rows="5" autoresize placeholder="Opisz przebieg treningu…" class="w-full" />
         </UFormField>
-        <UButton :loading="adding" icon="i-lucide-plus" @click="addEntry">
+        <UButton size="lg" :loading="adding" icon="i-lucide-plus" @click="addEntry">
           Dodaj wpis
         </UButton>
       </div>
-    </UCard>
+    </div>
 
     <h2 class="mb-4 text-xl font-bold text-highlighted">
       Historia wpisów
@@ -254,21 +260,33 @@ async function removeEntry (e: TrainingLogEntry) {
 
     <UModal v-model:open="editOpen" title="Edytuj wpis" :ui="{ overlay: 'z-[190]', content: 'z-[200]' }">
       <template #content>
-        <div class="space-y-4 p-4 sm:p-6">
-          <UFormField label="Data">
-            <UInput v-model="editForm.session_date" type="date" class="w-full" />
-          </UFormField>
-          <UFormField label="Temat">
-            <UInput v-model="editForm.title" class="w-full" />
-          </UFormField>
-          <UFormField label="Treść" required>
-            <UTextarea v-model="editForm.notes" :rows="6" autoresize class="w-full" />
-          </UFormField>
-          <div class="flex justify-end gap-2 pt-2">
-            <UButton color="neutral" variant="outline" @click="editOpen = false">
+        <div class="slavia-form-modal">
+          <div class="slavia-form-panel">
+            <div class="slavia-form-panel__header">
+              <div class="slavia-form-panel__title">
+                <span class="slavia-form-panel__icon">
+                  <UIcon name="i-lucide-book-open" class="size-4" />
+                </span>
+                Wpis w dzienniku
+              </div>
+            </div>
+            <div class="slavia-form-panel__body">
+              <UFormField label="Data">
+                <UInput v-model="editForm.session_date" type="date" size="lg" class="w-full" />
+              </UFormField>
+              <UFormField label="Temat">
+                <UInput v-model="editForm.title" size="lg" class="w-full" />
+              </UFormField>
+              <UFormField label="Treść" required>
+                <UTextarea v-model="editForm.notes" :rows="6" autoresize class="w-full" />
+              </UFormField>
+            </div>
+          </div>
+          <div class="slavia-form-actions border-t border-default/60 pt-4">
+            <UButton color="neutral" variant="outline" size="lg" @click="editOpen = false">
               Anuluj
             </UButton>
-            <UButton :loading="savingEdit" @click="saveEdit">
+            <UButton size="lg" :loading="savingEdit" @click="saveEdit">
               Zapisz
             </UButton>
           </div>

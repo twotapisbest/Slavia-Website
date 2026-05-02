@@ -77,10 +77,11 @@ useSeoMeta({
               Dane
             </h2>
           </template>
-          <div class="space-y-5">
+          <div class="space-y-6">
             <UFormField label="Płeć">
               <USelect
                 v-model="gender"
+                size="lg"
                 :items="[
                   { label: 'Mężczyzna', value: 'male' },
                   { label: 'Kobieta', value: 'female' }
@@ -97,8 +98,9 @@ useSeoMeta({
               <UInput
                 v-model="bodyweightRaw"
                 inputmode="decimal"
+                size="lg"
                 placeholder="np. 81,4"
-                class="w-full"
+                class="w-full tabular-nums"
                 @update:model-value="val => {
                   // To wymusi przeliczenie Sinclaira natychmiast
                   const n = parseFloat(String(val).replace(',', '.'));
@@ -113,6 +115,7 @@ useSeoMeta({
             >
               <UInputNumber
                 v-model="total"
+                size="lg"
                 class="w-full"
                 :min="0"
                 :max="600"

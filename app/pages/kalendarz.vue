@@ -154,15 +154,18 @@ async function syncExternalCalendars () {
       pzpc_imported: number
       pc_imported: number
       upserts: number
-      stale_external_removed: number
+      stale_removed: number
+      stale_import_removed: number
+      stale_manual_removed: number
     }>(
       '/api/competitions/sync-external',
       { method: 'POST' }
     )
     await refresh()
     toast.add({
-      title: 'Zsynchronizowano zewnętrzne kalendarze',
-      description: `PZPC: ${res.pzpc_imported}, PodnoszenieCiezarow.pl: ${res.pc_imported}, zapisów (merge): ${res.upserts}. Usunięto stare importy: ${res.stale_external_removed}.`,
+      title: 'Zsynchronizowano kalendarze',
+      description: `PZPC: ${res.pzpc_imported}, PC.pl: ${res.pc_imported}, merge: ${res.upserts}. `
+        + `Czyszczenie poza bieżącym i następnym rokiem: ${res.stale_removed} (importy: ${res.stale_import_removed}, ręczne: ${res.stale_manual_removed}).`,
       color: 'success'
     })
   } catch (e) {
@@ -405,6 +408,14 @@ function handleDayClick(day: Date) {
           Dodaj wydarzenie
         </UButton>
       </div>
+      <p
+        v-if="canManageEvents"
+        class="mx-auto max-w-2xl text-center text-[11px] leading-snug text-muted md:mx-0 md:text-left"
+      >
+        <strong>Synchronizacja</strong> scala PZPC i PodnoszenieCiezarow.pl oraz
+        <strong class="text-default">usuwa z bazy wszystkie wydarzenia spoza bieżącego i następnego roku</strong>
+        (w tym wpisy dodane ręcznie). Administratorzy i trenerzy uruchamiają ją tutaj.
+      </p>
     </div>
 
     <div
@@ -521,7 +532,7 @@ function handleDayClick(day: Date) {
       :ui="{ overlay: 'z-[190]', content: 'z-[200] max-h-[90vh] overflow-y-auto' }"
     >
       <template #content>
-        <div class="p-6 space-y-4">
+        <div class="slavia-form-modal">
           <div v-if="readOnlyEvent" class="rounded-xl border border-amber-400/40 bg-amber-500/10 p-3 text-sm text-amber-900 dark:text-amber-100">
             <template v-if="bannerEvent?.external_source || bannerEvent?.type === 'external'">
               <span v-if="canManageEvents">Zawody z kalendarza zewnętrznego (PZPC lub PodnoszenieCiezarow.pl) — nazwa i termin są aktualizowane przy synchronizacji. Możesz zmienić status oraz przypisać zawodników klubu.</span>
@@ -556,14 +567,14 @@ function handleDayClick(day: Date) {
           </UFormField>
 
           <UFormField label="Nazwa" required>
-            <UInput v-model="formState.title" placeholder="Mistrzostwa Polski..." class="w-full" :disabled="readOnlyEvent || !!bannerEvent?.external_source" />
+            <UInput v-model="formState.title" placeholder="Mistrzostwa Polski..." size="lg" class="w-full" :disabled="readOnlyEvent || !!bannerEvent?.external_source" />
           </UFormField>
           <div class="grid grid-cols-2 gap-4">
             <UFormField label="Data" required>
-              <UInput v-model="formState.date" type="date" class="w-full" :disabled="readOnlyEvent || !!bannerEvent?.external_source" />
+              <UInput v-model="formState.date" type="date" size="lg" class="w-full" :disabled="readOnlyEvent || !!bannerEvent?.external_source" />
             </UFormField>
             <UFormField label="Lokalizacja" required>
-              <UInput v-model="formState.location" placeholder="Ruda Śląska" class="w-full" :disabled="readOnlyEvent || !!bannerEvent?.external_source" />
+              <UInput v-model="formState.location" placeholder="Ruda Śląska" size="lg" class="w-full" :disabled="readOnlyEvent || !!bannerEvent?.external_source" />
             </UFormField>
           </div>
           <UFormField label="Status">
@@ -598,7 +609,7 @@ function handleDayClick(day: Date) {
             </div>
           </div>
           <UFormField label="Opis">
-            <UTextarea v-model="formState.description" placeholder="Szczegóły..." :rows="3" class="w-full" :disabled="readOnlyEvent || !!bannerEvent?.external_source" />
+            <UTextarea v-model="formState.description" placeholder="Szczegóły..." :rows="4" class="w-full" :disabled="readOnlyEvent || !!bannerEvent?.external_source" />
           </UFormField>
           <div v-if="bannerEvent?.external_url" class="text-sm">
             <a
@@ -610,25 +621,32 @@ function handleDayClick(day: Date) {
               Otwórz stronę źródła zawodów
             </a>
           </div>
-          <div class="flex justify-end gap-3 mt-6">
-            <UButton
-              v-if="editingId && canManageEvents && !readOnlyEvent && typeof editingId === 'string' && !editingId.startsWith('training-') && !bannerEvent?.external_source"
-              color="error"
-              variant="ghost"
-              icon="i-lucide-trash-2"
-              @click="editingId && deleteEvent(editingId)"
-            >
-              Usuń
-            </UButton>
-            <div class="flex-1"></div>
-            <UButton color="neutral" variant="soft" @click="isModalOpen = false">Anuluj</UButton>
-            <UButton
-              :loading="isSubmitting"
-              :disabled="readOnlyEvent && !bannerEvent?.external_source"
-              @click="saveEvent"
-            >
-              Zapisz
-            </UButton>
+          <div class="mt-6 flex flex-col gap-3 border-t border-default/60 pt-6 sm:flex-row sm:items-center sm:justify-between">
+            <div class="min-h-[2.5rem] shrink-0">
+              <UButton
+                v-if="editingId && canManageEvents && !readOnlyEvent && typeof editingId === 'string' && !editingId.startsWith('training-') && !bannerEvent?.external_source"
+                color="error"
+                variant="ghost"
+                size="lg"
+                icon="i-lucide-trash-2"
+                @click="editingId && deleteEvent(editingId)"
+              >
+                Usuń
+              </UButton>
+            </div>
+            <div class="slavia-form-actions w-full sm:w-auto">
+              <UButton color="neutral" variant="soft" size="lg" @click="isModalOpen = false">
+                Anuluj
+              </UButton>
+              <UButton
+                size="lg"
+                :loading="isSubmitting"
+                :disabled="readOnlyEvent && !bannerEvent?.external_source"
+                @click="saveEvent"
+              >
+                Zapisz
+              </UButton>
+            </div>
           </div>
         </div>
       </template>

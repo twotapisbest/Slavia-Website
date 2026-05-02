@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   format,
+  parseISO,
   startOfMonth,
   endOfMonth,
   startOfWeek,
@@ -57,7 +58,7 @@ const days = computed(() =>
 
 const weekDays = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz']
 
-const { getEventClasses, getEventIcon } = useCalendarEventChips()
+const { getEventClasses, getEventIcon, getEventModalHeaderClass, getEventKindLabel } = useCalendarEventChips()
 
 function getTrainingsForDay (date: Date) {
   const day = getDay(date)
@@ -101,8 +102,11 @@ function getEventsForDay (date: Date) {
 const modalOpen = ref(false)
 const selectedEvent = ref<Record<string, unknown> | null>(null)
 
-function openDetail (ev: Record<string, unknown>) {
-  selectedEvent.value = ev
+function openDetail (day: Date, ev: Record<string, unknown>) {
+  selectedEvent.value = {
+    ...ev,
+    _dateIso: format(day, 'yyyy-MM-dd')
+  }
   modalOpen.value = true
 }
 
@@ -176,7 +180,7 @@ const goToToday = () => (currentDate.value = new Date())
               type="button"
               class="w-full text-left text-[10px] p-1.5 rounded-lg border flex flex-col leading-tight cursor-pointer transition-all hover:brightness-110"
               :class="getEventClasses(ev)"
-              @click="openDetail(ev)"
+              @click="openDetail(day, ev)"
             >
               <div class="flex items-center justify-between gap-1">
                 <span class="truncate font-semibold">{{ ev.title }}</span>
@@ -225,23 +229,80 @@ const goToToday = () => (currentDate.value = new Date())
 
     <UModal
       v-model:open="modalOpen"
-      :title="String(selectedEvent?.title ?? 'Szczegóły')"
-      :ui="{ overlay: 'z-[190]', content: 'z-[200] max-h-[90vh] overflow-y-auto' }"
+      :ui="{
+        overlay: 'z-[190] bg-neutral-950/75 backdrop-blur-[3px]',
+        content:
+          'z-[200] max-h-[min(92dvh,880px)] w-[min(100vw-1rem,42rem)] overflow-hidden rounded-3xl border border-default/50 shadow-[0_24px_80px_-20px_rgba(0,0,0,0.55)] ring-1 ring-white/10 sm:w-full'
+      }"
     >
       <template #content>
-        <div class="p-6 space-y-3 text-sm">
-          <p v-if="selectedEvent?.modalHint" class="text-muted">
-            {{ selectedEvent.modalHint }}
-          </p>
-          <p v-if="selectedEvent?.participantsLine" class="text-highlighted whitespace-pre-wrap">
-            {{ selectedEvent.participantsLine }}
-          </p>
-          <p v-if="selectedEvent?.location" class="text-highlighted">
-            {{ selectedEvent.location }}
-          </p>
-          <UButton block color="neutral" variant="soft" @click="modalOpen = false">
-            Zamknij
-          </UButton>
+        <div v-if="selectedEvent" class="flex max-h-[min(92dvh,880px)] flex-col overflow-y-auto">
+          <div
+            class="relative shrink-0 px-6 pb-8 pt-7 md:px-9 md:pb-10 md:pt-10"
+            :class="getEventModalHeaderClass(selectedEvent)"
+          >
+            <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_60%_at_90%_-10%,rgba(255,255,255,0.22),transparent_52%)]" />
+            <div class="relative space-y-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <UBadge color="neutral" class="border-white/25 bg-white/15 font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+                  {{ getEventKindLabel(selectedEvent) }}
+                </UBadge>
+                <UBadge
+                  v-if="selectedEvent.status === 'cancelled'"
+                  color="error"
+                  variant="solid"
+                  class="font-bold uppercase"
+                >
+                  Odwołane
+                </UBadge>
+                <UBadge
+                  v-else-if="selectedEvent.status === 'moved'"
+                  color="warning"
+                  variant="solid"
+                  class="font-bold uppercase"
+                >
+                  Przesunięte
+                </UBadge>
+              </div>
+              <h2 class="text-pretty text-2xl font-black leading-tight tracking-tight md:text-3xl">
+                {{ String(selectedEvent.title ?? '') }}
+              </h2>
+              <p
+                v-if="selectedEvent._dateIso"
+                class="flex items-center gap-2 text-base font-semibold text-white/90 md:text-lg"
+              >
+                <UIcon name="i-lucide-calendar-days" class="size-5 shrink-0 opacity-90" />
+                {{ format(parseISO(String(selectedEvent._dateIso)), 'EEEE, d MMMM yyyy', { locale: pl }) }}
+              </p>
+              <p v-if="selectedEvent.time" class="text-sm font-medium text-white/75">
+                {{ selectedEvent.time }}
+              </p>
+            </div>
+          </div>
+
+          <div class="space-y-5 border-t border-default/40 bg-linear-to-b from-muted/30 to-background px-6 py-6 md:px-9 md:py-8">
+            <p v-if="selectedEvent.modalHint" class="text-[15px] leading-relaxed text-muted">
+              {{ selectedEvent.modalHint }}
+            </p>
+            <div
+              v-if="selectedEvent.participantsLine"
+              class="rounded-2xl border border-primary/25 bg-primary/5 px-4 py-3 text-[15px] font-medium leading-snug text-highlighted"
+            >
+              {{ selectedEvent.participantsLine }}
+            </div>
+            <div
+              v-if="selectedEvent.location"
+              class="flex gap-3 rounded-2xl border border-default/60 bg-muted/20 px-4 py-3 dark:bg-muted/10"
+            >
+              <UIcon name="i-lucide-map-pin" class="mt-0.5 size-5 shrink-0 text-primary" />
+              <p class="text-[15px] font-semibold leading-snug text-highlighted">
+                {{ selectedEvent.location }}
+              </p>
+            </div>
+            <UButton block size="lg" color="neutral" variant="soft" icon="i-lucide-x" class="font-bold" @click="modalOpen = false">
+              Zamknij
+            </UButton>
+          </div>
         </div>
       </template>
     </UModal>

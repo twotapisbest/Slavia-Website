@@ -180,57 +180,38 @@ function formatDate(dateStr: string) {
     <!-- Modal do dodawania -->
     <UModal v-model:open="isModalOpen" title="Nowy wpis">
       <template #content>
-        <div class="p-4 sm:p-6 space-y-4">
-          <form
-            class="space-y-4"
-            @submit.prevent="savePost"
-          >
-            <UFormField
-              label="Tytuł"
-              required
-            >
-              <UInput
-                v-model="formState.title"
-                placeholder="Wpisz chwytliwy tytuł..."
-                class="w-full"
-              />
-            </UFormField>
-
-            <UFormField
-              label="Zdjęcie (URL lub Upload)"
-            >
-              <div class="flex gap-2 items-center">
-                <UInput v-model="formState.image_url" placeholder="https://..." class="grow" />
-                <UButton icon="i-lucide-upload" color="neutral" variant="ghost" :loading="uploadLoading" @click="$refs.fileInput.click()" />
-                <input ref="fileInput" type="file" hidden accept="image/*" @change="onFileChange" />
+        <div class="slavia-form-modal">
+          <form class="slavia-form-stack" @submit.prevent="savePost">
+            <div class="slavia-form-panel">
+              <div class="slavia-form-panel__header">
+                <div class="slavia-form-panel__title">
+                  <span class="slavia-form-panel__icon">
+                    <UIcon name="i-lucide-file-text" class="size-4" />
+                  </span>
+                  Treść wpisu
+                </div>
               </div>
-            </UFormField>
-
-            <UFormField
-              label="Treść"
-              required
-            >
-              <UTextarea
-                v-model="formState.content"
-                placeholder="O czym chcesz napisać?"
-                :rows="8"
-                class="w-full"
-              />
-            </UFormField>
-
-            <div class="flex justify-end gap-3 mt-6">
-              <UButton
-                color="neutral"
-                variant="soft"
-                @click="isModalOpen = false"
-              >
+              <div class="slavia-form-panel__body">
+                <UFormField label="Tytuł" required>
+                  <UInput v-model="formState.title" placeholder="Wpisz chwytliwy tytuł..." size="lg" class="w-full" />
+                </UFormField>
+                <UFormField label="Zdjęcie (URL lub upload)">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <UInput v-model="formState.image_url" placeholder="https://..." size="lg" class="min-w-0 flex-1" />
+                    <UButton icon="i-lucide-upload" color="neutral" variant="soft" size="lg" :loading="uploadLoading" @click="$refs.fileInput.click()" />
+                    <input ref="fileInput" type="file" hidden accept="image/*" @change="onFileChange">
+                  </div>
+                </UFormField>
+                <UFormField label="Treść" required>
+                  <UTextarea v-model="formState.content" placeholder="O czym chcesz napisać?" :rows="8" class="w-full" />
+                </UFormField>
+              </div>
+            </div>
+            <div class="slavia-form-actions border-t border-default/60 pt-4">
+              <UButton color="neutral" variant="soft" size="lg" @click="isModalOpen = false">
                 Anuluj
               </UButton>
-              <UButton
-                type="submit"
-                color="primary"
-                :loading="isSubmitting"
-              >
+              <UButton type="submit" color="primary" size="lg" :loading="isSubmitting">
                 Opublikuj
               </UButton>
             </div>

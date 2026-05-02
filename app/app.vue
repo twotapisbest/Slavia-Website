@@ -101,7 +101,8 @@ async function logout() {
       class="transition-opacity duration-300 ease-out"
       :class="isAppLoading ? 'opacity-0 pointer-events-none select-none' : 'opacity-100'"
     >
-    <UHeader :toggle="false" class="border-b border-default backdrop-blur-md bg-background/80 sticky top-0 z-50">
+    <!-- Na mobile bez border-b na całym UHeader: linia pod belką z 4 linkami „cięła” pierwszą linię treści; odstęp daje belka (SiteNav public-mobile). Od lg zostaje klasyczna linia pod nagłówkiem. -->
+    <UHeader :toggle="false" class="border-default backdrop-blur-md bg-background/80 sticky top-0 z-50 lg:border-b">
       <template #left>
         <div class="flex min-w-0 items-center gap-2 sm:gap-4 lg:gap-6 xl:gap-8">
           <ClubBrand />

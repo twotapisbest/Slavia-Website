@@ -1,9 +1,9 @@
 <script setup lang="ts">
 const props = defineProps<{
   /**
-   * drawer — przycisk szuflady (poniżej breakpointu lg)
+   * drawer — przycisk szuflady: pełne menu na każdej szerokości ekranu
    * links — środek nagłówka (lg+): publiczne + panel po zalogowaniu
-   * public-mobile — pod nagłówkiem (poniżej lg): tylko linki bez logowania
+   * public-mobile — pod nagłówkiem (poniżej lg): skróty bez logowania
    */
   mode: 'drawer' | 'links' | 'public-mobile'
 }>()
@@ -127,13 +127,14 @@ const items = computed(() => {
     </nav>
   </div>
 
+  <!-- Tylko telefon / tablet poniżej lg: bez border-b (1px potrafi wizualnie „ciąć” treść pod spodem); oddzielenie cieniem + odstęp. -->
   <div
     v-else-if="props.mode === 'public-mobile'"
-    class="border-t border-default/80 bg-muted/25 backdrop-blur-md lg:hidden"
+    class="border-t border-default bg-background shadow-[0_8px_24px_-12px_rgba(0,0,0,0.28)] lg:hidden dark:shadow-[0_10px_28px_-14px_rgba(0,0,0,0.65)]"
   >
-    <UContainer class="max-w-full px-3 sm:px-6">
+    <UContainer class="max-w-full px-3 pb-[max(0.875rem,env(safe-area-inset-bottom))] pt-2.5 sm:px-6 sm:pb-4 sm:pt-3">
       <nav
-        class="-mx-0.5 flex flex-nowrap items-center gap-1.5 overflow-x-auto py-2.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-2 [&::-webkit-scrollbar]:hidden"
+        class="flex min-h-12 w-full flex-nowrap items-stretch gap-1 overflow-x-auto rounded-xl bg-muted p-1 [-ms-overflow-style:none] [scrollbar-width:none] ring-1 ring-default sm:justify-between [&::-webkit-scrollbar]:hidden"
         aria-label="Strony dostępne bez logowania"
       >
         <UButton
@@ -141,10 +142,10 @@ const items = computed(() => {
           :key="'pub-strip-' + link.to"
           :to="link.to"
           color="neutral"
-          variant="subtle"
-          size="sm"
-          class="shrink-0 rounded-full px-3.5 font-semibold text-highlighted shadow-none ring-1 ring-default/60 hover:bg-primary/12 hover:text-primary hover:ring-primary/35 sm:px-4"
-          active-class="bg-primary/18 text-primary ring-primary/45"
+          variant="ghost"
+          size="md"
+          class="min-h-11 min-w-19 shrink-0 flex-1 justify-center rounded-lg px-2 text-center text-sm font-bold leading-snug text-highlighted shadow-none ring-0 transition-colors hover:bg-primary/12 hover:text-primary sm:min-w-0 sm:flex-1 sm:px-3"
+          active-class="!bg-background text-primary shadow-sm ring-1 ring-primary/40 dark:!bg-elevated"
         >
           {{ link.label }}
         </UButton>
@@ -152,7 +153,7 @@ const items = computed(() => {
     </UContainer>
   </div>
 
-  <div v-else-if="props.mode === 'drawer'" class="lg:hidden">
+  <div v-else-if="props.mode === 'drawer'">
     <UDrawer
       v-model:open="mobileDrawerOpen"
       title="Menu Slavia"
@@ -176,9 +177,24 @@ const items = computed(() => {
           >
             Strona Główna
           </UButton>
-          
-          <p class="px-1 pb-1 text-[11px] leading-snug text-muted">
-            Skróty do zawodników, kalendarza, bloga i kalkulatora znajdziesz w belce pod logo — możesz ją przewinąć w poziomie.
+
+          <p class="mb-0 px-1 text-[11px] font-bold uppercase tracking-wider text-muted">
+            Klub
+          </p>
+          <UButton
+            v-for="link in items.main"
+            :key="'drawer-main-' + link.to"
+            :to="link.to"
+            variant="ghost"
+            color="neutral"
+            block
+            class="min-h-12 justify-start rounded-xl text-base font-semibold sm:text-lg"
+          >
+            {{ link.label }}
+          </UButton>
+
+          <p class="px-1 pb-0 pt-1 text-[11px] leading-snug text-muted lg:hidden">
+            Na telefonie te same strony są też w poziomym pasku pod nagłówkiem.
           </p>
 
           <template v-if="items.management.length > 0">

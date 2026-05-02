@@ -280,51 +280,62 @@ const pageLead = computed(() =>
         <UIcon name="i-lucide-shield" class="size-5 text-primary" />
         Ustawienia konta
       </h2>
-      <UCard class="p-4 sm:p-6">
-        <div class="grid gap-4 sm:grid-cols-2">
-          <UFormField label="Email">
-            <UInput v-model="profileForm.email" type="email" class="w-full" />
-          </UFormField>
-          <UFormField label="Zdjęcie profilowe">
-            <input
-              ref="avatarFileInput"
-              type="file"
-              accept="image/*"
-              class="sr-only"
-              @change="onAvatarFileChange"
-            >
-            <div class="flex flex-wrap items-center gap-2">
-              <UInput v-model="profileForm.avatar_url" type="url" placeholder="https://... lub wgraj plik" class="min-w-0 flex-1" />
-              <UButton
-                color="neutral"
-                variant="soft"
-                icon="i-lucide-upload"
-                :loading="avatarUploadLoading"
-                @click="avatarFileInput?.click()"
+      <div class="slavia-form-panel shadow-md">
+        <div class="slavia-form-panel__header">
+          <div class="slavia-form-panel__title">
+            <span class="slavia-form-panel__icon">
+              <UIcon name="i-lucide-user-round" class="size-4" />
+            </span>
+            Dane logowania i zdjęcie
+          </div>
+        </div>
+        <div class="slavia-form-panel__body">
+          <div class="grid gap-5 sm:grid-cols-2">
+            <UFormField label="Email">
+              <UInput v-model="profileForm.email" type="email" size="lg" class="w-full" />
+            </UFormField>
+            <UFormField label="Zdjęcie profilowe">
+              <input
+                ref="avatarFileInput"
+                type="file"
+                accept="image/*"
+                class="sr-only"
+                @change="onAvatarFileChange"
               >
-                Wgraj
-              </UButton>
-            </div>
-            <p class="mt-1 text-xs text-muted">
-              Możesz wkleić URL lub wgrać plik (Cloudinary). Poprzednie zdjęcie w Cloudinary jest usuwane przy zapisie, jeśli zmienisz adres.
-            </p>
-          </UFormField>
-          <UFormField label="Nowe hasło (opcjonalnie)">
-            <UInput v-model="profileForm.newPassword" type="password" placeholder="Zostaw puste aby nie zmieniać" class="w-full" />
-          </UFormField>
-          <UFormField label="Potwierdzenie hasła">
-            <UInput v-model="profileForm.confirmPassword" type="password" placeholder="Potwierdzenie nowego hasła" class="w-full" />
-          </UFormField>
+              <div class="flex flex-wrap items-center gap-2">
+                <UInput v-model="profileForm.avatar_url" type="url" placeholder="https://... lub wgraj plik" size="lg" class="min-w-0 flex-1" />
+                <UButton
+                  color="neutral"
+                  variant="soft"
+                  size="lg"
+                  icon="i-lucide-upload"
+                  :loading="avatarUploadLoading"
+                  @click="avatarFileInput?.click()"
+                >
+                  Wgraj
+                </UButton>
+              </div>
+              <p class="mt-2 text-xs text-muted">
+                Możesz wkleić URL lub wgrać plik (Cloudinary). Poprzednie zdjęcie w Cloudinary jest usuwane przy zapisie, jeśli zmienisz adres.
+              </p>
+            </UFormField>
+            <UFormField label="Nowe hasło (opcjonalnie)">
+              <UInput v-model="profileForm.newPassword" type="password" placeholder="Zostaw puste aby nie zmieniać" size="lg" class="w-full" />
+            </UFormField>
+            <UFormField label="Potwierdzenie hasła">
+              <UInput v-model="profileForm.confirmPassword" type="password" placeholder="Potwierdzenie nowego hasła" size="lg" class="w-full" />
+            </UFormField>
+          </div>
+          <div class="slavia-form-actions border-t border-default/60 pt-5">
+            <UButton color="neutral" variant="soft" size="lg" @click="() => { profileForm.email = auth.user.value?.email || ''; profileForm.newPassword = ''; profileForm.confirmPassword = '' }">
+              Anuluj
+            </UButton>
+            <UButton size="lg" :loading="profileLoading" @click="updateProfile">
+              Zapisz zmiany
+            </UButton>
+          </div>
         </div>
-        <div class="mt-6 flex justify-end gap-3">
-          <UButton color="neutral" variant="soft" @click="() => { profileForm.email = auth.user.value?.email || ''; profileForm.newPassword = ''; profileForm.confirmPassword = '' }">
-            Anuluj
-          </UButton>
-          <UButton :loading="profileLoading" @click="updateProfile">
-            Zapisz zmiany
-          </UButton>
-        </div>
-      </UCard>
+      </div>
     </section>
 
     <section v-if="isAthleteRole && athlete" class="mb-12">
@@ -332,27 +343,40 @@ const pageLead = computed(() =>
         <UIcon name="i-lucide-flag" class="size-5 text-primary" />
         Zgłoś wynik do weryfikacji
       </h2>
-      <UCard class="p-4 sm:p-6">
-        <div class="grid gap-4 sm:grid-cols-2">
-          <UFormField label="Rwanie (kg)">
-            <UInputNumber v-model="resultForm.snatch" :min="0" step="0.5" class="w-full" />
-          </UFormField>
-          <UFormField label="Podrzut (kg)">
-            <UInputNumber v-model="resultForm.clean_and_jerk" :min="0" step="0.5" class="w-full" />
-          </UFormField>
-          <UFormField label="Data">
-            <UInput v-model="resultForm.date" type="date" class="w-full" />
-          </UFormField>
-          <UFormField label="Suma">
-            <UInputNumber :value="resultForm.total" class="w-full" disabled />
-          </UFormField>
+      <div class="slavia-form-panel shadow-md">
+        <div class="slavia-form-panel__header">
+          <div class="slavia-form-panel__title">
+            <span class="slavia-form-panel__icon">
+              <UIcon name="i-lucide-barbell" class="size-4" />
+            </span>
+            Wynik startowy
+          </div>
+          <p class="slavia-form-panel__desc">
+            Trener zweryfikuje wpis — po akceptacji pojawi się na karcie i w rankingach.
+          </p>
         </div>
-        <div class="mt-6 flex justify-end gap-3">
-          <UButton color="neutral" variant="soft" @click="submitResult">
-            Zgłoś wynik
-          </UButton>
+        <div class="slavia-form-panel__body">
+          <div class="grid gap-5 sm:grid-cols-2">
+            <UFormField label="Rwanie (kg)">
+              <UInputNumber v-model="resultForm.snatch" :min="0" step="0.5" size="lg" class="w-full" />
+            </UFormField>
+            <UFormField label="Podrzut (kg)">
+              <UInputNumber v-model="resultForm.clean_and_jerk" :min="0" step="0.5" size="lg" class="w-full" />
+            </UFormField>
+            <UFormField label="Data">
+              <UInput v-model="resultForm.date" type="date" size="lg" class="w-full" />
+            </UFormField>
+            <UFormField label="Suma">
+              <UInputNumber :value="resultForm.total" size="lg" class="w-full" disabled />
+            </UFormField>
+          </div>
+          <div class="slavia-form-actions border-t border-default/60 pt-5">
+            <UButton color="primary" variant="soft" size="lg" @click="submitResult">
+              Zgłoś wynik
+            </UButton>
+          </div>
         </div>
-      </UCard>
+      </div>
     </section>
 
     <div class="grid grid-cols-1 gap-8 lg:grid-cols-2">

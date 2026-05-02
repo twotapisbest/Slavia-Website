@@ -92,6 +92,27 @@ watch(() => [form.best_snatch_kg, form.best_clean_jerk_kg], ([snatch, cj]) => {
   form.total_kg = (snatch || 0) + (cj || 0)
 })
 
+const currentYear = new Date().getFullYear()
+
+/** Rok jako liczba całkowita bez separatorów (UInputNumber potrafiło pokazywać „2 010”). */
+function setBirthYear (v: string | number | null | undefined) {
+  if (v === null || v === undefined) {
+    form.birth_year = null
+    return
+  }
+  const s = String(v)
+    .trim()
+    .replace(/\u00a0/g, ' ')
+    .replace(/\s/g, '')
+    .replace(/,/g, '')
+  if (s === '') {
+    form.birth_year = null
+    return
+  }
+  const n = Number.parseInt(s, 10)
+  form.birth_year = Number.isFinite(n) ? n : null
+}
+
 async function loadPlayers () {
   loading.value = true
   try {
@@ -393,196 +414,243 @@ onMounted(() => {
       :title="editingId ? 'Edycja zawodnika' : 'Nowy zawodnik'"
     >
       <template #content>
-        <div class="p-4 sm:p-6 space-y-4">
-          <form
-            class="space-y-4"
-            @submit.prevent="savePlayer"
-          >
-            <UFormField
-              label="Nazwisko i imię"
-              required
-            >
-              <UInput
-                v-model="form.full_name"
-                autocomplete="name"
-                class="w-full"
-              />
-            </UFormField>
-
-            <div class="grid gap-4 sm:grid-cols-2">
-              <UFormField label="Płeć" required>
-                <select v-model="form.gender" class="slavia-select w-full">
-                  <option value="male">
-                    Mężczyzna
-                  </option>
-                  <option value="female">
-                    Kobieta
-                  </option>
-                </select>
-              </UFormField>
-              <UFormField label="Zdjęcie (URL lub Upload)">
-                <div class="flex gap-2 items-center">
-                  <UInput v-model="form.image_url" placeholder="https://..." class="grow" />
-                  <UButton icon="i-lucide-upload" color="neutral" variant="ghost" :loading="uploadLoading" @click="$refs.fileInput.click()" />
-                  <input ref="fileInput" type="file" hidden accept="image/*" @change="onFileChange" />
+        <div class="slavia-form-modal">
+          <form class="slavia-form-stack" @submit.prevent="savePlayer">
+            <div class="slavia-form-panel">
+              <div class="slavia-form-panel__header">
+                <div class="slavia-form-panel__title">
+                  <span class="slavia-form-panel__icon">
+                    <UIcon name="i-lucide-user" class="size-4" />
+                  </span>
+                  Dane podstawowe
                 </div>
-              </UFormField>
-            </div>
-
-            <div class="grid gap-4 sm:grid-cols-3">
-              <UFormField label="Rok urodzenia">
-                <UInputNumber
-                  v-model="form.birth_year"
-                  :min="1950"
-                  :max="new Date().getFullYear()"
-                  placeholder="np. 2010"
-                  class="w-full"
-                />
-              </UFormField>
-              <UFormField label="Kategoria wagowa">
-                <UInput
-                  v-model="form.weight_category"
-                  placeholder="np. 73 kg"
-                  class="w-full"
-                />
-              </UFormField>
-              <UFormField label="Waga ciała (kg)">
-                <UInputNumber
-                  v-model="form.bodyweight"
-                  :min="0"
-                  :max="300"
-                  step="0.1"
-                  placeholder="np. 72.5"
-                  class="w-full"
-                />
-              </UFormField>
-            </div>
-
-            <div class="grid gap-4 sm:grid-cols-3">
-              <UFormField label="Rwanie (kg)">
-                <UInputNumber
-                  v-model="form.best_snatch_kg"
-                  :min="0"
-                  placeholder="—"
-                  class="w-full"
-                />
-              </UFormField>
-              <UFormField label="Podrzut (kg)">
-                <UInputNumber
-                  v-model="form.best_clean_jerk_kg"
-                  :min="0"
-                  placeholder="—"
-                  class="w-full"
-                />
-              </UFormField>
-              <UFormField label="Suma (kg)">
-                <UInputNumber
-                  v-model="form.total_kg"
-                  :min="0"
-                  placeholder="—"
-                  class="w-full"
-                  disabled
-                />
-              </UFormField>
-            </div>
-
-            <USeparator />
-
-            <!-- Account Section -->
-            <div v-if="!editingId || !(players.find(p => p.id === editingId)?.user_id)" class="space-y-4">
-              <div class="flex items-center justify-between">
-                <div>
-                  <h4 class="text-sm font-bold text-highlighted">Konto użytkownika</h4>
-                  <p class="text-xs text-muted">Umożliwia zawodnikowi logowanie i edycję profilu.</p>
-                </div>
-                <USwitch v-model="form.create_account" />
               </div>
-
-              <div v-if="form.create_account" class="grid gap-4 sm:grid-cols-2">
-                <UFormField label="Login" required>
-                  <UInput v-model="form.username" placeholder="np. jgawron" class="w-full" />
+              <div class="slavia-form-panel__body">
+                <UFormField label="Nazwisko i imię" required>
+                  <UInput
+                    v-model="form.full_name"
+                    autocomplete="name"
+                    placeholder="np. Kowalski Jan"
+                    size="lg"
+                    class="w-full"
+                  />
                 </UFormField>
-                <UFormField label="Hasło (opcjonalnie)">
-                  <UInput v-model="form.password" type="password" placeholder="Domyślnie: Slavia2026" class="w-full" />
+                <div class="grid gap-5 sm:grid-cols-2">
+                  <UFormField label="Płeć" required>
+                    <select v-model="form.gender" class="slavia-select w-full py-3 text-[15px]">
+                      <option value="male">
+                        Mężczyzna
+                      </option>
+                      <option value="female">
+                        Kobieta
+                      </option>
+                    </select>
+                  </UFormField>
+                  <UFormField label="Zdjęcie (URL lub wgrywanie)">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <UInput v-model="form.image_url" placeholder="https://..." size="lg" class="min-w-0 flex-1" />
+                      <UButton icon="i-lucide-upload" color="neutral" variant="soft" size="lg" :loading="uploadLoading" @click="$refs.fileInput.click()" />
+                      <input ref="fileInput" type="file" hidden accept="image/*" @change="onFileChange">
+                    </div>
+                  </UFormField>
+                </div>
+              </div>
+            </div>
+
+            <div class="slavia-form-panel">
+              <div class="slavia-form-panel__header">
+                <div class="slavia-form-panel__title">
+                  <span class="slavia-form-panel__icon">
+                    <UIcon name="i-lucide-dumbbell" class="size-4" />
+                  </span>
+                  Parametry sportowe
+                </div>
+                <p class="slavia-form-panel__desc">
+                  Rok urodzenia jako cztery cyfry — bez przecinka ani spacji.
+                </p>
+              </div>
+              <div class="slavia-form-panel__body">
+                <div class="grid gap-5 sm:grid-cols-3">
+                  <UFormField label="Rok urodzenia">
+                    <UInput
+                      :model-value="form.birth_year === null || form.birth_year === undefined ? '' : String(form.birth_year)"
+                      type="number"
+                      inputmode="numeric"
+                      size="lg"
+                      class="w-full tabular-nums"
+                      :min="1950"
+                      :max="currentYear"
+                      placeholder="np. 2010"
+                      @update:model-value="setBirthYear"
+                    />
+                  </UFormField>
+                  <UFormField label="Kategoria wagowa">
+                    <UInput
+                      v-model="form.weight_category"
+                      placeholder="np. 73 kg"
+                      size="lg"
+                      class="w-full"
+                    />
+                  </UFormField>
+                  <UFormField label="Waga ciała (kg)">
+                    <UInputNumber
+                      v-model="form.bodyweight"
+                      :min="0"
+                      :max="300"
+                      step="0.1"
+                      placeholder="np. 72.5"
+                      size="lg"
+                      class="w-full"
+                    />
+                  </UFormField>
+                </div>
+                <div class="grid gap-5 sm:grid-cols-3">
+                  <UFormField label="Rwanie (kg)">
+                    <UInputNumber
+                      v-model="form.best_snatch_kg"
+                      :min="0"
+                      placeholder="—"
+                      size="lg"
+                      class="w-full"
+                    />
+                  </UFormField>
+                  <UFormField label="Podrzut (kg)">
+                    <UInputNumber
+                      v-model="form.best_clean_jerk_kg"
+                      :min="0"
+                      placeholder="—"
+                      size="lg"
+                      class="w-full"
+                    />
+                  </UFormField>
+                  <UFormField label="Suma (kg)">
+                    <UInputNumber
+                      v-model="form.total_kg"
+                      :min="0"
+                      placeholder="—"
+                      size="lg"
+                      class="w-full"
+                      disabled
+                    />
+                  </UFormField>
+                </div>
+              </div>
+            </div>
+
+            <div class="slavia-form-panel">
+              <div class="slavia-form-panel__header">
+                <div class="slavia-form-panel__title">
+                  <span class="slavia-form-panel__icon">
+                    <UIcon name="i-lucide-key-round" class="size-4" />
+                  </span>
+                  Konto i dostęp
+                </div>
+              </div>
+              <div class="slavia-form-panel__body space-y-5">
+                <div v-if="!editingId || !(players.find(p => p.id === editingId)?.user_id)">
+                  <div class="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-default/60 bg-muted/20 px-4 py-3 dark:bg-muted/10">
+                    <div>
+                      <p class="text-sm font-bold text-highlighted">
+                        Utwórz konto logowania
+                      </p>
+                      <p class="text-xs text-muted">
+                        Zawodnik zaloguje się do panelu i edytuje swój profil.
+                      </p>
+                    </div>
+                    <USwitch v-model="form.create_account" />
+                  </div>
+                  <div v-if="form.create_account" class="mt-5 grid gap-5 sm:grid-cols-2">
+                    <UFormField label="Login" required>
+                      <UInput v-model="form.username" placeholder="np. jgawron" size="lg" class="w-full" />
+                    </UFormField>
+                    <UFormField label="Hasło (opcjonalnie)">
+                      <UInput v-model="form.password" type="password" placeholder="Domyślnie: Slavia2026" size="lg" class="w-full" />
+                    </UFormField>
+                  </div>
+                </div>
+                <div v-else class="flex items-start gap-3 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
+                  <UIcon name="i-lucide-user-check" class="size-5 shrink-0 text-primary" />
+                  <div>
+                    <p class="text-sm font-bold text-primary">
+                      Konto powiązane
+                    </p>
+                    <p class="text-xs text-muted">
+                      Ten zawodnik ma już konto w systemie.
+                    </p>
+                  </div>
+                </div>
+
+                <template v-if="editingId">
+                  <div class="rounded-xl border border-default/70 bg-muted/10 p-4 dark:bg-muted/5">
+                    <p class="text-sm font-bold text-highlighted">
+                      Przypisania do zawodów
+                    </p>
+                    <p class="mt-1 text-xs text-muted">
+                      Zaznaczone pozycje trafiają do osobistego kalendarza zawodnika.
+                    </p>
+                    <div v-if="assignmentsLoading" class="mt-4 flex items-center gap-2 text-sm text-muted">
+                      <UIcon name="i-lucide-loader-2" class="size-4 animate-spin shrink-0" />
+                      Wczytywanie…
+                    </div>
+                    <div v-else-if="!competitionsCatalog.length" class="mt-3 text-xs text-muted">
+                      Brak wpisów w kalendarzu — dodaj wydarzenie w zakładce Kalendarz.
+                    </div>
+                    <div v-else class="mt-4 max-h-52 space-y-2 overflow-y-auto pr-1">
+                      <label
+                        v-for="c in competitionsCatalog"
+                        :key="c.id"
+                        class="flex cursor-pointer items-start gap-3 rounded-lg border border-default/60 bg-background/80 px-3 py-2.5 transition-colors hover:border-primary/35 hover:bg-primary/5"
+                      >
+                        <input
+                          v-model="assignedCompetitionIds"
+                          type="checkbox"
+                          :value="c.id"
+                          class="mt-1 size-4 rounded border-default text-primary focus:ring-primary/40"
+                        >
+                        <span class="text-sm leading-snug">
+                          <span class="font-semibold text-highlighted">{{ c.title }}</span>
+                          <span class="block text-xs text-muted tabular-nums">{{ (c.date || '').slice(0, 10) }} · {{ c.location }}</span>
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <div class="slavia-form-panel">
+              <div class="slavia-form-panel__header">
+                <div class="slavia-form-panel__title">
+                  <span class="slavia-form-panel__icon">
+                    <UIcon name="i-lucide-sticky-note" class="size-4" />
+                  </span>
+                  Notatki i status
+                </div>
+              </div>
+              <div class="slavia-form-panel__body">
+                <UFormField label="Notatki wewnętrzne">
+                  <UTextarea
+                    v-model="form.notes"
+                    :rows="3"
+                    autoresize
+                    placeholder="Opcjonalnie…"
+                    class="w-full"
+                  />
                 </UFormField>
-              </div>
-            </div>
-            <div v-else class="p-3 rounded-lg bg-primary/5 border border-primary/20 flex items-center gap-3">
-              <UIcon name="i-lucide-user-check" class="size-5 text-primary" />
-              <div>
-                <p class="text-sm font-bold text-primary">Konto powiązane</p>
-                <p class="text-xs text-muted">Ten zawodnik posiada już konto w systemie.</p>
-              </div>
-            </div>
-
-            <template v-if="editingId">
-              <USeparator />
-              <div class="rounded-xl border border-default bg-muted/10 p-4 space-y-3">
-                <div>
-                  <h4 class="text-sm font-bold text-highlighted">
-                    Przypisania do zawodów (kalendarz klubu)
-                  </h4>
-                  <p class="text-xs text-muted mt-0.5">
-                    Dostępne po utworzeniu rekordu — zaznaczone pozycje trafiają do osobistego kalendarza zawodnika.
-                  </p>
+                <div class="flex flex-col gap-6 border-t border-default/60 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                  <div class="flex items-center gap-3">
+                    <USwitch v-model="form.is_active" />
+                    <span class="text-sm font-semibold text-highlighted">Aktywny w kadrze</span>
+                  </div>
+                  <div class="slavia-form-actions w-full sm:w-auto">
+                    <UButton type="button" color="neutral" variant="outline" size="lg" @click="modalOpen = false">
+                      Anuluj
+                    </UButton>
+                    <UButton type="submit" size="lg" :loading="saving">
+                      Zapisz
+                    </UButton>
+                  </div>
                 </div>
-                <div v-if="assignmentsLoading" class="flex items-center gap-2 text-sm text-muted py-2">
-                  <UIcon name="i-lucide-loader-2" class="size-4 animate-spin shrink-0" />
-                  Wczytywanie listy i przypisań…
-                </div>
-                <div v-else-if="!competitionsCatalog.length" class="text-xs text-muted py-1">
-                  Brak wpisów w kalendarzu zawodów — dodaj wydarzenie w zakładce Kalendarz.
-                </div>
-                <div v-else class="max-h-52 overflow-y-auto space-y-2 pr-1">
-                  <label
-                    v-for="c in competitionsCatalog"
-                    :key="c.id"
-                    class="flex gap-3 cursor-pointer items-start rounded-lg border border-default/60 bg-background/80 px-3 py-2.5 transition-colors hover:border-primary/35 hover:bg-primary/5"
-                  >
-                    <input
-                      v-model="assignedCompetitionIds"
-                      type="checkbox"
-                      :value="c.id"
-                      class="mt-1 size-4 rounded border-default text-primary focus:ring-primary/40"
-                    >
-                    <span class="text-sm leading-snug">
-                      <span class="font-semibold text-highlighted">{{ c.title }}</span>
-                      <span class="block text-xs text-muted tabular-nums">{{ (c.date || '').slice(0, 10) }} · {{ c.location }}</span>
-                    </span>
-                  </label>
-                </div>
-              </div>
-            </template>
-
-            <UFormField label="Notatki">
-              <UTextarea
-                v-model="form.notes"
-                :rows="3"
-                autoresize
-                placeholder="Opcjonalnie…"
-                class="w-full"
-              />
-            </UFormField>
-
-            <div class="flex items-center justify-between gap-4">
-              <UFormField label="Aktywny w kadrze">
-                <USwitch v-model="form.is_active" />
-              </UFormField>
-              <div class="flex gap-2">
-                <UButton
-                  type="button"
-                  color="neutral"
-                  variant="outline"
-                  @click="modalOpen = false"
-                >
-                  Anuluj
-                </UButton>
-                <UButton
-                  type="submit"
-                  :loading="saving"
-                >
-                  Zapisz
-                </UButton>
               </div>
             </div>
           </form>
@@ -596,23 +664,25 @@ onMounted(() => {
       description="Tej operacji nie cofniesz."
     >
       <template #content>
-        <div class="p-4 sm:p-6 space-y-4">
+        <div class="slavia-form-modal">
           <p
             v-if="pendingDelete"
-            class="text-muted"
+            class="text-muted leading-relaxed"
           >
             Czy na pewno usunąć „{{ pendingDelete.full_name }}”?
           </p>
-          <div class="flex justify-end gap-2">
+          <div class="slavia-form-actions border-t border-default/60 pt-4">
             <UButton
               color="neutral"
               variant="outline"
+              size="lg"
               @click="cancelDelete"
             >
               Wróć
             </UButton>
             <UButton
               color="error"
+              size="lg"
               :loading="deleting"
               @click="confirmDelete"
             >

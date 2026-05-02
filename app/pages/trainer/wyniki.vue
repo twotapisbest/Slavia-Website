@@ -287,39 +287,48 @@ watch([() => formAdd.snatch, () => formAdd.clean_and_jerk], () => {
 
     <UModal v-model:open="modalOpen" title="Edytuj start" :ui="{ overlay: 'z-[190]', content: 'z-[200]' }">
       <template #content>
-        <div class="space-y-4 p-4 sm:p-6">
-          <div class="grid grid-cols-2 gap-3">
-            <UFormField label="Rwanie (kg)">
-              <UInput v-model.number="form.snatch" type="number" step="0.5" class="w-full" />
-            </UFormField>
-            <UFormField label="Podrzut (kg)">
-              <UInput v-model.number="form.clean_and_jerk" type="number" step="0.5" class="w-full" />
-            </UFormField>
+        <div class="slavia-form-modal">
+          <div class="slavia-form-panel">
+            <div class="slavia-form-panel__header">
+              <div class="slavia-form-panel__title">
+                <span class="slavia-form-panel__icon">
+                  <UIcon name="i-lucide-pencil" class="size-4" />
+                </span>
+                Wynik startu
+              </div>
+            </div>
+            <div class="slavia-form-panel__body">
+              <div class="grid grid-cols-2 gap-4">
+                <UFormField label="Rwanie (kg)">
+                  <UInput v-model.number="form.snatch" type="number" step="0.5" size="lg" class="w-full tabular-nums" />
+                </UFormField>
+                <UFormField label="Podrzut (kg)">
+                  <UInput v-model.number="form.clean_and_jerk" type="number" step="0.5" size="lg" class="w-full tabular-nums" />
+                </UFormField>
+              </div>
+              <UFormField label="Data">
+                <UInput v-model="form.date" type="date" size="lg" class="w-full" />
+              </UFormField>
+              <UFormField label="Status">
+                <select v-model="form.status" class="slavia-select w-full py-3 text-[15px]">
+                  <option value="Pending">
+                    Oczekuje na akceptację
+                  </option>
+                  <option value="Approved">
+                    Zatwierdzony
+                  </option>
+                </select>
+              </UFormField>
+              <p class="text-xs text-muted">
+                Suma (auto): <strong class="tabular-nums text-highlighted">{{ form.total }}</strong> kg
+              </p>
+            </div>
           </div>
-          <UFormField label="Data">
-            <UInput v-model="form.date" type="date" class="w-full" />
-          </UFormField>
-          <UFormField label="Status">
-            <select
-              v-model="form.status"
-              class="slavia-select w-full"
-            >
-              <option value="Pending">
-                Oczekuje na akceptację
-              </option>
-              <option value="Approved">
-                Zatwierdzony
-              </option>
-            </select>
-          </UFormField>
-          <p class="text-xs text-muted">
-            Suma (auto): <strong>{{ form.total }}</strong> kg
-          </p>
-          <div class="flex justify-end gap-2 pt-2">
-            <UButton color="neutral" variant="outline" @click="modalOpen = false">
+          <div class="slavia-form-actions border-t border-default/60 pt-4">
+            <UButton color="neutral" variant="outline" size="lg" @click="modalOpen = false">
               Anuluj
             </UButton>
-            <UButton :loading="saving" @click="saveEdit">
+            <UButton size="lg" :loading="saving" @click="saveEdit">
               Zapisz
             </UButton>
           </div>
@@ -329,44 +338,56 @@ watch([() => formAdd.snatch, () => formAdd.clean_and_jerk], () => {
 
     <UModal v-model:open="addModalOpen" title="Nowy start (kadra)" :ui="{ overlay: 'z-[190]', content: 'z-[200]' }">
       <template #content>
-        <div class="space-y-4 p-4 sm:p-6">
-          <p class="text-sm text-muted">
+        <div class="slavia-form-modal">
+          <p class="rounded-xl border border-default/60 bg-muted/15 px-4 py-3 text-sm text-muted dark:bg-muted/10">
             Start zapisany przez trenera lub administratora trafia od razu jako
             <strong class="text-highlighted">zatwierdzony</strong> i liczy się w rankingu oraz na karcie zawodnika.
           </p>
-          <UFormField label="Zawodnik">
-            <select v-model="formAdd.athlete_id" class="slavia-select w-full">
-              <option disabled value="">
-                — wybierz —
-              </option>
-              <option
-                v-for="a in athleteSelectOptions"
-                :key="a.id"
-                :value="a.id"
-              >
-                {{ a.full_name }}
-              </option>
-            </select>
-          </UFormField>
-          <div class="grid grid-cols-2 gap-3">
-            <UFormField label="Rwanie (kg)">
-              <UInput v-model.number="formAdd.snatch" type="number" step="0.5" min="0" class="w-full" />
-            </UFormField>
-            <UFormField label="Podrzut (kg)">
-              <UInput v-model.number="formAdd.clean_and_jerk" type="number" step="0.5" min="0" class="w-full" />
-            </UFormField>
+          <div class="slavia-form-panel">
+            <div class="slavia-form-panel__header">
+              <div class="slavia-form-panel__title">
+                <span class="slavia-form-panel__icon">
+                  <UIcon name="i-lucide-plus" class="size-4" />
+                </span>
+                Dane startu
+              </div>
+            </div>
+            <div class="slavia-form-panel__body">
+              <UFormField label="Zawodnik">
+                <select v-model="formAdd.athlete_id" class="slavia-select w-full py-3 text-[15px]">
+                  <option disabled value="">
+                    — wybierz —
+                  </option>
+                  <option
+                    v-for="a in athleteSelectOptions"
+                    :key="a.id"
+                    :value="a.id"
+                  >
+                    {{ a.full_name }}
+                  </option>
+                </select>
+              </UFormField>
+              <div class="grid grid-cols-2 gap-4">
+                <UFormField label="Rwanie (kg)">
+                  <UInput v-model.number="formAdd.snatch" type="number" step="0.5" min="0" size="lg" class="w-full tabular-nums" />
+                </UFormField>
+                <UFormField label="Podrzut (kg)">
+                  <UInput v-model.number="formAdd.clean_and_jerk" type="number" step="0.5" min="0" size="lg" class="w-full tabular-nums" />
+                </UFormField>
+              </div>
+              <UFormField label="Data startu">
+                <UInput v-model="formAdd.date" type="date" size="lg" class="w-full" />
+              </UFormField>
+              <p class="text-xs text-muted">
+                Dwubój (auto): <strong class="tabular-nums text-highlighted">{{ formAdd.total }}</strong> kg
+              </p>
+            </div>
           </div>
-          <UFormField label="Data startu">
-            <UInput v-model="formAdd.date" type="date" class="w-full" />
-          </UFormField>
-          <p class="text-xs text-muted">
-            Dwubój (auto): <strong>{{ formAdd.total }}</strong> kg
-          </p>
-          <div class="flex justify-end gap-2 pt-2">
-            <UButton color="neutral" variant="outline" @click="addModalOpen = false">
+          <div class="slavia-form-actions border-t border-default/60 pt-4">
+            <UButton color="neutral" variant="outline" size="lg" @click="addModalOpen = false">
               Anuluj
             </UButton>
-            <UButton :loading="savingAdd" @click="submitAdd">
+            <UButton size="lg" :loading="savingAdd" @click="submitAdd">
               Zapisz start
             </UButton>
           </div>

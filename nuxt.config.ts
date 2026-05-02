@@ -40,17 +40,31 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    experimental: {
-      // Workaround dla zawieszania builda na Windows przy bundlowaniu Nitro.
+    /** Mniejszy narzut Rollupa na Windows (AV / blokady plików). */
+    rollupConfig: {
+      maxParallelFileOps: 4
     },
+    /** Bez map dla serwera — krótszy etap Nitro. */
+    sourcemap: false,
     externals: {
+      /**
+       * Wyłącza śledzenie plików (@vercel/nft) przy externals — na Windows potrafi
+       * dramatycznie spowalniać lub wyglądać jak zawieszenie podczas „Building Nitro server”.
+       * @see https://github.com/nuxt/nuxt/issues/34753
+       */
+      trace: false,
       inline: ['@nuxt/nitro-server']
     }
   },
 
   vite: {
     build: {
-      sourcemap: false
+      sourcemap: false,
+      /**
+       * Domyślnie Vite liczy rozmiary gzip każdego chunka — na dużych appkach
+       * wygląda jak „zawieszenie” pod koniec client builda.
+       */
+      reportCompressedSize: false
     }
   },
 

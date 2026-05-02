@@ -365,45 +365,31 @@ onMounted(() => {
 
     <UModal v-model:open="modalOpen" title="Nowe konto administratora">
       <template #content>
-        <div class="p-4 sm:p-6 space-y-4">
-          <form
-            class="space-y-4"
-            @submit.prevent="saveAdmin"
-          >
-            <UFormField
-              label="Login (nazwa użytkownika)"
-              required
-            >
-              <UInput
-                v-model="username"
-                autocomplete="username"
-                class="w-full"
-              />
-            </UFormField>
-            <UFormField
-              label="Hasło"
-              required
-            >
-              <UInput
-                v-model="password"
-                type="password"
-                autocomplete="new-password"
-                class="w-full"
-              />
-            </UFormField>
-            <div class="flex justify-end gap-2">
-              <UButton
-                type="button"
-                color="neutral"
-                variant="outline"
-                @click="modalOpen = false"
-              >
+        <div class="slavia-form-modal">
+          <form class="slavia-form-stack" @submit.prevent="saveAdmin">
+            <div class="slavia-form-panel">
+              <div class="slavia-form-panel__header">
+                <div class="slavia-form-panel__title">
+                  <span class="slavia-form-panel__icon">
+                    <UIcon name="i-lucide-user-plus" class="size-4" />
+                  </span>
+                  Dane konta
+                </div>
+              </div>
+              <div class="slavia-form-panel__body">
+                <UFormField label="Login (nazwa użytkownika)" required>
+                  <UInput v-model="username" autocomplete="username" size="lg" placeholder="np. admin_klubu" class="w-full" />
+                </UFormField>
+                <UFormField label="Hasło" required>
+                  <UInput v-model="password" type="password" autocomplete="new-password" size="lg" class="w-full" />
+                </UFormField>
+              </div>
+            </div>
+            <div class="slavia-form-actions border-t border-default/60 pt-4">
+              <UButton type="button" color="neutral" variant="outline" size="lg" @click="modalOpen = false">
                 Anuluj
               </UButton>
-              <UButton
-                type="submit"
-                :loading="saving"
-              >
+              <UButton type="submit" size="lg" :loading="saving">
                 Utwórz
               </UButton>
             </div>
@@ -414,21 +400,33 @@ onMounted(() => {
 
     <UModal v-model:open="accountModalOpen" title="Edycja konta">
       <template #content>
-        <div class="p-4 sm:p-6 space-y-4">
-          <UFormField label="Login" required>
-            <UInput v-model="accountUsername" autocomplete="username" class="w-full" />
-          </UFormField>
-          <UFormField label="E-mail (opcjonalnie)">
-            <UInput v-model="accountEmail" type="email" autocomplete="email" class="w-full" />
-          </UFormField>
-          <UFormField label="Nowe hasło (pozostaw puste, by nie zmieniać)">
-            <UInput v-model="accountPassword" type="password" autocomplete="new-password" class="w-full" />
-          </UFormField>
-          <div class="flex justify-end gap-2">
-            <UButton color="neutral" variant="outline" @click="accountModalOpen = false">
+        <div class="slavia-form-modal">
+          <div class="slavia-form-panel">
+            <div class="slavia-form-panel__header">
+              <div class="slavia-form-panel__title">
+                <span class="slavia-form-panel__icon">
+                  <UIcon name="i-lucide-pencil" class="size-4" />
+                </span>
+                Dane logowania
+              </div>
+            </div>
+            <div class="slavia-form-panel__body">
+              <UFormField label="Login" required>
+                <UInput v-model="accountUsername" autocomplete="username" size="lg" class="w-full" />
+              </UFormField>
+              <UFormField label="E-mail (opcjonalnie)">
+                <UInput v-model="accountEmail" type="email" autocomplete="email" size="lg" class="w-full" />
+              </UFormField>
+              <UFormField label="Nowe hasło (pozostaw puste, by nie zmieniać)">
+                <UInput v-model="accountPassword" type="password" autocomplete="new-password" size="lg" class="w-full" />
+              </UFormField>
+            </div>
+          </div>
+          <div class="slavia-form-actions border-t border-default/60 pt-4">
+            <UButton color="neutral" variant="outline" size="lg" @click="accountModalOpen = false">
               Anuluj
             </UButton>
-            <UButton :loading="accountSaving" @click="saveAccountEdit">
+            <UButton size="lg" :loading="accountSaving" @click="saveAccountEdit">
               Zapisz
             </UButton>
           </div>
@@ -438,26 +436,18 @@ onMounted(() => {
 
     <UModal v-model:open="deleteModalOpen" title="Usunąć konto?">
       <template #content>
-        <div class="p-4 sm:p-6 space-y-4">
+        <div class="slavia-form-modal">
           <p
             v-if="pendingDelete"
             class="text-muted"
           >
             Czy na pewno usunąć konto {{ pendingDelete.username }}?
           </p>
-          <div class="flex justify-end gap-2">
-            <UButton
-              color="neutral"
-              variant="outline"
-              @click="cancelDelete"
-            >
+          <div class="slavia-form-actions border-t border-default/60 pt-4">
+            <UButton color="neutral" variant="outline" size="lg" @click="cancelDelete">
               Wróć
             </UButton>
-            <UButton
-              color="error"
-              :loading="deleting"
-              @click="confirmDelete"
-            >
+            <UButton color="error" size="lg" :loading="deleting" @click="confirmDelete">
               Usuń
             </UButton>
           </div>
