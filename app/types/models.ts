@@ -51,6 +51,21 @@ export interface Competition {
   external_url?: string | null
 }
 
+export type CalendarEvent = {
+  id: string
+  title: string
+  date: string
+  type: string
+  time?: string
+  location?: string
+  description?: string
+  category?: string | null
+  status?: string | null
+  external_source?: string | null
+  external_ref?: string | null
+  external_url?: string | null
+}
+
 export interface CalendarParticipantBrief {
   athlete_id: string
   full_name: string

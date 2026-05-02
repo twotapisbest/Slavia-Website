@@ -28,7 +28,7 @@ const { data: posts, refresh, pending } = await useAsyncData('posts', () => apiF
 
 const isModalOpen = ref(false)
 const isSubmitting = ref(false)
-const fileInputRef = ref<HTMLInputElement>()
+const fileInputRef = ref<HTMLInputElement | null>(null)
 const formState = reactive({
   title: '',
   content: '',
@@ -36,6 +36,10 @@ const formState = reactive({
 })
 
 const uploadLoading = ref(false)
+
+function clickFileInput() {
+  fileInputRef.value?.click()
+}
 
 function openModal() {
   if (!isAdmin.value) return
@@ -296,10 +300,10 @@ function formatDate(dateStr: string) {
                       variant="soft"
                       size="lg"
                       :loading="uploadLoading"
-                      @click="$refs.fileInput.click()"
+                      @click="clickFileInput"
                     />
                     <input
-                      ref="fileInput"
+                      ref="fileInputRef"
                       type="file"
                       hidden
                       accept="image/*"
