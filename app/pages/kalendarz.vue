@@ -150,14 +150,19 @@ async function syncExternalCalendars () {
   if (!canManageEvents.value) return
   syncLoading.value = true
   try {
-    const res = await apiFetch<{ pzpc_imported: number, pc_imported: number, upserts: number }>(
+    const res = await apiFetch<{
+      pzpc_imported: number
+      pc_imported: number
+      upserts: number
+      stale_external_removed: number
+    }>(
       '/api/competitions/sync-external',
       { method: 'POST' }
     )
     await refresh()
     toast.add({
       title: 'Zsynchronizowano zewnętrzne kalendarze',
-      description: `PZPC: ${res.pzpc_imported} pozycji, PodnoszenieCiezarow.pl: ${res.pc_imported} (łącznie ${res.upserts} zapisów w bazie).`,
+      description: `PZPC: ${res.pzpc_imported}, PodnoszenieCiezarow.pl: ${res.pc_imported}, zapisów (merge): ${res.upserts}. Usunięto stare importy: ${res.stale_external_removed}.`,
       color: 'success'
     })
   } catch (e) {

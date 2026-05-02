@@ -55,17 +55,18 @@ watch(modalOpen, async (open) => {
   if (!open) {
     return
   }
+  if (!editingId.value) {
+    competitionsCatalog.value = []
+    assignedCompetitionIds.value = []
+    return
+  }
   try {
     const rows = await api<Competition[]>('/api/competitions')
     competitionsCatalog.value = [...rows].sort((a, b) => a.date.localeCompare(b.date))
   } catch {
     competitionsCatalog.value = []
   }
-  if (editingId.value) {
-    await loadAthleteAssignments(editingId.value)
-  } else {
-    assignedCompetitionIds.value = []
-  }
+  await loadAthleteAssignments(editingId.value)
 })
 
 function resetForm () {
@@ -156,6 +157,7 @@ async function savePlayer () {
     return
   }
   saving.value = true
+  const wasEditing = !!editingId.value
   try {
     const body: any = {
       full_name: form.full_name.trim(),
@@ -183,17 +185,19 @@ async function savePlayer () {
       toast.add({ title: 'Dodano zawodnika', color: 'success', icon: 'i-lucide-check' })
     }
 
-    try {
-      await api(`/api/athletes/${athleteId}/competitions`, {
-        method: 'PUT',
-        body: { competition_ids: [...assignedCompetitionIds.value] }
-      })
-    } catch (e) {
-      toast.add({
-        title: 'Zapisano zawodnika — nie zapisano przypisań do zawodów',
-        description: getApiErrorMessage(e),
-        color: 'warning'
-      })
+    if (wasEditing) {
+      try {
+        await api(`/api/athletes/${athleteId}/competitions`, {
+          method: 'PUT',
+          body: { competition_ids: [...assignedCompetitionIds.value] }
+        })
+      } catch (e) {
+        toast.add({
+          title: 'Zapisano zawodnika — nie zapisano przypisań do zawodów',
+          description: getApiErrorMessage(e),
+          color: 'warning'
+        })
+      }
     }
 
     modalOpen.value = false
@@ -511,42 +515,44 @@ onMounted(() => {
               </div>
             </div>
 
-            <USeparator />
-            <div class="rounded-xl border border-default bg-muted/10 p-4 space-y-3">
-              <div>
-                <h4 class="text-sm font-bold text-highlighted">
-                  Przypisania do zawodów (kalendarz klubu)
-                </h4>
-                <p class="text-xs text-muted mt-0.5">
-                  Zaznaczone pozycje trafiają do osobistego kalendarza zawodnika i są widoczne przy wspólnych startach.
-                </p>
-              </div>
-              <div v-if="assignmentsLoading" class="flex items-center gap-2 text-sm text-muted py-2">
-                <UIcon name="i-lucide-loader-2" class="size-4 animate-spin shrink-0" />
-                Wczytywanie listy i przypisań…
-              </div>
-              <div v-else-if="!competitionsCatalog.length" class="text-xs text-muted py-1">
-                Brak wpisów w kalendarzu zawodów — dodaj wydarzenie w zakładce Kalendarz.
-              </div>
-              <div v-else class="max-h-52 overflow-y-auto space-y-2 pr-1">
-                <label
-                  v-for="c in competitionsCatalog"
-                  :key="c.id"
-                  class="flex gap-3 cursor-pointer items-start rounded-lg border border-default/60 bg-background/80 px-3 py-2.5 transition-colors hover:border-primary/35 hover:bg-primary/5"
-                >
-                  <input
-                    v-model="assignedCompetitionIds"
-                    type="checkbox"
-                    :value="c.id"
-                    class="mt-1 size-4 rounded border-default text-primary focus:ring-primary/40"
+            <template v-if="editingId">
+              <USeparator />
+              <div class="rounded-xl border border-default bg-muted/10 p-4 space-y-3">
+                <div>
+                  <h4 class="text-sm font-bold text-highlighted">
+                    Przypisania do zawodów (kalendarz klubu)
+                  </h4>
+                  <p class="text-xs text-muted mt-0.5">
+                    Dostępne po utworzeniu rekordu — zaznaczone pozycje trafiają do osobistego kalendarza zawodnika.
+                  </p>
+                </div>
+                <div v-if="assignmentsLoading" class="flex items-center gap-2 text-sm text-muted py-2">
+                  <UIcon name="i-lucide-loader-2" class="size-4 animate-spin shrink-0" />
+                  Wczytywanie listy i przypisań…
+                </div>
+                <div v-else-if="!competitionsCatalog.length" class="text-xs text-muted py-1">
+                  Brak wpisów w kalendarzu zawodów — dodaj wydarzenie w zakładce Kalendarz.
+                </div>
+                <div v-else class="max-h-52 overflow-y-auto space-y-2 pr-1">
+                  <label
+                    v-for="c in competitionsCatalog"
+                    :key="c.id"
+                    class="flex gap-3 cursor-pointer items-start rounded-lg border border-default/60 bg-background/80 px-3 py-2.5 transition-colors hover:border-primary/35 hover:bg-primary/5"
                   >
-                  <span class="text-sm leading-snug">
-                    <span class="font-semibold text-highlighted">{{ c.title }}</span>
-                    <span class="block text-xs text-muted tabular-nums">{{ (c.date || '').slice(0, 10) }} · {{ c.location }}</span>
-                  </span>
-                </label>
+                    <input
+                      v-model="assignedCompetitionIds"
+                      type="checkbox"
+                      :value="c.id"
+                      class="mt-1 size-4 rounded border-default text-primary focus:ring-primary/40"
+                    >
+                    <span class="text-sm leading-snug">
+                      <span class="font-semibold text-highlighted">{{ c.title }}</span>
+                      <span class="block text-xs text-muted tabular-nums">{{ (c.date || '').slice(0, 10) }} · {{ c.location }}</span>
+                    </span>
+                  </label>
+                </div>
               </div>
-            </div>
+            </template>
 
             <UFormField label="Notatki">
               <UTextarea
