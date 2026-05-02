@@ -26,7 +26,8 @@ export const apiRoutes = {
     competitions: '/api/competitions'
   },
   superadmin: {
-    admins: '/api/admins'
+    admins: '/api/admins',
+    adminsGrouped: '/api/admins/grouped'
   },
   posts: {
     list: '/api/posts'

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Athlete, CompetitionResult } from '~/types/models'
+import type { Athlete, CompetitionResult, MyCalendarEntry } from '~/types/models'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -9,22 +9,29 @@ const toast = useToast()
 
 const isAthleteRole = computed(() => auth.user.value?.role === 'Athlete')
 
-type AthleteBundle = { athlete: Athlete | null, results: CompetitionResult[] }
+type AthleteBundle = { athlete: Athlete | null, results: CompetitionResult[], calendarEntries: MyCalendarEntry[] }
 
 const { data: bundle, refresh: refreshAthletePage } = await useAsyncData(
   'athlete-page-bundle',
   async () => {
     await auth.ensureSession()
     if (auth.user.value?.role !== 'Athlete') {
-      return { athlete: null, results: [] } satisfies AthleteBundle
+      return { athlete: null, results: [], calendarEntries: [] } satisfies AthleteBundle
     }
     const a = await apiFetch<Athlete | null>(`/api/athletes/me`).catch(() => null)
     const results = a?.id
       ? await apiFetch<CompetitionResult[]>(`/api/results/athlete/${a.id}/submissions`).catch(() => [])
       : []
-    return { athlete: a, results } satisfies AthleteBundle
+    const cal = await apiFetch<{ entries: MyCalendarEntry[] }>('/api/athletes/my-calendar').catch(() => ({
+      entries: [] as MyCalendarEntry[]
+    }))
+    return {
+      athlete: a,
+      results,
+      calendarEntries: Array.isArray(cal.entries) ? cal.entries : []
+    } satisfies AthleteBundle
   },
-  { default: () => ({ athlete: null, results: [] }) }
+  { default: () => ({ athlete: null, results: [], calendarEntries: [] }) }
 )
 
 const athlete = computed(() => bundle.value?.athlete ?? null)
@@ -60,6 +67,30 @@ watch(
 )
 
 const profileLoading = ref(false)
+const avatarUploadLoading = ref(false)
+const avatarFileInput = ref<HTMLInputElement | null>(null)
+
+async function onAvatarFileChange (e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file || !file.type.startsWith('image/')) {
+    toast.add({ title: 'Wybierz plik graficzny', color: 'warning' })
+    return
+  }
+  avatarUploadLoading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await apiFetch<{ url: string }>('/api/upload', { method: 'POST', body: fd })
+    profileForm.avatar_url = res.url
+    toast.add({ title: 'Wgrano zdjęcie — zapisz zmiany profilu', color: 'success' })
+  } catch (err) {
+    toast.add({ title: 'Upload nie powiódł się', description: String(err), color: 'error' })
+  } finally {
+    avatarUploadLoading.value = false
+  }
+}
 
 async function updateProfile() {
   if (profileForm.newPassword || profileForm.currentPassword) {
@@ -143,6 +174,18 @@ const stats = computed(() => [
   { label: 'Suma (Biathlon)', value: athlete.value?.total_kg ? `${athlete.value.total_kg} kg` : '—' }
 ])
 
+/** Wydarzenia z przypisań kadry — bez wpisów kategorii „trening” (stałe jednostki w klubie liczą się osobno w kalendarzu). */
+const assignedCompetitionStartsCount = computed(() => {
+  const entries = bundle.value?.calendarEntries ?? []
+  const ids = new Set<string>()
+  for (const e of entries) {
+    const cat = (e.competition.category || '').toLowerCase()
+    if (cat === 'training') continue
+    ids.add(e.competition.id)
+  }
+  return ids.size
+})
+
 const pageHeading = computed(() =>
   isAthleteRole.value ? 'Panel Zawodnika' : 'Profil konta'
 )
@@ -154,7 +197,7 @@ const pageLead = computed(() =>
 </script>
 
 <template>
-  <UContainer class="py-10 md:py-14">
+  <UContainer class="py-8 md:py-14 lg:py-16">
     <div class="mb-10">
       <div class="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-primary">
         <UIcon name="i-lucide-user" class="size-4" />
@@ -166,11 +209,47 @@ const pageLead = computed(() =>
       <p class="mt-2 max-w-2xl text-muted">
         {{ pageLead }}
       </p>
-      <div v-if="auth.isAthlete.value" class="mt-6">
-        <UButton to="/athlete/kalendarz" icon="i-lucide-calendar-heart" color="primary" variant="soft">
+      <div v-if="auth.isAthlete.value" class="mt-6 flex flex-wrap items-stretch gap-3">
+        <UButton to="/athlete/kalendarz" icon="i-lucide-calendar-heart" color="primary" variant="soft" class="min-h-11 w-full justify-center sm:w-auto">
           Mój kalendarz startów
         </UButton>
       </div>
+    </div>
+
+    <!-- Licznik przypisanych zawodów (bez treningów klubowych) -->
+    <div v-if="isAthleteRole && athlete" class="mb-10">
+      <UCard
+        class="overflow-hidden border border-primary/25 bg-linear-to-br from-primary/10 via-card to-card"
+        :ui="{ body: 'sm:p-6 p-5' }"
+      >
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-start gap-4">
+            <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/20 text-primary shadow-inner">
+              <UIcon name="i-lucide-calendar-check-2" class="size-7" />
+            </div>
+            <div class="min-w-0">
+              <p class="text-xs font-bold uppercase tracking-wider text-primary">
+                Przypisane starty
+              </p>
+              <p class="mt-1 text-4xl font-black tabular-nums text-highlighted">
+                {{ assignedCompetitionStartsCount }}
+              </p>
+              <p class="mt-2 max-w-xl text-sm leading-relaxed text-muted">
+                Liczba zawodów i wydarzeń, do których przypisała Cię kadra w systemie.
+                Stałe treningi klubowe (pn./śr./pt.) nie wchodzą do tego licznika — są widoczne osobno w kalendarzu.
+              </p>
+            </div>
+          </div>
+          <UButton
+            to="/athlete/kalendarz"
+            trailing-icon="i-lucide-arrow-right"
+            color="primary"
+            class="shrink-0 self-start sm:self-center"
+          >
+            Pełny harmonogram
+          </UButton>
+        </div>
+      </UCard>
     </div>
 
     <!-- Statystyki zawodnika -->
@@ -201,15 +280,33 @@ const pageLead = computed(() =>
         <UIcon name="i-lucide-shield" class="size-5 text-primary" />
         Ustawienia konta
       </h2>
-      <UCard class="p-6">
+      <UCard class="p-4 sm:p-6">
         <div class="grid gap-4 sm:grid-cols-2">
           <UFormField label="Email">
             <UInput v-model="profileForm.email" type="email" class="w-full" />
           </UFormField>
-          <UFormField label="URL zdjęcia profilowego">
-            <UInput v-model="profileForm.avatar_url" type="url" placeholder="https://..." class="w-full" />
+          <UFormField label="Zdjęcie profilowe">
+            <input
+              ref="avatarFileInput"
+              type="file"
+              accept="image/*"
+              class="sr-only"
+              @change="onAvatarFileChange"
+            >
+            <div class="flex flex-wrap items-center gap-2">
+              <UInput v-model="profileForm.avatar_url" type="url" placeholder="https://... lub wgraj plik" class="min-w-0 flex-1" />
+              <UButton
+                color="neutral"
+                variant="soft"
+                icon="i-lucide-upload"
+                :loading="avatarUploadLoading"
+                @click="avatarFileInput?.click()"
+              >
+                Wgraj
+              </UButton>
+            </div>
             <p class="mt-1 text-xs text-muted">
-              Wklej adres po uploadzie (np. Cloudinary) lub zostaw puste.
+              Możesz wkleić URL lub wgrać plik (Cloudinary). Poprzednie zdjęcie w Cloudinary jest usuwane przy zapisie, jeśli zmienisz adres.
             </p>
           </UFormField>
           <UFormField label="Nowe hasło (opcjonalnie)">
@@ -235,7 +332,7 @@ const pageLead = computed(() =>
         <UIcon name="i-lucide-flag" class="size-5 text-primary" />
         Zgłoś wynik do weryfikacji
       </h2>
-      <UCard class="p-6">
+      <UCard class="p-4 sm:p-6">
         <div class="grid gap-4 sm:grid-cols-2">
           <UFormField label="Rwanie (kg)">
             <UInputNumber v-model="resultForm.snatch" :min="0" step="0.5" class="w-full" />

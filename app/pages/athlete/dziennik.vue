@@ -155,7 +155,7 @@ async function removeEntry (e: TrainingLogEntry) {
 </script>
 
 <template>
-  <UContainer class="py-10 md:py-14 animate-page-in max-w-3xl">
+  <UContainer class="py-8 md:py-14 lg:py-16 animate-page-in max-w-3xl">
     <div class="mb-8">
       <p class="text-xs font-bold uppercase tracking-wider text-primary">
         Twój panel

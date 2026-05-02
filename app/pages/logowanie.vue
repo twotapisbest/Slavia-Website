@@ -44,7 +44,7 @@ async function submit() {
 </script>
 
 <template>
-  <div class="relative flex min-h-[95vh] items-center justify-center overflow-hidden py-12 px-4 bg-linear-to-br from-background via-background to-primary/5">
+  <div class="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-linear-to-br from-background via-background to-primary/5 px-4 py-10 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))]">
     <!-- Dekoracyjne tło z animowanymi elementami -->
     <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
       <div class="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-primary/10 blur-3xl animate-pulse" />

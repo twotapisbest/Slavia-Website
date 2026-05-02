@@ -11,7 +11,14 @@ const apiFetch = useApi()
 
 // Pobieranie podstawowych statystyk
 const { data: athletes } = await useAsyncData('super-dashboard-athletes', () => apiFetch('/api/athletes/admin').catch(() => []))
-const { data: admins } = await useAsyncData('super-dashboard-admins', () => apiFetch('/api/admins').catch(() => []))
+const { data: adminsGrouped } = await useAsyncData(
+  'super-dashboard-admins-grouped',
+  () =>
+    apiFetch<{ staff_admins: unknown[]; club_members: unknown[] }>('/api/admins/grouped').catch(() => ({
+      staff_admins: [],
+      club_members: []
+    }))
+)
 const { data: competitions } = await useAsyncData('super-dashboard-competitions', () => apiFetch('/api/competitions').catch(() => []))
 
 const athletesCount = computed(() => {
@@ -21,7 +28,9 @@ const athletesCount = computed(() => {
   }
   return list.filter(a => a.is_active !== false).length
 })
-const adminsCount = computed(() => Array.isArray(admins.value) ? admins.value.length : 0)
+const adminsCount = computed(() =>
+  Array.isArray(adminsGrouped.value?.staff_admins) ? adminsGrouped.value.staff_admins.length : 0
+)
 const competitionsCount = computed(() => Array.isArray(competitions.value) ? competitions.value.length : 0)
 
 const quickLinks = [
@@ -93,7 +102,7 @@ const quickLinks = [
 </script>
 
 <template>
-  <UContainer class="py-10 md:py-14">
+  <UContainer class="py-8 md:py-14 lg:py-16">
     <div class="mb-8">
       <p class="text-sm font-medium uppercase tracking-wider text-primary flex items-center gap-2">
         <UIcon name="i-lucide-crown" class="size-4" />
@@ -115,7 +124,7 @@ const quickLinks = [
             <UIcon name="i-lucide-shield-check" class="size-6" />
           </div>
           <div>
-            <p class="text-sm font-medium text-muted">Administratorzy</p>
+            <p class="text-sm font-medium text-muted">Konta administracyjne</p>
             <p class="text-2xl font-bold text-highlighted">{{ adminsCount }}</p>
           </div>
         </div>

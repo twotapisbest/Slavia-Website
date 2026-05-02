@@ -8,6 +8,33 @@ useSeoMeta({
 
 const updates = [
   {
+    version: 'v1.8.0',
+    date: '2 Maj 2026',
+    title: 'Nawigacja, wyniki kadry i panel trenera',
+    features: [
+      'Nagłówek: linki bez logowania pod nagłówkiem na urządzeniach mobilnych (belka z przewijaniem); na desktopie grupa publicznych skrótów w środkowej kolumnie `UHeader` — mniej ściskania i ucinania etykiet.',
+      'Nawigacja konta: spójne nazwy (m.in. Mój kalendarz, Panel admina / trenera / SuperAdmin, Panel admin i trener dla TrainerAdmin).',
+      'Panel trenera i panel admina: sekcja „Wyniki do zatwierdzenia” zawsze na stronie — działa kotwica z karty „Zgłoszenia wyników”; komunikat przy pustej liście; poprawiona ikona nagłówka sekcji; toasty przy błędzie lub sukcesie zatwierdzenia; skrót do listy startów.',
+      'Strona `/trainer/wyniki`: przycisk „Dodaj start (zatwierdzony)” — kadra zapisuje wpis od razu jako zatwierdzony (zgodnie z API); lepszy fallback listy zawodników; polskie opisy statusów w tabeli i w edycji.'
+    ],
+    type: 'feature'
+  },
+  {
+    version: 'v1.7.0',
+    date: '2 Maj 2026',
+    title: 'Powiadomienia w aplikacji',
+    features: [
+      'Ikona dzwonka w nagłówku (dla zalogowanych): lista powiadomień z API, licznik na ikonie, usuwanie pojedynczych wpisów.',
+      'Frontend: odświeżanie przy otwarciu panelu oraz okresowe w tle; opcjonalne skróty po kliknięciu (kalendarz, dziennik, wyniki, panele admin/superadmin).',
+      'Backend: tabela powiadomień per użytkownik, GET /api/notifications oraz DELETE /api/notifications/:id.',
+      'Zawodnik: m.in. zatwierdzenie wyniku, przypisanie / cofnięcie zapisu na zawody, notatka trenera w dzienniku.',
+      'Kadra treningowa (Trener / TrainerAdmin / Admin / SuperAdmin): m.in. wpis zawodnika w dzienniku, zmiany w kalendarzu zawodów, lista zapisów, synchronizacja zewnętrzna, nowy wynik do zatwierdzenia.',
+      'Administratorzy (Admin / TrainerAdmin / SuperAdmin): powiadomienia o zmianach administracyjnych (konta, zawodnicy, blog).',
+      'SuperAdmin: dodatkowo osobne wpisy „kadrowe” przy wybranych zdarzeniach zawodnika (podgląd bez treści „osobistej” jak u samego zawodnika).'
+    ],
+    type: 'feature'
+  },
+  {
     version: 'v1.6.0',
     date: '2 Maj 2026',
     title: 'Kalendarz, dziennik treningów i porządki w repo',
@@ -121,7 +148,7 @@ const updates = [
 </script>
 
 <template>
-  <UContainer class="py-10 md:py-14">
+  <UContainer class="py-8 md:py-14 lg:py-16">
     <div class="mb-8">
       <div class="flex items-center gap-2 mb-2">
         <UIcon name="i-lucide-file-text" class="size-5 text-primary" />

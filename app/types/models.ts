@@ -45,6 +45,10 @@ export interface Competition {
   description?: string
   category?: string | null
   status?: string | null
+  /** Zapis zsynchronizowany z kalendarza zewnętrznego (PZPC, PodnoszenieCiezarow.pl). */
+  external_source?: string | null
+  external_ref?: string | null
+  external_url?: string | null
 }
 
 export interface CalendarParticipantBrief {
@@ -81,6 +85,12 @@ export interface TrainingLogEntry {
 
 export interface AdminAccount extends AuthUser {
   created_at?: string
+}
+
+/** Rozdzielenie kont: kadra z panelem admin vs trenerzy i zawodnicy. */
+export interface GroupedAdminAccounts {
+  staff_admins: AdminAccount[]
+  club_members: AdminAccount[]
 }
 
 export interface PlayerPayload {

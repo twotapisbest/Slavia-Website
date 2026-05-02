@@ -8,7 +8,7 @@ useSeoMeta({
 </script>
 
 <template>
-  <UContainer class="py-10 md:py-14">
+  <UContainer class="py-8 md:py-14 lg:py-16">
     <div class="mb-8">
       <div class="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-red-500">
         <UIcon name="i-lucide-crown" class="size-4" />

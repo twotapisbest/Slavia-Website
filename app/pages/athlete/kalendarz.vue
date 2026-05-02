@@ -87,6 +87,7 @@ function getEventsForDay (date: Date) {
       type: 'competition' as const,
       category: entry.competition.category || 'club_event',
       status: entry.competition.status || 'scheduled',
+      external_source: entry.competition.external_source || undefined,
       title: entry.competition.title,
       time: '' as const,
       location: entry.competition.location,
@@ -115,7 +116,7 @@ const goToToday = () => (currentDate.value = new Date())
 </script>
 
 <template>
-  <UContainer class="py-10">
+  <UContainer class="py-8 md:py-12 lg:py-14">
     <div class="mb-8">
       <p class="text-sm font-medium uppercase tracking-wider text-primary">
         Zawodnik

@@ -8,7 +8,7 @@ useSeoMeta({
 </script>
 
 <template>
-  <UContainer class="py-10 md:py-14">
+  <UContainer class="py-8 md:py-14 lg:py-16">
     <div class="mb-8">
       <p class="text-sm font-medium uppercase tracking-wider text-primary">
         Administracja
@@ -17,7 +17,7 @@ useSeoMeta({
         Konta kadry
       </h1>
       <p class="mt-2 max-w-2xl text-muted">
-        Edycja loginu, e-maila i hasła dla kont trenerów i administratorów. Zmianę ról pozostawia superadministrator.
+        Dwie tabele: kadra administracyjna oraz trenerzy i zawodnicy. Możesz edytować login, e-mail i hasło (wg uprawnień). Zmianę ról wykonuje superadministrator.
       </p>
     </div>
 

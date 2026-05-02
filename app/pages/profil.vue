@@ -55,6 +55,34 @@ watch(
 )
 
 const saving = ref(false)
+const uploadLoading = ref(false)
+const avatarFileInput = ref<HTMLInputElement | null>(null)
+
+async function onAvatarFileChange (e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file || !file.type.startsWith('image/')) {
+    toast.add({ title: 'Wybierz plik graficzny', color: 'warning' })
+    return
+  }
+  uploadLoading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await apiFetch<{ url: string }>('/api/upload', { method: 'POST', body: fd })
+    form.avatar_url = res.url
+    toast.add({ title: 'Wgrano na Cloudinary — zapisz zmiany na koncie', color: 'success' })
+  } catch (err) {
+    toast.add({
+      title: 'Upload nie powiódł się',
+      description: getApiErrorMessage(err),
+      color: 'error'
+    })
+  } finally {
+    uploadLoading.value = false
+  }
+}
 
 onMounted(() => {
   if (auth.token.value) {
@@ -95,7 +123,7 @@ async function save () {
 </script>
 
 <template>
-  <UContainer class="py-10 md:py-16 max-w-lg animate-page-in">
+  <UContainer class="py-8 md:py-16 lg:py-20 max-w-lg animate-page-in">
     <p class="text-xs font-bold uppercase tracking-wider text-primary">
       Konto użytkownika
     </p>
@@ -144,8 +172,29 @@ async function save () {
         <UFormField label="E-mail">
           <UInput v-model="form.email" type="email" autocomplete="email" class="w-full" />
         </UFormField>
-        <UFormField label="URL avatara">
-          <UInput v-model="form.avatar_url" type="url" placeholder="https://..." class="w-full" />
+        <UFormField label="Zdjęcie profilowe">
+          <input
+            ref="avatarFileInput"
+            type="file"
+            accept="image/*"
+            class="sr-only"
+            @change="onAvatarFileChange"
+          >
+          <div class="flex flex-wrap items-center gap-2">
+            <UInput v-model="form.avatar_url" type="url" placeholder="https://... lub wgraj plik" class="min-w-0 flex-1" />
+            <UButton
+              color="neutral"
+              variant="soft"
+              icon="i-lucide-upload"
+              :loading="uploadLoading"
+              @click="avatarFileInput?.click()"
+            >
+              Wgraj
+            </UButton>
+          </div>
+          <p class="mt-1 text-[11px] text-muted">
+            Link nadal możliwy; po wgraniu nowego zdjęcia poprzednie w Cloudinary jest usuwane przy zapisie konta.
+          </p>
         </UFormField>
         <UFormField label="Nowe hasło (opcjonalnie)">
           <UInput v-model="form.newPassword" type="password" autocomplete="new-password" class="w-full" />

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Athlete, CompetitionResult } from '~/types/models'
+import { getApiErrorMessage } from '~/composables/useApi'
 
 definePageMeta({ middleware: 'admin' })
 
@@ -11,6 +12,8 @@ useSeoMeta({
 const auth = useAuth()
 const apiFetch = useApi()
 const isSuperAdmin = computed(() => auth.user.value?.role === 'SuperAdmin')
+/** Sam admin (bez trenera w roli) — w panelu bez narzędzi trenera. */
+const isPureAdmin = computed(() => auth.user.value?.role === 'Admin')
 
 // Pobieranie podstawowych statystyk
 const { data: athletes } = await useAsyncData(
@@ -29,6 +32,8 @@ const { data: pendingResults, refresh: refreshPending } = await useAsyncData(
     apiFetch<CompetitionResult[]>('/api/results/pending').catch(() => [])
 )
 const { data: competitions } = await useAsyncData('dashboard-competitions', () => apiFetch('/api/competitions').catch(() => []))
+
+const toast = useToast()
 
 const athleteNameById = computed(() => {
   const m = new Map<string, string>()
@@ -53,18 +58,28 @@ const pendingCount = computed(() => Array.isArray(pendingResults.value) ? pendin
 const competitionsCount = computed(() => Array.isArray(competitions.value) ? competitions.value.length : 0)
 
 async function approveResult (id: string) {
-  await apiFetch(`/api/results/${id}/approve`, { method: 'PATCH' })
-  await refreshPending()
+  try {
+    await apiFetch(`/api/results/${id}/approve`, { method: 'PATCH' })
+    toast.add({ title: 'Wynik zatwierdzony', color: 'success' })
+    await refreshPending()
+  } catch (e) {
+    toast.add({
+      title: 'Nie udało się zatwierdzić',
+      description: getApiErrorMessage(e),
+      color: 'error'
+    })
+  }
 }
 
-const quickLinks = [
+const quickLinksAll = [
   {
     title: 'Zawodnicy',
     description: 'Zarządzaj listą zawodników i ich danymi',
     icon: 'i-lucide-users',
     to: '/admin/zawodnicy',
     color: 'text-blue-500',
-    bg: 'bg-blue-500/10'
+    bg: 'bg-blue-500/10',
+    trainerOnly: false
   },
   {
     title: 'Kalendarz',
@@ -72,7 +87,8 @@ const quickLinks = [
     icon: 'i-lucide-calendar',
     to: '/kalendarz',
     color: 'text-purple-500',
-    bg: 'bg-purple-500/10'
+    bg: 'bg-purple-500/10',
+    trainerOnly: false
   },
   {
     title: 'Blog',
@@ -80,7 +96,8 @@ const quickLinks = [
     icon: 'i-lucide-newspaper',
     to: '/blog',
     color: 'text-orange-500',
-    bg: 'bg-orange-500/10'
+    bg: 'bg-orange-500/10',
+    trainerOnly: false
   },
   {
     title: 'Rankingi',
@@ -88,7 +105,8 @@ const quickLinks = [
     icon: 'i-lucide-trophy',
     to: '/zawodnicy',
     color: 'text-yellow-500',
-    bg: 'bg-yellow-500/10'
+    bg: 'bg-yellow-500/10',
+    trainerOnly: false
   },
   {
     title: 'Changelog',
@@ -96,7 +114,8 @@ const quickLinks = [
     icon: 'i-lucide-file-text',
     to: '/admin/changelog',
     color: 'text-emerald-500',
-    bg: 'bg-emerald-500/10'
+    bg: 'bg-emerald-500/10',
+    trainerOnly: false
   },
   {
     title: 'Konta kadry',
@@ -104,7 +123,8 @@ const quickLinks = [
     icon: 'i-lucide-key-round',
     to: '/admin/konta',
     color: 'text-rose-500',
-    bg: 'bg-rose-500/10'
+    bg: 'bg-rose-500/10',
+    trainerOnly: false
   },
   {
     title: 'Wszystkie starty',
@@ -112,7 +132,8 @@ const quickLinks = [
     icon: 'i-lucide-list-checks',
     to: '/trainer/wyniki',
     color: 'text-teal-500',
-    bg: 'bg-teal-500/10'
+    bg: 'bg-teal-500/10',
+    trainerOnly: true
   },
   {
     title: 'Dzienniki treningów',
@@ -120,7 +141,8 @@ const quickLinks = [
     icon: 'i-lucide-book-marked',
     to: '/trainer/dziennik',
     color: 'text-cyan-600',
-    bg: 'bg-cyan-500/10'
+    bg: 'bg-cyan-500/10',
+    trainerOnly: true
   },
   {
     title: 'Moje konto',
@@ -128,13 +150,21 @@ const quickLinks = [
     icon: 'i-lucide-user-cog',
     to: '/profil',
     color: 'text-neutral-500',
-    bg: 'bg-neutral-500/10'
+    bg: 'bg-neutral-500/10',
+    trainerOnly: false
   }
 ]
+
+const quickLinks = computed(() => {
+  if (isPureAdmin.value) {
+    return quickLinksAll.filter(l => !l.trainerOnly)
+  }
+  return quickLinksAll
+})
 </script>
 
 <template>
-  <UContainer class="py-10 md:py-14">
+  <UContainer class="py-8 md:py-14 lg:py-16">
     <div class="mb-8">
       <p class="text-sm font-medium uppercase tracking-wider text-primary">
         Administracja
@@ -148,23 +178,23 @@ const quickLinks = [
     </div>
 
     <!-- SuperAdmin Banner -->
-    <div v-if="isSuperAdmin" class="mb-8 p-5 rounded-2xl bg-gradient-to-r from-primary/10 to-purple-500/10 border border-primary/20 flex items-center justify-between gap-4 flex-wrap">
-      <div class="flex items-center gap-4">
-        <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/20 text-primary shrink-0">
+    <div v-if="isSuperAdmin" class="mb-8 flex flex-col gap-4 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 to-purple-500/10 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+      <div class="flex items-start gap-3 sm:items-center sm:gap-4">
+        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/20 text-primary sm:h-12 sm:w-12">
           <UIcon name="i-lucide-shield-check" class="size-6" />
         </div>
-        <div>
-          <p class="text-sm font-bold text-primary uppercase tracking-wider">Tryb SuperAdmin</p>
-          <p class="text-sm text-muted">Masz dostęp do zaawansowanych narzędzi systemowych.</p>
+        <div class="min-w-0">
+          <p class="text-xs font-bold uppercase tracking-wider text-primary sm:text-sm">Tryb SuperAdmin</p>
+          <p class="mt-0.5 text-sm text-muted">Masz dostęp do zaawansowanych narzędzi systemowych.</p>
         </div>
       </div>
-      <UButton to="/superadmin" trailing-icon="i-lucide-arrow-right" size="lg" class="shrink-0">
+      <UButton to="/superadmin" trailing-icon="i-lucide-arrow-right" size="lg" class="min-h-11 w-full shrink-0 justify-center sm:w-auto">
         Panel SuperAdmin
       </UButton>
     </div>
 
     <!-- Statystyki -->
-    <div class="mb-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div class="mb-12 grid grid-cols-1 gap-4 sm:grid-cols-3 lg:gap-6">
       <UCard>
         <div class="flex items-center gap-4">
           <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
@@ -200,24 +230,38 @@ const quickLinks = [
       </UCard>
     </div>
 
-    <!-- Wyniki oczekujące -->
-    <div id="wyniki-oczekujace" v-if="pendingCount > 0" class="mb-12 scroll-mt-24 rounded-2xl border border-default bg-card p-6">
-      <div class="mb-6 flex items-center justify-between">
-        <h2 class="text-xl font-semibold text-highlighted">
-          <UIcon name="i-lucide-pending" class="mr-2 inline" />
+    <!-- Wyniki oczekujące — kotwica działa także przy 0 pozycjach -->
+    <div id="wyniki-oczekujace" class="mb-12 scroll-mt-24 rounded-2xl border border-default bg-card p-6">
+      <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 class="text-lg font-semibold text-highlighted sm:text-xl">
+          <UIcon name="i-lucide-clipboard-clock" class="mr-2 inline" />
           Wyniki do zatwierdzenia ({{ pendingCount }})
         </h2>
-        <UButton @click="refreshPending()">
-          Odśwież
-        </UButton>
+        <div class="flex flex-wrap gap-2">
+          <UButton variant="soft" size="sm" icon="i-lucide-refresh-ccw" class="min-h-10 shrink-0" @click="refreshPending()">
+            Odśwież listę
+          </UButton>
+          <UButton size="sm" variant="outline" to="/trainer/wyniki" class="min-h-10 shrink-0">
+            Wszystkie starty / dodaj wpis
+          </UButton>
+        </div>
       </div>
-      <div class="space-y-3">
-        <div v-for="result in pendingResults || []" :key="result.id" class="flex items-center justify-between gap-4 rounded-xl bg-muted/20 p-4 border border-default/50">
-          <div>
+      <div v-if="pendingCount === 0" class="rounded-xl border border-dashed border-default/70 bg-muted/10 px-4 py-8 text-center text-sm text-muted">
+        Brak oczekujących zgłoszeń. Start dodany przez kadrę trafia od razu jako zatwierdzony —
+        <NuxtLink to="/trainer/wyniki" class="font-semibold text-primary underline-offset-2 hover:underline">
+          otwórz listę startów
+        </NuxtLink>
+        .
+      </div>
+      <div v-else class="space-y-3">
+        <div v-for="result in pendingResults || []" :key="result.id" class="flex flex-col gap-3 rounded-xl border border-default/50 bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="min-w-0">
             <p class="font-medium text-highlighted">{{ labelForResult(result) }}</p>
-            <p class="text-sm text-muted">Razem: {{ result.total }}kg ({{ result.date }})</p>
+            <p class="text-sm text-muted">
+              Rwanie {{ result.snatch }} kg · Podrzut {{ result.clean_and_jerk }} kg · Razem {{ result.total }} kg · {{ result.date.slice(0, 10) }}
+            </p>
           </div>
-          <UButton size="sm" @click="approveResult(result.id)">
+          <UButton size="sm" class="min-h-10 w-full shrink-0 sm:w-auto" @click="approveResult(result.id)">
             Zatwierdź
           </UButton>
         </div>
@@ -225,7 +269,7 @@ const quickLinks = [
     </div>
 
     <h2 class="mb-4 text-xl font-semibold text-highlighted">Szybki dostęp</h2>
-    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:gap-8">
       <NuxtLink
         v-for="link in quickLinks"
         :key="link.to"

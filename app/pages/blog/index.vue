@@ -119,13 +119,19 @@ function formatDate(dateStr: string) {
 </script>
 
 <template>
-  <UContainer class="py-12">
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
-      <div>
-        <h1 class="text-3xl font-bold tracking-tight text-highlighted">Aktualności</h1>
-        <p class="mt-2 text-muted">Najnowsze informacje i relacje z zawodów naszego klubu.</p>
+  <UContainer class="py-8 sm:py-12 lg:py-14">
+    <div class="mb-8 flex flex-col gap-4 sm:mb-10 md:flex-row md:items-end md:justify-between">
+      <div class="min-w-0">
+        <h1 class="text-2xl font-bold tracking-tight text-highlighted sm:text-3xl lg:text-4xl">Aktualności</h1>
+        <p class="mt-2 text-sm text-muted sm:text-base lg:text-lg lg:leading-relaxed">Najnowsze informacje i relacje z zawodów naszego klubu.</p>
       </div>
-      <UButton v-if="isAdmin" icon="i-lucide-pen-tool" color="primary" @click="openModal">
+      <UButton
+        v-if="isAdmin"
+        icon="i-lucide-pen-tool"
+        color="primary"
+        class="min-h-11 w-full shrink-0 justify-center md:w-auto"
+        @click="openModal"
+      >
         Dodaj wpis
       </UButton>
     </div>
@@ -140,10 +146,10 @@ function formatDate(dateStr: string) {
       <p class="text-muted mt-1">Zaglądaj tu wkrótce po nowości ze świata ciężarów.</p>
     </div>
 
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      <UCard v-for="post in posts" :key="post.id" class="flex flex-col group overflow-hidden border-transparent hover:border-primary/50 transition-colors">
+    <div v-else class="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3 xl:gap-10">
+      <UCard v-for="post in posts" :key="post.id" class="group flex flex-col overflow-hidden border-transparent transition-colors hover:border-primary/50">
         <!-- Zdjęcie wpisu -->
-        <div class="h-48 -mx-4 -mt-4 mb-4 bg-neutral-800 flex items-center justify-center relative overflow-hidden">
+        <div class="relative mb-4 flex h-44 items-center justify-center overflow-hidden rounded-lg bg-neutral-800 sm:h-48">
           <img v-if="post.image_url" :src="post.image_url" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
           <div v-else class="w-full h-full bg-linear-to-br from-primary/20 to-neutral-900 flex items-center justify-center">
             <UIcon name="i-lucide-newspaper" class="size-16 text-primary/10" />
@@ -158,12 +164,12 @@ function formatDate(dateStr: string) {
           <h3 class="text-xl font-bold text-highlighted mb-3 line-clamp-2">{{ post.title }}</h3>
           <p class="text-muted text-sm line-clamp-3 mb-4">{{ post.content }}</p>
           
-          <div class="mt-auto pt-4 flex items-center justify-between border-t border-default">
-            <UButton :to="`/blog/${post.id}`" variant="link" color="primary" trailing-icon="i-lucide-arrow-right" class="px-0">
+          <div class="mt-auto flex flex-col gap-3 border-t border-default pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <UButton :to="`/blog/${post.id}`" variant="link" color="primary" trailing-icon="i-lucide-arrow-right" class="min-h-10 justify-start px-0">
               Czytaj więcej
             </UButton>
             
-            <UButton v-if="isAdmin" size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" @click="deletePost(post.id)">
+            <UButton v-if="isAdmin" size="sm" color="error" variant="ghost" icon="i-lucide-trash-2" class="min-h-10 self-start sm:self-auto" @click="deletePost(post.id)">
               Usuń
             </UButton>
           </div>

@@ -3,9 +3,10 @@
     <UPageHero
       class="relative overflow-hidden"
       :ui="{
-        container: 'lg:gap-12',
-        title: 'text-pretty max-w-3xl sm:text-5xl',
-        description: 'text-pretty max-w-2xl text-lg text-muted'
+        container: 'lg:gap-12 xl:gap-16',
+        title: 'text-pretty max-w-3xl text-3xl leading-tight sm:text-4xl lg:text-5xl xl:text-6xl xl:max-w-4xl',
+        description: 'text-pretty max-w-2xl text-base text-muted sm:text-lg lg:text-xl lg:max-w-3xl lg:leading-relaxed',
+        links: 'flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap lg:gap-4'
       }"
     >
       <template #title>
@@ -19,6 +20,7 @@
           to="/zawodnicy"
           size="xl"
           trailing-icon="i-lucide-arrow-right"
+          class="min-h-12 w-full justify-center sm:w-auto sm:min-h-0"
         >
           Poznaj zawodników
         </UButton>
@@ -28,6 +30,7 @@
           color="neutral"
           variant="subtle"
           icon="i-lucide-calculator"
+          class="min-h-12 w-full justify-center sm:w-auto sm:min-h-0"
         >
           Kalkulator Sinclair
         </UButton>
@@ -37,6 +40,7 @@
           color="neutral"
           variant="outline"
           icon="i-lucide-shield"
+          class="min-h-12 w-full justify-center sm:w-auto sm:min-h-0"
         >
           Strefa klubu
         </UButton>
@@ -67,7 +71,7 @@
 
     <UPageSection
       orientation="horizontal"
-      class="pb-16"
+      class="pb-12 lg:pb-20"
       :features="[
         {
           icon: 'i-lucide-map-pin',

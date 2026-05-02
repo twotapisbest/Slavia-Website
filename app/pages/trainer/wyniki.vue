@@ -18,9 +18,22 @@ const { data: rawResults, pending, refresh } = await useAsyncData(
 )
 
 const { data: athletes } = await useAsyncData(
-  'staff-athletes-admin',
-  () => apiFetch<Athlete[]>('/api/athletes/admin').catch(() => [] as Athlete[])
+  'staff-athletes-wyniki',
+  async (): Promise<Athlete[]> => {
+    try {
+      return await apiFetch<Athlete[]>('/api/athletes/admin')
+    } catch {
+      return await apiFetch<Athlete[]>('/api/athletes').catch(() => [])
+    }
+  }
 )
+
+const athleteSelectOptions = computed(() => {
+  const list = (athletes.value || []) as Athlete[]
+  return [...list]
+    .filter(a => a.is_active !== false)
+    .sort((a, b) => a.full_name.localeCompare(b.full_name, 'pl'))
+})
 
 const nameById = computed(() => {
   const m = new Map<string, string>()
@@ -45,6 +58,68 @@ const form = reactive({
   status: 'Approved' as 'Pending' | 'Approved'
 })
 const saving = ref(false)
+
+const addModalOpen = ref(false)
+const savingAdd = ref(false)
+const formAdd = reactive({
+  athlete_id: '',
+  snatch: 0,
+  clean_and_jerk: 0,
+  total: 0,
+  date: ''
+})
+
+function defaultDateStr () {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function openAddModal () {
+  formAdd.athlete_id = athleteSelectOptions.value[0]?.id ?? ''
+  formAdd.snatch = 0
+  formAdd.clean_and_jerk = 0
+  formAdd.total = 0
+  formAdd.date = defaultDateStr()
+  addModalOpen.value = true
+}
+
+async function submitAdd () {
+  if (!formAdd.athlete_id) {
+    toast.add({ title: 'Wybierz zawodnika', color: 'warning' })
+    return
+  }
+  if (formAdd.snatch <= 0 || formAdd.clean_and_jerk <= 0) {
+    toast.add({ title: 'Podaj dodatnie ciężary (rwanie i podrzut)', color: 'warning' })
+    return
+  }
+  savingAdd.value = true
+  try {
+    await apiFetch<CompetitionResult>('/api/results', {
+      method: 'POST',
+      body: {
+        athlete_id: formAdd.athlete_id,
+        snatch: formAdd.snatch,
+        clean_and_jerk: formAdd.clean_and_jerk,
+        total: formAdd.snatch + formAdd.clean_and_jerk,
+        date: formAdd.date
+      }
+    })
+    toast.add({
+      title: 'Start zapisany',
+      description: 'Wpis kadry jest od razu zatwierdzany — bez kolejki oczekujących.',
+      color: 'success'
+    })
+    addModalOpen.value = false
+    await refresh()
+  } catch (e) {
+    toast.add({
+      title: 'Nie udało się dodać startu',
+      description: getApiErrorMessage(e),
+      color: 'error'
+    })
+  } finally {
+    savingAdd.value = false
+  }
+}
 
 function openEdit (r: CompetitionResult) {
   editing.value = r
@@ -106,10 +181,14 @@ async function removeRow (r: CompetitionResult) {
 watch([() => form.snatch, () => form.clean_and_jerk], () => {
   form.total = form.snatch + form.clean_and_jerk
 })
+
+watch([() => formAdd.snatch, () => formAdd.clean_and_jerk], () => {
+  formAdd.total = formAdd.snatch + formAdd.clean_and_jerk
+})
 </script>
 
 <template>
-  <UContainer class="py-10 md:py-14 animate-page-in">
+  <UContainer class="py-8 md:py-14 lg:py-16 animate-page-in">
     <div class="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div>
         <p class="text-xs font-bold uppercase tracking-wider text-primary">
@@ -119,12 +198,19 @@ watch([() => form.snatch, () => form.clean_and_jerk], () => {
           Wszystkie starty zawodników
         </h1>
         <p class="mt-2 max-w-2xl text-sm text-muted">
-          Pełna lista zgłoszeń (oczekujących i zatwierdzonych). Możesz poprawić ciężary, datę lub status oraz usunąć błędny wpis.
+          Pełna lista zgłoszeń (oczekujących i zatwierdzonych). Jako kadra możesz
+          <strong class="text-highlighted">dodać start od razu jako zatwierdzony</strong>
+          — bez kolejki akceptacji. Edycja i usuwanie jak dotąd.
         </p>
       </div>
-      <UButton icon="i-lucide-refresh-ccw" variant="soft" :loading="pending" @click="refresh()">
-        Odśwież
-      </UButton>
+      <div class="flex flex-wrap gap-2">
+        <UButton icon="i-lucide-plus-circle" @click="openAddModal">
+          Dodaj start (zatwierdzony)
+        </UButton>
+        <UButton icon="i-lucide-refresh-ccw" variant="soft" :loading="pending" @click="refresh()">
+          Odśwież
+        </UButton>
+      </div>
     </div>
 
     <UCard :ui="{ body: 'p-0 overflow-x-auto' }">
@@ -184,7 +270,7 @@ watch([() => form.snatch, () => form.clean_and_jerk], () => {
               </td>
               <td class="px-4 py-3">
                 <UBadge :color="r.status === 'Approved' ? 'success' : 'warning'" variant="subtle">
-                  {{ r.status }}
+                  {{ r.status === 'Approved' ? 'Zatwierdzony' : 'Oczekuje' }}
                 </UBadge>
               </td>
               <td class="px-4 py-3 text-right">
@@ -219,10 +305,10 @@ watch([() => form.snatch, () => form.clean_and_jerk], () => {
               class="slavia-select w-full"
             >
               <option value="Pending">
-                Pending
+                Oczekuje na akceptację
               </option>
               <option value="Approved">
-                Approved
+                Zatwierdzony
               </option>
             </select>
           </UFormField>
@@ -235,6 +321,53 @@ watch([() => form.snatch, () => form.clean_and_jerk], () => {
             </UButton>
             <UButton :loading="saving" @click="saveEdit">
               Zapisz
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="addModalOpen" title="Nowy start (kadra)" :ui="{ overlay: 'z-[190]', content: 'z-[200]' }">
+      <template #content>
+        <div class="space-y-4 p-4 sm:p-6">
+          <p class="text-sm text-muted">
+            Start zapisany przez trenera lub administratora trafia od razu jako
+            <strong class="text-highlighted">zatwierdzony</strong> i liczy się w rankingu oraz na karcie zawodnika.
+          </p>
+          <UFormField label="Zawodnik">
+            <select v-model="formAdd.athlete_id" class="slavia-select w-full">
+              <option disabled value="">
+                — wybierz —
+              </option>
+              <option
+                v-for="a in athleteSelectOptions"
+                :key="a.id"
+                :value="a.id"
+              >
+                {{ a.full_name }}
+              </option>
+            </select>
+          </UFormField>
+          <div class="grid grid-cols-2 gap-3">
+            <UFormField label="Rwanie (kg)">
+              <UInput v-model.number="formAdd.snatch" type="number" step="0.5" min="0" class="w-full" />
+            </UFormField>
+            <UFormField label="Podrzut (kg)">
+              <UInput v-model.number="formAdd.clean_and_jerk" type="number" step="0.5" min="0" class="w-full" />
+            </UFormField>
+          </div>
+          <UFormField label="Data startu">
+            <UInput v-model="formAdd.date" type="date" class="w-full" />
+          </UFormField>
+          <p class="text-xs text-muted">
+            Dwubój (auto): <strong>{{ formAdd.total }}</strong> kg
+          </p>
+          <div class="flex justify-end gap-2 pt-2">
+            <UButton color="neutral" variant="outline" @click="addModalOpen = false">
+              Anuluj
+            </UButton>
+            <UButton :loading="savingAdd" @click="submitAdd">
+              Zapisz start
             </UButton>
           </div>
         </div>

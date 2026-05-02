@@ -162,7 +162,7 @@ async function removeEntry (e: TrainingLogEntry) {
 </script>
 
 <template>
-  <UContainer class="py-10 md:py-14 animate-page-in">
+  <UContainer class="py-8 md:py-14 lg:py-16 animate-page-in">
     <div class="mb-8 flex flex-wrap items-start justify-between gap-4">
       <div>
         <p class="text-xs font-bold uppercase tracking-wider text-primary">

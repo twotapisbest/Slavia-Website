@@ -34,10 +34,9 @@ function publicBase () {
   return String(config.public.apiBase || '').replace(/\/$/, '')
 }
 
-// Import zewnętrznych zawodów
-const { competitions: externalCompetitions, loading: externalLoading, fetchAll: fetchExternalCompetitions } = useExternalCompetitions()
-
 const canManageEvents = computed(() => auth.isAdmin.value || auth.isTrainer.value || auth.isSuperAdmin.value)
+
+const syncLoading = ref(false)
 
 // Bez SSR: na hostingu Node często nie ma dostępu do API / złego apiBase — strona się wywalała u gości.
 const { data: competitions, refresh, pending: competitionsPending } = await useAsyncData(
@@ -80,7 +79,6 @@ function monthFirstMsFromDate (d: Date | number | string) {
 const monthFirstMs = ref(monthFirstMsFromDate(new Date()))
 
 onMounted(() => {
-  fetchExternalCompetitions()
   refresh()
   if (!Number.isFinite(monthFirstMs.value)) {
     monthFirstMs.value = monthFirstMsFromDate(new Date())
@@ -141,18 +139,36 @@ const getEventsForDay = (date: Date) => {
   // Lokalne zawody z bazy danych
   const comps = (competitions.value || []).filter((e: any) => typeof e?.date === 'string' && e.date.startsWith(dateStr)).map((e: any) => ({
     ...e,
-    type: 'competition'
+    type: e.external_source ? 'external' : 'competition',
+    external_source: e.external_source || undefined
   }))
-  
-  // Zewnętrzne zawody z PZPC/SLPC
-  const external = externalCompetitions.value
-    .filter((e: any) => typeof e?.date === 'string' && e.date.startsWith(dateStr))
-    .map((e: any) => ({
-      ...e,
-      type: 'external'
-    }))
-  
-  return [...getTrainingsForDay(date), ...comps, ...external]
+
+  return [...getTrainingsForDay(date), ...comps]
+}
+
+async function syncExternalCalendars () {
+  if (!canManageEvents.value) return
+  syncLoading.value = true
+  try {
+    const res = await apiFetch<{ pzpc_imported: number, pc_imported: number, upserts: number }>(
+      '/api/competitions/sync-external',
+      { method: 'POST' }
+    )
+    await refresh()
+    toast.add({
+      title: 'Zsynchronizowano zewnętrzne kalendarze',
+      description: `PZPC: ${res.pzpc_imported} pozycji, PodnoszenieCiezarow.pl: ${res.pc_imported} (łącznie ${res.upserts} zapisów w bazie).`,
+      color: 'success'
+    })
+  } catch (e) {
+    toast.add({
+      title: 'Synchronizacja nie powiodła się',
+      description: getApiErrorMessage(e),
+      color: 'error'
+    })
+  } finally {
+    syncLoading.value = false
+  }
 }
 
 /** Kontekst otwartego wpisu (banner w modalu — external/training vs gość). */
@@ -207,9 +223,14 @@ async function openModal (date?: Date, event?: any) {
     formState.description = event.description || ''
     formState.category = event.category || (event.type === 'training' ? 'training' : 'club_event')
     formState.status = event.status || 'scheduled'
-    if (event.type === 'external') {
-      editingId.value = null
-      readOnlyEvent.value = true
+    if (event.external_source || event.type === 'external') {
+      editingId.value = event.id
+      readOnlyEvent.value = !canManageEvents.value
+      if (canManageEvents.value && event.id) {
+        await loadAthletesPickList()
+        const parts = await apiFetch<Array<{ athlete_id: string }>>(`/api/competitions/${event.id}/participants`).catch(() => [])
+        participantIds.value = parts.map(p => p.athlete_id)
+      }
     } else if (event.type === 'training') {
       editingId.value = `training-${event.date}`
       readOnlyEvent.value = true
@@ -245,7 +266,8 @@ async function saveEvent() {
     return
   }
 
-  if (!formState.title || !formState.date || !formState.location) {
+  const externalSrc = bannerEvent.value?.external_source
+  if (!externalSrc && (!formState.title || !formState.date || !formState.location)) {
     toast.add({ title: 'Uzupełnij wymagane pola', color: 'error' })
     return
   }
@@ -253,8 +275,21 @@ async function saveEvent() {
   try {
     let competitionId = editingId.value as string | null
     if (editingId.value) {
-      await apiFetch(`/api/competitions/${editingId.value}`, { method: 'PATCH', body: formState })
-      toast.add({ title: 'Zaktualizowano', color: 'success' })
+      await apiFetch(`/api/competitions/${editingId.value}`, {
+        method: 'PATCH',
+        body: {
+          title: formState.title,
+          date: formState.date,
+          location: formState.location,
+          description: formState.description,
+          category: formState.category,
+          status: formState.status
+        }
+      })
+      toast.add({
+        title: externalSrc ? 'Zapisano status i przypisania' : 'Zaktualizowano',
+        color: 'success'
+      })
     } else {
       const created = await apiFetch<{ id: string }>('/api/competitions', { method: 'POST', body: formState })
       competitionId = created?.id ?? null
@@ -294,6 +329,16 @@ async function deleteEvent(id: string) {
     return
   }
 
+  const row = (competitions.value || []).find((c: any) => c.id === id)
+  if (row?.external_source) {
+    toast.add({
+      title: 'Nie można usunąć',
+      description: 'Zawody z importu są aktualizowane przyciskiem synchronizacji.',
+      color: 'warning'
+    })
+    return
+  }
+
   if (!confirm('Usunąć?')) return
   try {
     await apiFetch(`/api/competitions/${id}`, { method: 'DELETE' })
@@ -321,36 +366,37 @@ function handleDayClick(day: Date) {
 </script>
 
 <template>
-  <UContainer class="py-10">
-    <div class="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
-      <div>
-        <h1 class="text-4xl font-black tracking-tight text-highlighted uppercase italic">
+  <UContainer class="py-6 sm:py-10 lg:py-14">
+    <div class="mb-6 flex flex-col gap-5 sm:mb-8 md:flex-row md:items-center md:justify-between md:gap-6 lg:mb-10">
+      <div class="min-w-0 text-center md:text-left">
+        <h1 class="text-2xl font-black uppercase italic tracking-tight text-highlighted sm:text-3xl md:text-4xl lg:text-5xl">
           Kalendarz <span class="text-primary italic">Slavia</span>
         </h1>
-        <p class="text-muted mt-1 font-medium">Harmonogram treningów i startów klubowych.</p>
+        <p class="mt-1 font-medium text-muted">Harmonogram treningów i startów klubowych.</p>
       </div>
 
-      <div class="flex items-center gap-2 bg-muted/20 p-1.5 rounded-xl border border-default">
+      <div class="flex w-full items-center justify-center gap-2 rounded-xl border border-default bg-muted/20 p-1.5 md:w-auto">
         <UButton icon="i-lucide-chevron-left" variant="ghost" color="neutral" @click="prevMonth" />
-        <UButton variant="ghost" color="neutral" class="min-w-[140px] font-bold text-highlighted" @click="goToToday">
+        <UButton variant="ghost" color="neutral" class="min-w-0 flex-1 truncate px-2 font-bold text-highlighted sm:min-w-[140px] sm:flex-none" @click="goToToday">
           {{ format(currentDate, 'MMMM yyyy', { locale: pl }) }}
         </UButton>
         <UButton icon="i-lucide-chevron-right" variant="ghost" color="neutral" @click="nextMonth" />
       </div>
 
-      <div class="flex items-center gap-2">
-        <UButton 
-          v-if="canManageEvents" 
-          icon="i-lucide-refresh-ccw" 
-          size="lg" 
-          color="neutral" 
+      <div class="flex w-full flex-col gap-2 sm:flex-row sm:justify-end md:w-auto md:flex-none">
+        <UButton
+          v-if="canManageEvents"
+          icon="i-lucide-download-cloud"
+          size="lg"
+          color="neutral"
           variant="ghost"
-          :loading="externalLoading"
-          @click="fetchExternalCompetitions().then(() => toast.add({ title: 'Zewnętrzne zawody załadowane', color: 'success' }))"
+          class="min-h-11 w-full justify-center text-sm sm:w-auto sm:text-base"
+          :loading="syncLoading"
+          @click="syncExternalCalendars"
         >
-          Importuj z PZPC
+          Synchronizuj PZPC i PC
         </UButton>
-        <UButton v-if="canManageEvents" icon="i-lucide-plus" size="lg" @click="openModal()">
+        <UButton v-if="canManageEvents" icon="i-lucide-plus" size="lg" class="min-h-11 w-full justify-center sm:w-auto" @click="openModal()">
           Dodaj wydarzenie
         </UButton>
       </div>
@@ -361,24 +407,24 @@ function handleDayClick(day: Date) {
       class="mb-4 flex items-center gap-2 rounded-xl border border-dashed border-default bg-muted/20 px-4 py-3 text-sm text-muted"
     >
       <UIcon name="i-lucide-loader-2" class="size-4 shrink-0 animate-spin" />
-      Ładowanie wydarzeń z serwera… (treningi i import PZPC są już widoczne)
+      Ładowanie wydarzeń z serwera…
     </div>
 
     <!-- Calendar Grid -->
-    <div class="border border-default rounded-2xl overflow-hidden bg-card shadow-2xl">
+    <div class="overflow-x-auto rounded-2xl border border-default bg-card shadow-2xl sm:overflow-visible">
       <!-- Header -->
-      <div class="grid grid-cols-7 border-b border-default bg-muted/30">
-        <div v-for="day in weekDays" :key="day" class="py-4 text-center text-xs font-black uppercase tracking-widest text-muted">
+      <div class="grid min-w-[520px] grid-cols-7 border-b border-default bg-muted/30 sm:min-w-0">
+        <div v-for="day in weekDays" :key="day" class="py-2 text-center text-[10px] font-black uppercase tracking-wide text-muted sm:py-4 sm:text-xs sm:tracking-widest">
           {{ day }}
         </div>
       </div>
 
       <!-- Days -->
-      <div class="grid grid-cols-7">
+      <div class="grid min-w-[520px] grid-cols-7 sm:min-w-0">
         <div 
           v-for="day in days" 
           :key="day.toString()" 
-          class="min-h-[140px] border-r border-b border-default last:border-r-0 p-2 transition-colors hover:bg-primary/5 group relative"
+          class="group relative min-h-[92px] border-b border-r border-default p-1.5 transition-colors last:border-r-0 hover:bg-primary/5 sm:min-h-[120px] sm:p-2 md:min-h-[140px]"
           :class="[
             !isSameMonth(day, monthStart) ? 'bg-muted/10 opacity-30' : '',
             isToday(day) ? 'bg-primary/5' : ''
@@ -402,7 +448,7 @@ function handleDayClick(day: Date) {
             />
           </div>
 
-          <div class="space-y-1 overflow-y-auto max-h-[100px] scrollbar-hide">
+          <div class="scrollbar-hide max-h-[76px] space-y-1 overflow-y-auto sm:max-h-[100px]">
             <div 
               v-for="event in getEventsForDay(day)" 
               :key="event.id"
@@ -425,7 +471,7 @@ function handleDayClick(day: Date) {
     </div>
 
     <!-- Legenda -->
-    <div class="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 p-5 rounded-2xl bg-muted/10 border border-default">
+    <div class="mt-6 grid grid-cols-1 gap-4 rounded-2xl border border-default bg-muted/10 p-4 sm:mt-8 sm:grid-cols-2 sm:gap-3 sm:p-5 lg:grid-cols-4">
       <div class="flex items-center gap-3">
         <div class="w-3 h-7 rounded-full bg-blue-500/40 border border-blue-500/50 shrink-0"></div>
         <div>
@@ -454,6 +500,13 @@ function handleDayClick(day: Date) {
           <p class="text-[10px] text-muted">obóz, zgrupowanie</p>
         </div>
       </div>
+      <div class="flex items-center gap-3 sm:col-span-2">
+        <div class="w-3 h-7 rounded-full bg-indigo-500/35 border border-indigo-500/50 shrink-0"></div>
+        <div>
+          <p class="text-xs font-black text-indigo-300 uppercase">Import zewnętrzny</p>
+          <p class="text-[10px] text-muted">PZPC lub PodnoszenieCiezarow.pl — synchronizacja do bazy</p>
+        </div>
+      </div>
     </div>
 
     <!-- Modal -->
@@ -465,9 +518,9 @@ function handleDayClick(day: Date) {
       <template #content>
         <div class="p-6 space-y-4">
           <div v-if="readOnlyEvent" class="rounded-xl border border-amber-400/40 bg-amber-500/10 p-3 text-sm text-amber-900 dark:text-amber-100">
-            <template v-if="bannerEvent?.type === 'external'">
-              <span v-if="canManageEvents">Import z kalendarza PZPC/SLPC — podgląd tylko do odczytu. Wydarzenia klubu nadal możesz dodawać i edytować przez wpisy z bazy.</span>
-              <span v-else>Podgląd importowanych zawodów (PZPC/SLPC). Wydarzenia z bazy klubu mogą dodawać i edytować trener lub administrator — zaloguj się na takie konto.</span>
+            <template v-if="bannerEvent?.external_source || bannerEvent?.type === 'external'">
+              <span v-if="canManageEvents">Zawody z kalendarza zewnętrznego (PZPC lub PodnoszenieCiezarow.pl) — nazwa i termin są aktualizowane przy synchronizacji. Możesz zmienić status oraz przypisać zawodników klubu.</span>
+              <span v-else>Importer z krajowych kalendarzy — szczegóły tylko do odczytu. Przypisania widzą zawodnicy po zalogowaniu.</span>
             </template>
             <template v-else-if="bannerEvent?.type === 'training'">
               <span v-if="canManageEvents">Stałe godziny treningów w grafiku (Pn, Śr, Pt). Te pozycje nie są edytowalne tutaj — dodawaj i zmieniaj osobne wydarzenia z bazy klubu.</span>
@@ -489,8 +542,8 @@ function handleDayClick(day: Date) {
                     : cat.value === 'league' ? 'bg-amber-500/20 border-amber-500 text-amber-400'
                     : 'bg-teal-500/20 border-teal-500 text-teal-400'
                   : 'border-default bg-muted/10 text-muted hover:bg-muted/30'"
-                @click="!readOnlyEvent && (formState.category = cat.value)"
-                :disabled="readOnlyEvent"
+                @click="!readOnlyEvent && !bannerEvent?.external_source && (formState.category = cat.value)"
+                :disabled="readOnlyEvent || !!bannerEvent?.external_source"
               >
                 {{ cat.label }}
               </button>
@@ -498,28 +551,28 @@ function handleDayClick(day: Date) {
           </UFormField>
 
           <UFormField label="Nazwa" required>
-            <UInput v-model="formState.title" placeholder="Mistrzostwa Polski..." class="w-full" :disabled="readOnlyEvent" />
+            <UInput v-model="formState.title" placeholder="Mistrzostwa Polski..." class="w-full" :disabled="readOnlyEvent || !!bannerEvent?.external_source" />
           </UFormField>
           <div class="grid grid-cols-2 gap-4">
             <UFormField label="Data" required>
-              <UInput v-model="formState.date" type="date" class="w-full" :disabled="readOnlyEvent" />
+              <UInput v-model="formState.date" type="date" class="w-full" :disabled="readOnlyEvent || !!bannerEvent?.external_source" />
             </UFormField>
             <UFormField label="Lokalizacja" required>
-              <UInput v-model="formState.location" placeholder="Ruda Śląska" class="w-full" :disabled="readOnlyEvent" />
+              <UInput v-model="formState.location" placeholder="Ruda Śląska" class="w-full" :disabled="readOnlyEvent || !!bannerEvent?.external_source" />
             </UFormField>
           </div>
           <UFormField label="Status">
             <select
               v-model="formState.status"
               class="slavia-select w-full"
-              :disabled="readOnlyEvent"
+              :disabled="readOnlyEvent && !bannerEvent?.external_source"
             >
               <option value="scheduled">Zaplanowane</option>
               <option value="cancelled">Odwołane</option>
               <option value="moved">Przesunięte</option>
             </select>
           </UFormField>
-          <div v-if="canManageEvents && !readOnlyEvent && athletesPickList.length" class="rounded-xl border border-default p-3 space-y-2">
+          <div v-if="canManageEvents && !readOnlyEvent && athletesPickList.length && (editingId == null || !String(editingId).startsWith('training-'))" class="rounded-xl border border-default p-3 space-y-2">
             <p class="text-xs font-bold text-muted uppercase tracking-wide">
               Przypisani zawodnicy (startują razem)
             </p>
@@ -540,11 +593,21 @@ function handleDayClick(day: Date) {
             </div>
           </div>
           <UFormField label="Opis">
-            <UTextarea v-model="formState.description" placeholder="Szczegóły..." :rows="3" class="w-full" :disabled="readOnlyEvent" />
+            <UTextarea v-model="formState.description" placeholder="Szczegóły..." :rows="3" class="w-full" :disabled="readOnlyEvent || !!bannerEvent?.external_source" />
           </UFormField>
+          <div v-if="bannerEvent?.external_url" class="text-sm">
+            <a
+              :href="bannerEvent.external_url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="font-medium text-primary underline underline-offset-2 hover:no-underline"
+            >
+              Otwórz stronę źródła zawodów
+            </a>
+          </div>
           <div class="flex justify-end gap-3 mt-6">
             <UButton
-              v-if="editingId && canManageEvents && !readOnlyEvent && typeof editingId === 'string' && !editingId.startsWith('training-')"
+              v-if="editingId && canManageEvents && !readOnlyEvent && typeof editingId === 'string' && !editingId.startsWith('training-') && !bannerEvent?.external_source"
               color="error"
               variant="ghost"
               icon="i-lucide-trash-2"
@@ -554,7 +617,13 @@ function handleDayClick(day: Date) {
             </UButton>
             <div class="flex-1"></div>
             <UButton color="neutral" variant="soft" @click="isModalOpen = false">Anuluj</UButton>
-            <UButton :loading="isSubmitting" :disabled="readOnlyEvent" @click="saveEvent">Zapisz</UButton>
+            <UButton
+              :loading="isSubmitting"
+              :disabled="readOnlyEvent && !bannerEvent?.external_source"
+              @click="saveEvent"
+            >
+              Zapisz
+            </UButton>
           </div>
         </div>
       </template>

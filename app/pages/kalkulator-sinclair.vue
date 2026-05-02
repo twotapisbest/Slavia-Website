@@ -57,12 +57,12 @@ useSeoMeta({
 
 <template>
   <div>
-    <UContainer class="py-10 md:py-14">
+    <UContainer class="py-8 md:py-14 lg:py-16">
       <div class="mx-auto max-w-3xl text-center">
         <p class="text-sm font-medium uppercase tracking-wider text-primary">
           Narzędzie
         </p>
-        <h1 class="mt-2 text-3xl font-bold tracking-tight text-highlighted sm:text-4xl">
+        <h1 class="mt-2 text-3xl font-bold tracking-tight text-highlighted sm:text-4xl lg:text-5xl">
           Kalkulator Sinclair
         </h1>
         <p class="mx-auto mt-4 max-w-2xl text-lg text-muted">

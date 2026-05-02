@@ -143,26 +143,26 @@ const filteredRankings = computed(() => {
 </script>
 
 <template>
-  <UContainer class="py-10 md:py-16">
+  <UContainer class="py-8 md:py-16 lg:py-20">
     <!-- Header Section -->
-    <div class="mb-16 text-center">
-      <div class="flex items-center justify-center gap-3 text-sm font-bold uppercase tracking-[0.3em] text-primary">
-        <UIcon name="i-lucide-trophy" class="size-6" />
+    <div class="mb-10 px-1 text-center md:mb-16">
+      <div class="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.25em] text-primary sm:gap-3 sm:text-sm sm:tracking-[0.3em]">
+        <UIcon name="i-lucide-trophy" class="size-5 shrink-0 sm:size-6" />
         Kadra i Ranking
       </div>
-      <h1 class="mt-6 text-5xl font-black tracking-tighter text-highlighted sm:text-7xl uppercase italic">
+      <h1 class="mt-4 text-4xl font-black uppercase italic tracking-tighter text-highlighted sm:mt-6 sm:text-6xl md:text-7xl lg:text-8xl lg:tracking-tighter">
         Elita <span class="text-primary">Slavii</span>
       </h1>
-      <p class="mx-auto mt-6 max-w-2xl text-xl font-medium text-muted/80 leading-relaxed">
+      <p class="mx-auto mt-4 max-w-2xl px-2 text-base font-medium leading-relaxed text-muted/80 sm:mt-6 sm:text-xl">
         Poznaj naszych reprezentantów. Ranking i wykresy na kartach bazują wyłącznie na zatwierdzonych zgłoszeniach wyników
         (po weryfikacji przez trenera lub administrację).
       </p>
     </div>
 
     <!-- Podium Section -->
-    <div v-if="podium.length > 0" class="mb-24 pt-12 relative">
+    <div v-if="podium.length > 0" class="relative mb-16 pt-8 sm:mb-24 sm:pt-12">
       <div class="absolute inset-0 -z-10 bg-linear-to-b from-primary/5 to-transparent blur-3xl opacity-50" />
-      <div class="grid grid-cols-1 gap-10 md:grid-cols-3 items-end max-w-4xl mx-auto px-4">
+      <div class="mx-auto grid max-w-4xl grid-cols-1 items-end gap-8 px-2 sm:gap-10 sm:px-4 md:grid-cols-3">
         <!-- 2nd Place -->
         <div v-if="podium[1]" class="order-2 md:order-1 group">
           <div class="flex flex-col items-center">
@@ -181,7 +181,7 @@ const filteredRankings = computed(() => {
         </div>
 
         <!-- 1st Place -->
-        <div v-if="podium[0]" class="order-1 md:order-2 group -mt-16">
+        <div v-if="podium[0]" class="order-1 md:order-2 group -mt-6 md:-mt-16">
           <div class="flex flex-col items-center">
             <div class="relative mb-6">
               <div class="absolute -top-12 left-1/2 -translate-x-1/2 text-yellow-500 animate-pulse">
@@ -221,25 +221,25 @@ const filteredRankings = computed(() => {
 
     <!-- Ranking Table Section -->
     <div class="mb-32">
-      <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-        <div>
-          <h2 class="text-3xl font-black text-highlighted uppercase italic tracking-tight flex items-center gap-4">
-            <UIcon name="i-lucide-list-ordered" class="text-primary size-8" />
+      <div class="mb-8 flex flex-col justify-between gap-6 sm:mb-12 md:flex-row md:items-end lg:mb-14">
+        <div class="min-w-0">
+          <h2 class="flex items-center gap-3 text-2xl font-black uppercase italic tracking-tight text-highlighted sm:gap-4 sm:text-3xl lg:text-4xl">
+            <UIcon name="i-lucide-list-ordered" class="size-7 shrink-0 text-primary sm:size-8" />
             Tabela Rankingowa
           </h2>
-          <p class="mt-2 text-muted font-medium">
+          <p class="mt-2 font-medium text-muted">
             Zestawienie Sinclair — uwzględniani są tylko zawodnicy z co najmniej jednym zatwierdzonym wynikiem.
           </p>
         </div>
         <div
-          class="flex flex-wrap gap-2 p-1.5 rounded-2xl bg-muted/30 border border-default w-full md:w-auto"
+          class="flex w-full flex-wrap gap-2 rounded-2xl border border-default bg-muted/30 p-1.5 md:inline-flex md:w-auto md:flex-nowrap lg:p-2"
           role="tablist"
         >
           <UButton
             v-for="c in categories"
             :key="c.value"
             size="sm"
-            class="min-h-10"
+            class="min-h-11 min-w-0 flex-1 sm:min-h-10 sm:flex-none md:shrink-0"
             :variant="selectedCategory === c.value ? 'solid' : 'ghost'"
             :color="selectedCategory === c.value ? 'primary' : 'neutral'"
             @click="selectedCategory = c.value"
@@ -266,11 +266,11 @@ const filteredRankings = computed(() => {
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="border-b border-white/10 bg-white/5">
-                <th class="px-6 py-5 text-xs font-black uppercase tracking-widest text-muted">Msc.</th>
-                <th class="px-6 py-5 text-xs font-black uppercase tracking-widest text-muted">Zawodnik</th>
-                <th class="px-6 py-5 text-xs font-black uppercase tracking-widest text-muted text-right">Waga</th>
-                <th class="px-6 py-5 text-xs font-black uppercase tracking-widest text-muted text-right">Dwubój</th>
-                <th class="px-6 py-5 text-xs font-black uppercase tracking-widest text-muted text-right">Sinclair</th>
+                <th class="px-3 py-3 text-[10px] font-black uppercase tracking-wider text-muted sm:px-6 sm:py-5 sm:text-xs sm:tracking-widest lg:px-8">Msc.</th>
+                <th class="px-3 py-3 text-[10px] font-black uppercase tracking-wider text-muted sm:px-6 sm:py-5 sm:text-xs sm:tracking-widest lg:px-8">Zawodnik</th>
+                <th class="hidden px-3 py-3 text-right text-[10px] font-black uppercase tracking-wider text-muted md:table-cell md:px-6 md:py-5 md:text-xs md:tracking-widest lg:px-8">Waga</th>
+                <th class="px-3 py-3 text-right text-[10px] font-black uppercase tracking-wider text-muted sm:px-6 sm:py-5 sm:text-xs sm:tracking-widest lg:px-8">Dwubój</th>
+                <th class="px-3 py-3 text-right text-[10px] font-black uppercase tracking-wider text-muted sm:px-6 sm:py-5 sm:text-xs sm:tracking-widest lg:px-8">Sinclair</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-white/5">
@@ -279,25 +279,28 @@ const filteredRankings = computed(() => {
                 :key="p.name"
                 class="group transition-all hover:bg-primary/10"
               >
-                <td class="px-6 py-6">
-                  <span class="font-mono font-black text-lg text-muted/50 group-hover:text-primary transition-colors">
+                <td class="px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+                  <span class="font-mono text-base font-black text-muted/50 transition-colors group-hover:text-primary sm:text-lg">
                     {{ (idx + 1).toString().padStart(2, '0') }}
                   </span>
                 </td>
-                <td class="px-6 py-6">
-                  <div class="flex items-center gap-4">
-                    <UAvatar :src="p.photo" :alt="p.name" size="sm" class="ring-1 ring-white/10" />
-                    <span class="font-bold text-highlighted">{{ p.name }}</span>
+                <td class="min-w-0 px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+                  <div class="flex min-w-0 items-center gap-2 sm:gap-4">
+                    <UAvatar :src="p.photo" :alt="p.name" size="sm" class="shrink-0 ring-1 ring-white/10" />
+                    <span class="truncate font-bold text-highlighted">{{ p.name }}</span>
                   </div>
+                  <p class="mt-0.5 font-mono text-[11px] text-muted md:hidden">
+                    {{ p.weightCategory }} kg
+                  </p>
                 </td>
-                <td class="px-6 py-6 text-right font-mono text-muted">
+                <td class="hidden px-3 py-4 text-right font-mono text-muted md:table-cell md:px-6 md:py-6 lg:px-8">
                   {{ p.weightCategory }} kg
                 </td>
-                <td class="px-6 py-6 text-right font-mono font-bold text-highlighted">
+                <td class="px-3 py-4 text-right font-mono text-sm font-bold text-highlighted sm:px-6 sm:py-6 sm:text-base lg:px-8">
                   {{ p.total }} kg
                 </td>
-                <td class="px-6 py-6 text-right">
-                  <span class="inline-block px-4 py-1 rounded-full bg-primary/20 text-primary font-mono font-black">
+                <td class="px-3 py-4 text-right sm:px-6 sm:py-6 lg:px-8">
+                  <span class="inline-block rounded-full bg-primary/20 px-2 py-1 font-mono text-sm font-black text-primary sm:px-4">
                     {{ p.sinclair }}
                   </span>
                 </td>
@@ -310,11 +313,11 @@ const filteredRankings = computed(() => {
 
     <!-- Full Athlete List Section -->
     <div v-if="mappedPlayers.length > 0" class="mb-20">
-      <h2 class="mb-12 text-3xl font-black text-highlighted uppercase italic tracking-tight flex items-center gap-4">
-        <UIcon name="i-lucide-users" class="text-primary size-8" />
+      <h2 class="mb-8 flex items-center gap-3 text-2xl font-black uppercase italic tracking-tight text-highlighted sm:mb-12 sm:gap-4 sm:text-3xl lg:text-4xl">
+        <UIcon name="i-lucide-users" class="size-7 shrink-0 text-primary sm:size-8" />
         Karty Zawodników
       </h2>
-      <div class="grid grid-cols-1 gap-10 lg:grid-cols-2">
+      <div class="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12 xl:gap-14">
         <AtheleteCard 
           v-for="player in mappedPlayers" 
           :key="player.name"

@@ -5,12 +5,15 @@ export type CalendarChipEvent = {
   type?: string
   category?: string | null
   status?: string | null
+  external_source?: string | null
 }
 
 export function useCalendarEventChips () {
   function getEventClasses (event: CalendarChipEvent) {
     if (event.type === 'training' || event.category === 'training')
       return 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+    if (event.external_source)
+      return 'bg-indigo-500/12 border-indigo-500/35 text-indigo-300'
     const cat = event.category || 'club_event'
     if (event.status === 'cancelled') return 'bg-gray-500/10 border-gray-500/40 text-gray-400 line-through'
     if (event.status === 'moved') return 'bg-amber-500/15 border-amber-500/40 text-amber-400 font-bold'
@@ -21,6 +24,7 @@ export function useCalendarEventChips () {
 
   function getEventIcon (event: CalendarChipEvent) {
     if (event.type === 'training') return 'i-lucide-dumbbell'
+    if (event.external_source) return 'i-lucide-globe'
     const cat = event.category || 'club_event'
     if (cat === 'championship') return 'i-lucide-trophy'
     if (cat === 'league') return 'i-lucide-medal'

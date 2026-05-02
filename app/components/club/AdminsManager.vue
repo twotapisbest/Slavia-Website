@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { apiRoutes, urlAdminAccount, urlSuperadminAdmin } from '~/config/api'
-import type { AdminAccount } from '~/types/models'
+import type { AdminAccount, GroupedAdminAccounts } from '~/types/models'
 
 const api = useApi()
 const auth = useAuth()
@@ -9,8 +9,24 @@ const toast = useToast()
 const canSuper = computed(() => auth.isSuperAdmin.value)
 const canEditAccount = computed(() => auth.isAdmin.value)
 
-const admins = ref<AdminAccount[]>([])
+const staffAdmins = ref<AdminAccount[]>([])
+const clubMembers = ref<AdminAccount[]>([])
 const loading = ref(true)
+
+const accountSections = computed(() => [
+  {
+    key: 'staff' as const,
+    title: 'Administratorzy i admin-trenerzy',
+    subtitle: 'Konta Admin, SuperAdmin oraz TrainerAdmin — dostęp do panelu administracyjnego.',
+    rows: staffAdmins.value
+  },
+  {
+    key: 'members' as const,
+    title: 'Trenerzy i zawodnicy',
+    subtitle: 'Trenerzy bez roli admin oraz zawodnicy z kontem użytkownika.',
+    rows: clubMembers.value
+  }
+])
 
 const modalOpen = ref(false)
 const saving = ref(false)
@@ -119,7 +135,9 @@ async function changeRole (adminId: string, newRole: string) {
 async function loadAdmins () {
   loading.value = true
   try {
-    admins.value = await api<AdminAccount[]>(apiRoutes.superadmin.admins)
+    const data = await api<GroupedAdminAccounts>(apiRoutes.superadmin.adminsGrouped)
+    staffAdmins.value = data.staff_admins ?? []
+    clubMembers.value = data.club_members ?? []
   } catch (e) {
     toast.add({
       title: 'Nie udało się wczytać kont',
@@ -201,8 +219,8 @@ onMounted(() => {
   <div class="space-y-4">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <p class="text-sm text-muted max-w-2xl">
-        <span v-if="canSuper">Superadministrator: pełne zarządzanie rolami (w tym SuperAdmin i zawodnik), tworzenie i usuwanie kont — bez usuwania ani zmiany roli własnego konta z tej tabeli.</span>
-        <span v-else>Administrator: edycja loginu, e-maila i hasła kont kadry. Zmiany ról wykonuje superadministrator.</span>
+        <span v-if="canSuper">Superadministrator: dwie listy kont — zarządzanie rolami (w tym SuperAdmin i zawodnik), tworzenie i usuwanie kont. Nie możesz usunąć ani zmienić roli własnego konta z tej strony.</span>
+        <span v-else>Administrator: edycja loginu, e-maila i hasła (wg przypisanych kont). Zmiany ról wykonuje superadministrator.</span>
       </p>
       <UButton
         v-if="canSuper"
@@ -213,119 +231,137 @@ onMounted(() => {
       </UButton>
     </div>
 
-    <UCard :ui="{ body: 'p-0 overflow-visible' }">
-      <div class="overflow-x-auto overflow-y-visible">
-        <table class="w-full min-w-[640px] text-sm">
-          <thead class="border-b border-default bg-muted/30">
-            <tr>
-              <th class="px-4 py-3 text-left font-semibold text-muted">
-                Użytkownik
-              </th>
-              <th class="px-4 py-3 text-left font-semibold text-muted">
-                Rola
-              </th>
-              <th class="px-4 py-3 text-right font-semibold text-muted">
-                Akcje
-              </th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-default">
-            <tr v-if="loading">
-              <td
-                colspan="3"
-                class="px-4 py-10 text-center text-muted"
+    <div
+      v-if="loading"
+      class="flex justify-center py-16 text-muted"
+    >
+      <UIcon
+        name="i-lucide-loader-2"
+        class="size-8 animate-spin"
+      />
+    </div>
+    <div
+      v-for="section in accountSections"
+      v-else
+      :key="section.key"
+      class="space-y-2"
+    >
+      <div class="mt-8 first:mt-0">
+        <h2 class="text-lg font-semibold text-highlighted">
+          {{ section.title }}
+        </h2>
+        <p class="text-sm text-muted mt-1 max-w-3xl">
+          {{ section.subtitle }}
+        </p>
+      </div>
+      <UCard :ui="{ body: 'p-0 overflow-visible' }">
+        <div class="overflow-x-auto overflow-y-visible">
+          <table class="w-full min-w-[640px] text-sm">
+            <thead class="border-b border-default bg-muted/30">
+              <tr>
+                <th class="px-4 py-3 text-left font-semibold text-muted">
+                  Użytkownik
+                </th>
+                <th class="px-4 py-3 text-left font-semibold text-muted">
+                  Rola
+                </th>
+                <th class="px-4 py-3 text-right font-semibold text-muted">
+                  Akcje
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-default">
+              <tr
+                v-for="a in section.rows"
+                :key="a.id"
+                class="hover:bg-muted/20"
               >
-                <UIcon
-                  name="i-lucide-loader-2"
-                  class="size-6 animate-spin"
-                />
-              </td>
-            </tr>
-            <tr
-              v-for="a in admins"
-              v-else
-              :key="a.id"
-              class="hover:bg-muted/20"
-            >
-              <td class="px-4 py-3">
-                <p class="font-medium">
-                  {{ a.username }}
-                </p>
-                <p v-if="a.email" class="text-xs text-muted mt-0.5">
-                  {{ a.email }}
-                </p>
-              </td>
-              <td class="relative z-20 px-4 py-3 align-top">
-                <div v-if="canEditRoleFor(a) && roleEditId === a.id" class="relative z-30 flex flex-wrap items-center gap-2">
-                  <select
-                    v-model="roleEditValue"
-                    class="slavia-select w-40 min-w-[10rem]"
-                  >
-                    <option v-for="r in roles" :key="r" :value="r">
-                      {{ r }}
-                    </option>
-                  </select>
-                  <UButton size="xs" @click="changeRole(a.id, roleEditValue)">
-                    Zmień
-                  </UButton>
-                  <UButton size="xs" color="neutral" variant="ghost" @click="roleEditId = null">
-                    Anuluj
-                  </UButton>
-                </div>
-                <div v-else class="flex flex-col gap-1">
-                  <div class="flex items-center gap-2">
-                    <UBadge
-                      color="primary"
-                      variant="subtle"
+                <td class="px-4 py-3">
+                  <p class="font-medium">
+                    {{ a.username }}
+                  </p>
+                  <p v-if="a.email" class="text-xs text-muted mt-0.5">
+                    {{ a.email }}
+                  </p>
+                </td>
+                <td class="relative z-20 px-4 py-3 align-top">
+                  <div v-if="canEditRoleFor(a) && roleEditId === a.id" class="relative z-30 flex flex-wrap items-center gap-2">
+                    <select
+                      v-model="roleEditValue"
+                      class="slavia-select w-40 min-w-[10rem]"
                     >
-                      {{ a.role }}
-                    </UBadge>
+                      <option v-for="r in roles" :key="r" :value="r">
+                        {{ r }}
+                      </option>
+                    </select>
+                    <UButton size="xs" @click="changeRole(a.id, roleEditValue)">
+                      Zmień
+                    </UButton>
+                    <UButton size="xs" color="neutral" variant="ghost" @click="roleEditId = null">
+                      Anuluj
+                    </UButton>
+                  </div>
+                  <div v-else class="flex flex-col gap-1">
+                    <div class="flex items-center gap-2">
+                      <UBadge
+                        color="primary"
+                        variant="subtle"
+                      >
+                        {{ a.role }}
+                      </UBadge>
+                      <UButton
+                        v-if="canEditRoleFor(a)"
+                        size="xs"
+                        color="neutral"
+                        variant="ghost"
+                        icon="i-lucide-edit-2"
+                        @click="startRoleEdit(a)"
+                      />
+                    </div>
+                    <p v-if="a.role === 'Athlete'" class="text-[11px] text-muted leading-snug max-w-xs">
+                      Konto zawodnika — profil sportowy edytujesz w bazie zawodników.
+                    </p>
+                    <p v-else-if="a.role === 'Trainer'" class="text-[11px] text-muted leading-snug max-w-xs">
+                      Trener — dostęp do panelu trenera bez uprawnień administratora.
+                    </p>
+                    <p v-else-if="a.role === 'TrainerAdmin'" class="text-[11px] text-muted leading-snug max-w-xs">
+                      Admin-trener — scalony panel administracyjny z narzędziami trenera.
+                    </p>
+                  </div>
+                </td>
+                <td class="px-4 py-3 text-right">
+                  <div class="flex justify-end gap-1">
                     <UButton
-                      v-if="canEditRoleFor(a)"
+                      v-if="canEditAccountFor(a)"
                       size="xs"
-                      color="neutral"
+                      variant="soft"
+                      icon="i-lucide-key-round"
+                      @click="openAccountEdit(a)"
+                    >
+                      Konto
+                    </UButton>
+                    <UButton
+                      v-if="canDeleteAccount(a)"
+                      icon="i-lucide-trash-2"
+                      size="xs"
+                      color="error"
                       variant="ghost"
-                      icon="i-lucide-edit-2"
-                      @click="startRoleEdit(a)"
+                      @click="askDelete(a)"
                     />
                   </div>
-                  <p v-if="a.role === 'Athlete'" class="text-[11px] text-muted leading-snug max-w-xs">
-                    Konto zawodnika — profil sportowy edytujesz w bazie zawodników.
-                  </p>
-                </div>
-              </td>
-              <td class="px-4 py-3 text-right">
-                <div class="flex justify-end gap-1">
-                  <UButton
-                    v-if="canEditAccountFor(a)"
-                    size="xs"
-                    variant="soft"
-                    icon="i-lucide-key-round"
-                    @click="openAccountEdit(a)"
-                  >
-                    Konto
-                  </UButton>
-                  <UButton
-                    v-if="canDeleteAccount(a)"
-                    icon="i-lucide-trash-2"
-                    size="xs"
-                    color="error"
-                    variant="ghost"
-                    @click="askDelete(a)"
-                  />
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <div
-          v-if="!loading && admins.length === 0"
-          class="px-4 py-10 text-center text-muted"
-        >
-          Brak kont — superadministrator może dodać pierwsze konto.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div
+            v-if="section.rows.length === 0"
+            class="px-4 py-10 text-center text-muted"
+          >
+            Brak kont w tej grupie.
+          </div>
         </div>
-      </div>
-    </UCard>
+      </UCard>
+    </div>
 
     <UModal v-model:open="modalOpen" title="Nowe konto administratora">
       <template #content>

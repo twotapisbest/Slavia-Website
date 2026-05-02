@@ -28,8 +28,8 @@ function formatDate(dateStr: string) {
 </script>
 
 <template>
-  <article v-if="post" class="py-12">
-    <UContainer class="max-w-3xl">
+  <article v-if="post" class="py-8 sm:py-12 lg:py-16">
+    <UContainer class="max-w-3xl px-2 sm:px-0">
       <NuxtLink to="/blog" class="inline-flex items-center text-sm font-medium text-muted hover:text-primary mb-8 transition-colors">
         <UIcon name="i-lucide-arrow-left" class="size-4 mr-1" />
         Wróć do aktualności
@@ -40,7 +40,7 @@ function formatDate(dateStr: string) {
           <UIcon name="i-lucide-calendar" class="size-4" />
           Opublikowano {{ formatDate(post.created_at) }}
         </p>
-        <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-highlighted">
+        <h1 class="text-3xl font-extrabold tracking-tight text-highlighted sm:text-4xl md:text-5xl">
           {{ post.title }}
         </h1>
       </header>

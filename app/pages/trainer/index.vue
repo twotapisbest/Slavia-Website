@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Athlete, CompetitionResult } from '~/types/models'
+import { getApiErrorMessage } from '~/composables/useApi'
 
 definePageMeta({ middleware: 'trainer' })
 
@@ -27,6 +28,8 @@ const { data: pendingResults, refresh: refreshPending } = await useAsyncData(
     apiFetch<CompetitionResult[]>('/api/results/pending').catch(() => [])
 )
 const { data: competitions } = await useAsyncData('trainer-competitions', () => apiFetch('/api/competitions').catch(() => []))
+
+const toast = useToast()
 
 const athleteNameById = computed(() => {
   const m = new Map<string, string>()
@@ -71,7 +74,7 @@ const quickLinks = computed(() => {
     },
     {
       title: 'Zgłoszenia wyników',
-      description: 'Zatwierdzaj zgłoszenia wyników zawodników',
+      description: 'Przejdź do listy oczekujących lub dodaj start na stronie „Wszystkie starty”',
       icon: 'i-lucide-check-circle',
       to: admin ? '/admin#wyniki-oczekujace' : '/trainer#wyniki-oczekujace',
       color: 'text-emerald-500',
@@ -105,13 +108,22 @@ const quickLinks = computed(() => {
 })
 
 async function approveResult (id: string) {
-  await apiFetch(`/api/results/${id}/approve`, { method: 'PATCH' })
-  await refreshPending()
+  try {
+    await apiFetch(`/api/results/${id}/approve`, { method: 'PATCH' })
+    toast.add({ title: 'Wynik zatwierdzony', color: 'success' })
+    await refreshPending()
+  } catch (e) {
+    toast.add({
+      title: 'Nie udało się zatwierdzić',
+      description: getApiErrorMessage(e),
+      color: 'error'
+    })
+  }
 }
 </script>
 
 <template>
-  <UContainer class="py-10 md:py-14">
+  <UContainer class="py-8 md:py-14 lg:py-16">
     <div class="mb-8">
       <p class="text-sm font-medium uppercase tracking-wider text-primary">
         Panel Trenera
@@ -160,29 +172,45 @@ async function approveResult (id: string) {
       </UCard>
     </div>
 
-    <!-- Wyniki oczekujące -->
+    <!-- Wyniki oczekujące — zawsze w DOM (kotwica z „Zgłoszenia wyników”), także przy 0 pozycji -->
     <div
       id="wyniki-oczekujace"
-      v-if="pendingCount > 0"
       class="mb-12 scroll-mt-24 rounded-2xl border border-default bg-card p-6"
     >
-      <div class="mb-6 flex items-center justify-between">
+      <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 class="text-xl font-semibold text-highlighted">
-          <UIcon name="i-lucide-pending" class="mr-2 inline" />
+          <UIcon name="i-lucide-clipboard-clock" class="mr-2 inline" />
           Wyniki do zatwierdzenia ({{ pendingCount }})
         </h2>
+        <div class="flex flex-wrap gap-2">
+          <UButton variant="soft" size="sm" icon="i-lucide-refresh-ccw" @click="refreshPending()">
+            Odśwież listę
+          </UButton>
+          <UButton size="sm" variant="outline" to="/trainer/wyniki">
+            Wszystkie starty / dodaj wpis
+          </UButton>
+        </div>
       </div>
-      <div class="space-y-3">
+      <div v-if="pendingCount === 0" class="rounded-xl border border-dashed border-default/70 bg-muted/10 px-4 py-8 text-center text-sm text-muted">
+        Brak oczekujących zgłoszeń. Możesz dodać start od razu jako zatwierdzony na stronie
+        <NuxtLink to="/trainer/wyniki" class="font-semibold text-primary underline-offset-2 hover:underline">
+          Wszystkie starty
+        </NuxtLink>
+        .
+      </div>
+      <div v-else class="space-y-3">
         <div
           v-for="result in pendingResults || []"
           :key="result.id"
-          class="flex items-center justify-between gap-4 rounded-xl bg-muted/20 p-4 border border-default/50"
+          class="flex flex-col gap-3 rounded-xl border border-default/50 bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between"
         >
-          <div>
+          <div class="min-w-0">
             <p class="font-medium text-highlighted">{{ labelForResult(result) }}</p>
-            <p class="text-sm text-muted">Razem: {{ result.total }}kg ({{ result.date }})</p>
+            <p class="text-sm text-muted">
+              Rwanie {{ result.snatch }} kg · Podrzut {{ result.clean_and_jerk }} kg · Razem {{ result.total }} kg · {{ result.date.slice(0, 10) }}
+            </p>
           </div>
-          <UButton size="sm" @click="approveResult(result.id)">
+          <UButton size="sm" class="shrink-0" @click="approveResult(result.id)">
             Zatwierdź
           </UButton>
         </div>

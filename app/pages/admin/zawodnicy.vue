@@ -8,7 +8,7 @@ useSeoMeta({
 </script>
 
 <template>
-  <UContainer class="py-10 md:py-14">
+  <UContainer class="py-8 md:py-14 lg:py-16">
     <div class="mb-8">
       <p class="text-sm font-medium uppercase tracking-wider text-primary">
         Administracja

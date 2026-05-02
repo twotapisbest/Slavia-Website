@@ -13,6 +13,16 @@ onMounted(() => {
   })
 })
 
+watch(isAppLoading, (loading) => {
+  if (!import.meta.client) return
+  document.documentElement.classList.toggle('overflow-hidden', loading)
+})
+
+onBeforeUnmount(() => {
+  if (!import.meta.client) return
+  document.documentElement.classList.remove('overflow-hidden')
+})
+
 const dashboardLink = computed(() => {
   if (auth.isSuperAdmin.value) return '/superadmin'
   if (auth.isAdmin.value) return '/admin'
@@ -27,7 +37,7 @@ const socialImage = computed(() => `${siteUrl.value}/logo.png`)
 
 useHead({
   meta: [
-    { name: 'viewport', content: 'width=device-width, initial-scale=1' }
+    { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' }
   ],
   link: [
     { rel: 'icon', href: '/favicon.ico' }
@@ -61,17 +71,20 @@ async function logout() {
 
 <template>
   <UApp>
-    <!-- Splash Screen -->
-    <Transition
-      enter-active-class="transition duration-500 ease-out"
-      enter-from-class="opacity-0"
-      enter-to-class="opacity-100"
-      leave-active-class="transition duration-700 ease-in"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
+    <!-- Splash: pełna nieprzezroczysta warstwa; bez fade-out całego overlay (wtedy „przeświecał” tekst strony). -->
+    <div
+      v-if="isAppLoading"
+      class="fixed inset-0 z-[10050] flex flex-col items-center justify-center bg-[var(--ui-bg)]"
+      aria-busy="true"
+      aria-live="polite"
     >
-      <div v-if="isAppLoading" class="fixed inset-0 z-9999 flex flex-col items-center justify-center bg-background">
-        <div class="relative flex flex-col items-center">
+      <Transition
+        appear
+        enter-active-class="transition duration-400 ease-out"
+        enter-from-class="opacity-0 scale-[0.97]"
+        enter-to-class="opacity-100 scale-100"
+      >
+        <div class="relative flex flex-col items-center px-6">
           <div class="absolute -inset-8 animate-pulse rounded-full bg-primary/20 blur-2xl" />
           <img src="/logo.png" alt="Slavia Logo" class="relative h-32 w-auto animate-bounce mb-8" />
           <div class="flex items-center gap-2">
@@ -81,24 +94,48 @@ async function logout() {
           </div>
           <p class="mt-4 text-sm font-bold uppercase tracking-[0.3em] text-primary italic">Ładowanie...</p>
         </div>
-      </div>
-    </Transition>
+      </Transition>
+    </div>
 
-    <UHeader class="border-b border-default backdrop-blur-md bg-background/80 sticky top-0 z-50">
+    <div
+      class="transition-opacity duration-300 ease-out"
+      :class="isAppLoading ? 'opacity-0 pointer-events-none select-none' : 'opacity-100'"
+    >
+    <UHeader :toggle="false" class="border-b border-default backdrop-blur-md bg-background/80 sticky top-0 z-50">
       <template #left>
-        <div class="flex items-center gap-4 lg:gap-8">
+        <div class="flex min-w-0 items-center gap-2 sm:gap-4 lg:gap-6 xl:gap-8">
           <ClubBrand />
-          <ClubSiteNav />
+          <ClubSiteNav mode="drawer" />
         </div>
       </template>
 
+      <template #default>
+        <ClubSiteNav mode="links" />
+      </template>
+
+      <template #bottom>
+        <ClubSiteNav mode="public-mobile" />
+      </template>
+
       <template #right>
-        <div class="flex items-center gap-3">
+        <div class="flex shrink-0 items-center gap-1.5 sm:gap-3">
           <template v-if="auth.isLoggedIn.value">
-            <div class="hidden items-center gap-4 sm:flex">
+            <ClubNotificationBell />
+            <NuxtLink
+              :to="dashboardLink"
+              class="flex h-10 w-10 items-center justify-center rounded-full ring-1 ring-primary/25 transition-colors hover:bg-primary/10 sm:hidden"
+              :aria-label="`Panel: ${auth.user.value?.username ?? ''}`"
+            >
+              <UAvatar
+                :alt="auth.user.value?.username"
+                size="xs"
+                class="ring-1 ring-primary/30"
+              />
+            </NuxtLink>
+            <div class="hidden items-center gap-4 sm:flex lg:gap-5">
               <NuxtLink 
                 :to="dashboardLink"
-                class="group flex items-center gap-2 rounded-full bg-primary/5 px-4 py-1.5 transition-all hover:bg-primary/10 ring-1 ring-primary/20"
+                class="group flex items-center gap-2 rounded-full bg-primary/5 px-4 py-1.5 transition-all hover:bg-primary/10 ring-1 ring-primary/20 lg:px-5"
               >
                 <UAvatar
                   :alt="auth.user.value?.username"
@@ -135,11 +172,11 @@ async function logout() {
       </template>
     </UHeader>
 
-    <UMain>
+    <UMain class="slavia-safe-x">
       <NuxtPage />
     </UMain>
 
-    <UFooter class="border-t border-default bg-muted/5 py-8">
+    <UFooter class="border-t border-default bg-muted/5 py-8 slavia-safe-bottom slavia-safe-x lg:py-10" :ui="{ container: 'flex flex-col gap-8 md:flex-row md:items-center md:justify-between lg:gap-12' }">
       <template #left>
         <div class="flex flex-col gap-2">
           <p class="text-sm font-bold text-highlighted uppercase tracking-widest">
@@ -153,7 +190,7 @@ async function logout() {
       </template>
 
       <template #right>
-        <div class="flex flex-col items-end gap-2 text-right">
+        <div class="flex w-full flex-col gap-2 text-left md:w-auto md:items-end md:text-right">
           <p class="text-xs text-muted">
             © {{ new Date().getFullYear() }} Slavia Ruda Śląska.
           </p>
@@ -163,6 +200,7 @@ async function logout() {
         </div>
       </template>
     </UFooter>
+    </div>
   </UApp>
 </template>
 
