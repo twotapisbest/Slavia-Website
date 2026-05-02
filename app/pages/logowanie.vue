@@ -89,7 +89,7 @@ async function submit() {
             <UInput
               v-model="username"
               autocomplete="username"
-              placeholder="jgawron"
+              placeholder="Login"
               size="xl"
               icon="i-lucide-user"
               class="w-full"
