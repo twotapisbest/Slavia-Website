@@ -1,2 +1,7 @@
+[build]
+  command = "pnpm install --force && pnpm build"
+  publish = ".output/public"
+
 [build.environment]
   NODE_OPTIONS = "--max_old_space_size=4096"
+  NODE_VERSION = "node"
