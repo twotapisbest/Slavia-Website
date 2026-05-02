@@ -15,17 +15,34 @@ const deleting = ref(false)
 
 const editingId = ref<string | null>(null)
 
-const form = reactive({
+const fileInputRef = ref<HTMLInputElement>()
+
+const form = reactive<{
+  full_name: string
+  birth_year: number | null
+  gender: string
+  weight_category: string | undefined
+  bodyweight: number | null
+  best_snatch_kg: number | null
+  best_clean_jerk_kg: number | null
+  total_kg: number | null
+  image_url: string | undefined
+  notes: string | undefined
+  is_active: boolean
+  create_account: boolean
+  username: string
+  password: string
+}>({
   full_name: '',
   birth_year: null,
   gender: 'male',
-  weight_category: null,
+  weight_category: undefined,
   bodyweight: null,
   best_snatch_kg: null,
   best_clean_jerk_kg: null,
   total_kg: null,
-  image_url: null,
-  notes: null,
+  image_url: undefined,
+  notes: undefined,
   is_active: true,
   // Account fields
   create_account: false,
@@ -74,13 +91,13 @@ function resetForm() {
   form.full_name = ''
   form.birth_year = null
   form.gender = 'male'
-  form.weight_category = null
+  form.weight_category = undefined
   form.bodyweight = null
   form.best_snatch_kg = null
   form.best_clean_jerk_kg = null
   form.total_kg = null
-  form.image_url = null
-  form.notes = null
+  form.image_url = undefined
+  form.notes = undefined
   form.is_active = true
   form.create_account = false
   form.username = ''
@@ -138,22 +155,26 @@ function openEdit(p: Player) {
   form.full_name = p.full_name
   form.birth_year = p.birth_year ?? null
   form.gender = p.gender || 'male'
-  form.weight_category = p.weight_category ?? null
+  form.weight_category = p.weight_category ?? undefined
   form.bodyweight = p.bodyweight ?? null
   form.best_snatch_kg = p.best_snatch_kg ?? null
   form.best_clean_jerk_kg = p.best_clean_jerk_kg ?? null
   form.total_kg = p.total_kg ?? null
-  form.image_url = p.image_url || null
-  form.notes = p.notes ?? null
+  form.image_url = p.image_url || undefined
+  form.notes = p.notes ?? undefined
   form.is_active = p.is_active !== false
   modalOpen.value = true
+}
+
+function clickFileInput() {
+  fileInputRef.value?.click()
 }
 
 async function onFileChange(e: Event) {
   const input = e.target as HTMLInputElement
   if (!input.files?.length) return
 
-  const file = input.files[0]
+  const file = input.files[0] as File
   const formData = new FormData()
   formData.append('file', file)
 
@@ -489,10 +510,10 @@ onMounted(() => {
                         variant="soft"
                         size="lg"
                         :loading="uploadLoading"
-                        @click="$refs.fileInput.click()"
+                        @click="clickFileInput"
                       />
                       <input
-                        ref="fileInput"
+                        ref="fileInputRef"
                         type="file"
                         hidden
                         accept="image/*"
@@ -547,7 +568,7 @@ onMounted(() => {
                       v-model="form.bodyweight"
                       :min="0"
                       :max="300"
-                      step="0.1"
+                      :step="0.1"
                       placeholder="np. 72.5"
                       size="lg"
                       class="w-full"

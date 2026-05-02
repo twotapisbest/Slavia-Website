@@ -16,10 +16,19 @@ const toast = useToast()
 
 const isAdmin = computed(() => auth.isAdmin.value || auth.isSuperAdmin.value)
 
-const { data: posts, refresh, pending } = await useAsyncData('posts', () => apiFetch('/api/posts') as Promise<unknown[]>)
+interface BlogPost {
+  id: string
+  title: string
+  content: string
+  image_url?: string
+  created_at: string
+}
+
+const { data: posts, refresh, pending } = await useAsyncData('posts', () => apiFetch<BlogPost[]>('/api/posts'))
 
 const isModalOpen = ref(false)
 const isSubmitting = ref(false)
+const fileInputRef = ref<HTMLInputElement>()
 const formState = reactive({
   title: '',
   content: '',
@@ -45,7 +54,9 @@ async function onFileChange(e: Event) {
 
   const input = e.target as HTMLInputElement
   if (!input.files?.length) return
-  const file = input.files[0]
+  const file = input.files[0] as File | undefined
+  if (!file) return
+
   const formData = new FormData()
   formData.append('file', file)
 

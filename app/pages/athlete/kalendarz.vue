@@ -114,9 +114,15 @@ watch(modalOpen, (open) => {
   if (!open) selectedEvent.value = null
 })
 
-const nextMonth = () => (currentDate.value = addMonths(currentDate.value, 1))
-const prevMonth = () => (currentDate.value = subMonths(currentDate.value, 1))
-const goToToday = () => (currentDate.value = new Date())
+const nextMonth = () => {
+  currentDate.value = addMonths(currentDate.value, 1)
+}
+const prevMonth = () => {
+  currentDate.value = subMonths(currentDate.value, 1)
+}
+const goToToday = () => {
+  currentDate.value = new Date()
+}
 </script>
 
 <template>

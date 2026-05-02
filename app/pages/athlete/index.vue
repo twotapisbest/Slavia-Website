@@ -41,9 +41,14 @@ async function refreshResults() {
   await refreshAthletePage()
 }
 
-const resultForm = reactive({
-  snatch: null as number | null,
-  clean_and_jerk: null as number | null,
+const resultForm = reactive<{
+  snatch: number | null
+  clean_and_jerk: number | null
+  total: number
+  date: string
+}>({
+  snatch: null,
+  clean_and_jerk: null,
   total: 0,
   date: new Date().toISOString().substring(0, 10)
 })
@@ -436,7 +441,7 @@ const pageLead = computed(() =>
               <UInputNumber
                 v-model="resultForm.snatch"
                 :min="0"
-                step="0.5"
+                :step="0.5"
                 size="lg"
                 class="w-full"
               />
@@ -445,7 +450,7 @@ const pageLead = computed(() =>
               <UInputNumber
                 v-model="resultForm.clean_and_jerk"
                 :min="0"
-                step="0.5"
+                :step="0.5"
                 size="lg"
                 class="w-full"
               />

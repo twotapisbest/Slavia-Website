@@ -41,7 +41,7 @@ export default defineNuxtConfig({
       maxParallelFileOps: 4
     },
     /** Bez map dla serwera — krótszy etap Nitro. */
-    sourcemap: false,
+    sourceMap: false,
     externals: {
       /**
        * Wyłącza śledzenie plików (@vercel/nft) przy externals — na Windows potrafi

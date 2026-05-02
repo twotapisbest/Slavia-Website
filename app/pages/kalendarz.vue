@@ -15,7 +15,7 @@ import {
 } from 'date-fns'
 import { pl } from 'date-fns/locale'
 import { apiRoutes } from '~/config/api'
-import type { Athlete } from '~/types/models'
+import type { Athlete, Competition } from '~/types/models'
 import { getApiErrorMessage } from '~/composables/useApi'
 
 useSeoMeta({
@@ -338,7 +338,7 @@ async function deleteEvent(id: string) {
     return
   }
 
-  const row = (competitions.value || []).find((c: Competition) => c.id === id)
+  const row = (competitions.value || []).find((c: Competition) => c.id === id) as Competition | undefined
   if (row?.external_source) {
     toast.add({
       title: 'Nie można usunąć',

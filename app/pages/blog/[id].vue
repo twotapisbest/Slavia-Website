@@ -7,7 +7,13 @@ const apiFetch = useApi()
 
 const postId = route.params.id as string
 
-const { data: post, error } = await useAsyncData(`post-${postId}`, () => apiFetch(`/api/posts/${postId}`) as Promise<unknown>)
+interface BlogPost {
+  title: string
+  content: string
+  created_at: string
+}
+
+const { data: post, error } = await useAsyncData(`post-${postId}`, () => apiFetch<BlogPost>(`/api/posts/${postId}`))
 
 if (error.value || !post.value) {
   throw createError({ statusCode: 404, statusMessage: 'Post not found', fatal: true })
