@@ -7,7 +7,7 @@ const apiFetch = useApi()
 
 const postId = route.params.id as string
 
-const { data: post, pending, error } = await useAsyncData(`post-${postId}`, () => apiFetch(`/api/posts/${postId}`) as Promise<any>)
+const { data: post, error } = await useAsyncData(`post-${postId}`, () => apiFetch(`/api/posts/${postId}`) as Promise<unknown>)
 
 if (error.value || !post.value) {
   throw createError({ statusCode: 404, statusMessage: 'Post not found', fatal: true })
@@ -21,7 +21,7 @@ useSeoMeta({
 function formatDate(dateStr: string) {
   try {
     return format(parseISO(dateStr), 'd MMMM yyyy', { locale: pl })
-  } catch (e) {
+  } catch (_e) {
     return dateStr
   }
 }
@@ -51,7 +51,9 @@ function formatDate(dateStr: string) {
 
       <div class="prose prose-invert prose-lg max-w-none text-muted leading-relaxed">
         <!-- Renderowanie treści na ten moment bez edytora WYSIWYG, więc po prostu p -->
-        <p class="whitespace-pre-wrap">{{ post.content }}</p>
+        <p class="whitespace-pre-wrap">
+          {{ post.content }}
+        </p>
       </div>
     </UContainer>
   </article>

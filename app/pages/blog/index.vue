@@ -16,7 +16,7 @@ const toast = useToast()
 
 const isAdmin = computed(() => auth.isAdmin.value || auth.isSuperAdmin.value)
 
-const { data: posts, refresh, pending } = await useAsyncData('posts', () => apiFetch('/api/posts') as Promise<any[]>)
+const { data: posts, refresh, pending } = await useAsyncData('posts', () => apiFetch('/api/posts') as Promise<unknown[]>)
 
 const isModalOpen = ref(false)
 const isSubmitting = ref(false)
@@ -45,11 +45,10 @@ async function onFileChange(e: Event) {
 
   const input = e.target as HTMLInputElement
   if (!input.files?.length) return
-  
   const file = input.files[0]
   const formData = new FormData()
   formData.append('file', file)
-  
+
   uploadLoading.value = true
   try {
     const res = await apiFetch<{ url: string }>('/api/upload', {
@@ -85,8 +84,8 @@ async function savePost() {
     toast.add({ title: 'Wpis dodany', color: 'success' })
     isModalOpen.value = false
     await refresh()
-  } catch (error) {
-    toast.add({ title: 'Wystąpił błąd', description: String(error), color: 'error' })
+  } catch (_error) {
+    toast.add({ title: 'Wystąpił błąd', description: String(_error), color: 'error' })
   } finally {
     isSubmitting.value = false
   }
@@ -99,12 +98,12 @@ async function deletePost(id: string) {
   }
 
   if (!confirm('Czy na pewno usunąć ten wpis?')) return
-  
+
   try {
     await apiFetch(`/api/posts/${id}`, { method: 'DELETE' })
     toast.add({ title: 'Wpis usunięty', color: 'success' })
     await refresh()
-  } catch (error) {
+  } catch (_error) {
     toast.add({ title: 'Błąd usuwania', color: 'error' })
   }
 }
@@ -112,7 +111,7 @@ async function deletePost(id: string) {
 function formatDate(dateStr: string) {
   try {
     return format(parseISO(dateStr), 'dd MMMM yyyy, HH:mm', { locale: pl })
-  } catch (e) {
+  } catch (_e) {
     return dateStr
   }
 }
@@ -122,8 +121,12 @@ function formatDate(dateStr: string) {
   <UContainer class="py-8 sm:py-12 lg:py-14">
     <div class="mb-8 flex flex-col gap-4 sm:mb-10 md:flex-row md:items-end md:justify-between">
       <div class="min-w-0">
-        <h1 class="text-2xl font-bold tracking-tight text-highlighted sm:text-3xl lg:text-4xl">Aktualności</h1>
-        <p class="mt-2 text-sm text-muted sm:text-base lg:text-lg lg:leading-relaxed">Najnowsze informacje i relacje z zawodów naszego klubu.</p>
+        <h1 class="text-2xl font-bold tracking-tight text-highlighted sm:text-3xl lg:text-4xl">
+          Aktualności
+        </h1>
+        <p class="mt-2 text-sm text-muted sm:text-base lg:text-lg lg:leading-relaxed">
+          Najnowsze informacje i relacje z zawodów naszego klubu.
+        </p>
       </div>
       <UButton
         v-if="isAdmin"
@@ -155,20 +158,24 @@ function formatDate(dateStr: string) {
             <UIcon name="i-lucide-newspaper" class="size-16 text-primary/10" />
           </div>
         </div>
-        
+
         <div class="flex-1 flex flex-col">
           <p class="text-xs font-medium text-primary mb-2 flex items-center gap-1.5">
             <UIcon name="i-lucide-calendar" class="size-3.5" />
             {{ formatDate(post.created_at) }}
           </p>
-          <h3 class="text-xl font-bold text-highlighted mb-3 line-clamp-2">{{ post.title }}</h3>
-          <p class="text-muted text-sm line-clamp-3 mb-4">{{ post.content }}</p>
-          
+          <h3 class="text-xl font-bold text-highlighted mb-3 line-clamp-2">
+            {{ post.title }}
+          </h3>
+          <p class="text-muted text-sm line-clamp-3 mb-4">
+            {{ post.content }}
+          </p>
+
           <div class="mt-auto flex flex-col gap-3 border-t border-default pt-4 sm:flex-row sm:items-center sm:justify-between">
             <UButton :to="`/blog/${post.id}`" variant="link" color="primary" trailing-icon="i-lucide-arrow-right" class="min-h-10 justify-start px-0">
               Czytaj więcej
             </UButton>
-            
+
             <UButton v-if="isAdmin" size="sm" color="error" variant="ghost" icon="i-lucide-trash-2" class="min-h-10 self-start sm:self-auto" @click="deletePost(post.id)">
               Usuń
             </UButton>
