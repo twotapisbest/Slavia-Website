@@ -37,7 +37,7 @@ const { data: bundle, refresh: refreshAthletePage } = await useAsyncData(
 const athlete = computed(() => bundle.value?.athlete ?? null)
 const results = computed(() => bundle.value?.results ?? [])
 
-async function refreshResults () {
+async function refreshResults() {
   await refreshAthletePage()
 }
 
@@ -45,7 +45,7 @@ const resultForm = reactive({
   snatch: null as number | null,
   clean_and_jerk: null as number | null,
   total: 0,
-  date: new Date().toISOString().substring(0, 10),
+  date: new Date().toISOString().substring(0, 10)
 })
 
 const profileForm = reactive({
@@ -70,7 +70,7 @@ const profileLoading = ref(false)
 const avatarUploadLoading = ref(false)
 const avatarFileInput = ref<HTMLInputElement | null>(null)
 
-async function onAvatarFileChange (e: Event) {
+async function onAvatarFileChange(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
   input.value = ''
@@ -149,7 +149,7 @@ async function submitResult() {
         snatch: resultForm.snatch,
         clean_and_jerk: resultForm.clean_and_jerk,
         total: resultForm.total,
-        date: resultForm.date,
+        date: resultForm.date
       }
     })
     toast.add({ title: 'Zgłoszono wynik', description: 'Wynik trafił do oczekujących.', color: 'success' })
@@ -200,7 +200,10 @@ const pageLead = computed(() =>
   <UContainer class="py-8 md:py-14 lg:py-16">
     <div class="mb-10">
       <div class="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-primary">
-        <UIcon name="i-lucide-user" class="size-4" />
+        <UIcon
+          name="i-lucide-user"
+          class="size-4"
+        />
         {{ pageHeading }}
       </div>
       <h1 class="mt-2 text-3xl font-bold tracking-tight text-highlighted">
@@ -209,15 +212,27 @@ const pageLead = computed(() =>
       <p class="mt-2 max-w-2xl text-muted">
         {{ pageLead }}
       </p>
-      <div v-if="auth.isAthlete.value" class="mt-6 flex flex-wrap items-stretch gap-3">
-        <UButton to="/athlete/kalendarz" icon="i-lucide-calendar-heart" color="primary" variant="soft" class="min-h-11 w-full justify-center sm:w-auto">
+      <div
+        v-if="auth.isAthlete.value"
+        class="mt-6 flex flex-wrap items-stretch gap-3"
+      >
+        <UButton
+          to="/athlete/kalendarz"
+          icon="i-lucide-calendar-heart"
+          color="primary"
+          variant="soft"
+          class="min-h-11 w-full justify-center sm:w-auto"
+        >
           Mój kalendarz startów
         </UButton>
       </div>
     </div>
 
     <!-- Licznik przypisanych zawodów (bez treningów klubowych) -->
-    <div v-if="isAthleteRole && athlete" class="mb-10">
+    <div
+      v-if="isAthleteRole && athlete"
+      class="mb-10"
+    >
       <UCard
         class="overflow-hidden border border-primary/25 bg-linear-to-br from-primary/10 via-card to-card"
         :ui="{ body: 'sm:p-6 p-5' }"
@@ -225,7 +240,10 @@ const pageLead = computed(() =>
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex items-start gap-4">
             <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/20 text-primary shadow-inner">
-              <UIcon name="i-lucide-calendar-check-2" class="size-7" />
+              <UIcon
+                name="i-lucide-calendar-check-2"
+                class="size-7"
+              />
             </div>
             <div class="min-w-0">
               <p class="text-xs font-bold uppercase tracking-wider text-primary">
@@ -253,8 +271,15 @@ const pageLead = computed(() =>
     </div>
 
     <!-- Statystyki zawodnika -->
-    <div v-if="isAthleteRole && athlete" class="mb-12 grid grid-cols-1 gap-6 sm:grid-cols-3">
-      <UCard v-for="s in stats" :key="s.label" class="border border-default/50 bg-muted/10">
+    <div
+      v-if="isAthleteRole && athlete"
+      class="mb-12 grid grid-cols-1 gap-6 sm:grid-cols-3"
+    >
+      <UCard
+        v-for="s in stats"
+        :key="s.label"
+        class="border border-default/50 bg-muted/10"
+      >
         <p class="text-xs font-semibold uppercase tracking-wider text-muted">
           {{ s.label }}
         </p>
@@ -264,7 +289,10 @@ const pageLead = computed(() =>
       </UCard>
     </div>
 
-    <div v-else-if="isAthleteRole && !athlete" class="mb-12">
+    <div
+      v-else-if="isAthleteRole && !athlete"
+      class="mb-12"
+    >
       <UAlert
         icon="i-lucide-info"
         title="Brak powiązanego profilu"
@@ -277,14 +305,20 @@ const pageLead = computed(() =>
     <!-- Edycja profilu -->
     <section class="mb-12">
       <h2 class="mb-4 flex items-center gap-2 text-xl font-bold text-highlighted">
-        <UIcon name="i-lucide-shield" class="size-5 text-primary" />
+        <UIcon
+          name="i-lucide-shield"
+          class="size-5 text-primary"
+        />
         Ustawienia konta
       </h2>
       <div class="slavia-form-panel shadow-md">
         <div class="slavia-form-panel__header">
           <div class="slavia-form-panel__title">
             <span class="slavia-form-panel__icon">
-              <UIcon name="i-lucide-user-round" class="size-4" />
+              <UIcon
+                name="i-lucide-user-round"
+                class="size-4"
+              />
             </span>
             Dane logowania i zdjęcie
           </div>
@@ -292,7 +326,12 @@ const pageLead = computed(() =>
         <div class="slavia-form-panel__body">
           <div class="grid gap-5 sm:grid-cols-2">
             <UFormField label="Email">
-              <UInput v-model="profileForm.email" type="email" size="lg" class="w-full" />
+              <UInput
+                v-model="profileForm.email"
+                type="email"
+                size="lg"
+                class="w-full"
+              />
             </UFormField>
             <UFormField label="Zdjęcie profilowe">
               <input
@@ -303,7 +342,13 @@ const pageLead = computed(() =>
                 @change="onAvatarFileChange"
               >
               <div class="flex flex-wrap items-center gap-2">
-                <UInput v-model="profileForm.avatar_url" type="url" placeholder="https://... lub wgraj plik" size="lg" class="min-w-0 flex-1" />
+                <UInput
+                  v-model="profileForm.avatar_url"
+                  type="url"
+                  placeholder="https://... lub wgraj plik"
+                  size="lg"
+                  class="min-w-0 flex-1"
+                />
                 <UButton
                   color="neutral"
                   variant="soft"
@@ -320,17 +365,38 @@ const pageLead = computed(() =>
               </p>
             </UFormField>
             <UFormField label="Nowe hasło (opcjonalnie)">
-              <UInput v-model="profileForm.newPassword" type="password" placeholder="Zostaw puste aby nie zmieniać" size="lg" class="w-full" />
+              <UInput
+                v-model="profileForm.newPassword"
+                type="password"
+                placeholder="Zostaw puste aby nie zmieniać"
+                size="lg"
+                class="w-full"
+              />
             </UFormField>
             <UFormField label="Potwierdzenie hasła">
-              <UInput v-model="profileForm.confirmPassword" type="password" placeholder="Potwierdzenie nowego hasła" size="lg" class="w-full" />
+              <UInput
+                v-model="profileForm.confirmPassword"
+                type="password"
+                placeholder="Potwierdzenie nowego hasła"
+                size="lg"
+                class="w-full"
+              />
             </UFormField>
           </div>
           <div class="slavia-form-actions border-t border-default/60 pt-5">
-            <UButton color="neutral" variant="soft" size="lg" @click="() => { profileForm.email = auth.user.value?.email || ''; profileForm.newPassword = ''; profileForm.confirmPassword = '' }">
+            <UButton
+              color="neutral"
+              variant="soft"
+              size="lg"
+              @click="() => { profileForm.email = auth.user.value?.email || ''; profileForm.newPassword = ''; profileForm.confirmPassword = '' }"
+            >
               Anuluj
             </UButton>
-            <UButton size="lg" :loading="profileLoading" @click="updateProfile">
+            <UButton
+              size="lg"
+              :loading="profileLoading"
+              @click="updateProfile"
+            >
               Zapisz zmiany
             </UButton>
           </div>
@@ -338,16 +404,25 @@ const pageLead = computed(() =>
       </div>
     </section>
 
-    <section v-if="isAthleteRole && athlete" class="mb-12">
+    <section
+      v-if="isAthleteRole && athlete"
+      class="mb-12"
+    >
       <h2 class="mb-4 flex items-center gap-2 text-xl font-bold text-highlighted">
-        <UIcon name="i-lucide-flag" class="size-5 text-primary" />
+        <UIcon
+          name="i-lucide-flag"
+          class="size-5 text-primary"
+        />
         Zgłoś wynik do weryfikacji
       </h2>
       <div class="slavia-form-panel shadow-md">
         <div class="slavia-form-panel__header">
           <div class="slavia-form-panel__title">
             <span class="slavia-form-panel__icon">
-              <UIcon name="i-lucide-barbell" class="size-4" />
+              <UIcon
+                name="i-lucide-barbell"
+                class="size-4"
+              />
             </span>
             Wynik startowy
           </div>
@@ -358,20 +433,47 @@ const pageLead = computed(() =>
         <div class="slavia-form-panel__body">
           <div class="grid gap-5 sm:grid-cols-2">
             <UFormField label="Rwanie (kg)">
-              <UInputNumber v-model="resultForm.snatch" :min="0" step="0.5" size="lg" class="w-full" />
+              <UInputNumber
+                v-model="resultForm.snatch"
+                :min="0"
+                step="0.5"
+                size="lg"
+                class="w-full"
+              />
             </UFormField>
             <UFormField label="Podrzut (kg)">
-              <UInputNumber v-model="resultForm.clean_and_jerk" :min="0" step="0.5" size="lg" class="w-full" />
+              <UInputNumber
+                v-model="resultForm.clean_and_jerk"
+                :min="0"
+                step="0.5"
+                size="lg"
+                class="w-full"
+              />
             </UFormField>
             <UFormField label="Data">
-              <UInput v-model="resultForm.date" type="date" size="lg" class="w-full" />
+              <UInput
+                v-model="resultForm.date"
+                type="date"
+                size="lg"
+                class="w-full"
+              />
             </UFormField>
             <UFormField label="Suma">
-              <UInputNumber :value="resultForm.total" size="lg" class="w-full" disabled />
+              <UInputNumber
+                :value="resultForm.total"
+                size="lg"
+                class="w-full"
+                disabled
+              />
             </UFormField>
           </div>
           <div class="slavia-form-actions border-t border-default/60 pt-5">
-            <UButton color="primary" variant="soft" size="lg" @click="submitResult">
+            <UButton
+              color="primary"
+              variant="soft"
+              size="lg"
+              @click="submitResult"
+            >
               Zgłoś wynik
             </UButton>
           </div>
@@ -383,24 +485,48 @@ const pageLead = computed(() =>
       <!-- Ostatnie wyniki -->
       <section v-if="isAthleteRole">
         <h2 class="mb-4 flex items-center gap-2 text-xl font-bold text-highlighted">
-          <UIcon name="i-lucide-trophy" class="size-5 text-yellow-500" />
+          <UIcon
+            name="i-lucide-trophy"
+            class="size-5 text-yellow-500"
+          />
           Twoje ostatnie starty
         </h2>
-        <UCard v-if="results && results.length > 0" :ui="{ body: 'p-0' }">
+        <UCard
+          v-if="results && results.length > 0"
+          :ui="{ body: 'p-0' }"
+        >
           <table class="w-full text-sm">
             <thead class="border-b border-default bg-muted/30">
               <tr>
-                <th class="px-4 py-3 text-left font-semibold text-muted">Data</th>
-                <th class="px-4 py-3 text-center font-semibold text-muted">Suma</th>
-                <th class="px-4 py-3 text-center font-semibold text-muted">Status</th>
+                <th class="px-4 py-3 text-left font-semibold text-muted">
+                  Data
+                </th>
+                <th class="px-4 py-3 text-center font-semibold text-muted">
+                  Suma
+                </th>
+                <th class="px-4 py-3 text-center font-semibold text-muted">
+                  Status
+                </th>
               </tr>
             </thead>
             <tbody class="divide-y divide-default">
-              <tr v-for="r in results" :key="r.id" class="hover:bg-muted/20">
-                <td class="px-4 py-3 text-muted">{{ r.date }}</td>
-                <td class="px-4 py-3 text-center font-bold">{{ r.total }} kg</td>
+              <tr
+                v-for="r in results"
+                :key="r.id"
+                class="hover:bg-muted/20"
+              >
+                <td class="px-4 py-3 text-muted">
+                  {{ r.date }}
+                </td>
+                <td class="px-4 py-3 text-center font-bold">
+                  {{ r.total }} kg
+                </td>
                 <td class="px-4 py-3 text-center">
-                  <UBadge :color="r.status === 'Approved' ? 'success' : 'warning'" variant="subtle" size="sm">
+                  <UBadge
+                    :color="r.status === 'Approved' ? 'success' : 'warning'"
+                    variant="subtle"
+                    size="sm"
+                  >
                     {{ r.status === 'Approved' ? 'Zatwierdzony' : 'Oczekujący' }}
                   </UBadge>
                 </td>
@@ -408,7 +534,10 @@ const pageLead = computed(() =>
             </tbody>
           </table>
         </UCard>
-        <div v-else class="rounded-xl border border-dashed border-default p-10 text-center text-muted">
+        <div
+          v-else
+          class="rounded-xl border border-dashed border-default p-10 text-center text-muted"
+        >
           Nie znaleziono jeszcze żadnych wyników z Twoich startów.
         </div>
       </section>
@@ -416,67 +545,109 @@ const pageLead = computed(() =>
       <!-- Szybkie akcje -->
       <section>
         <h2 class="mb-4 flex items-center gap-2 text-xl font-bold text-highlighted">
-          <UIcon name="i-lucide-zap" class="size-5 text-primary" />
+          <UIcon
+            name="i-lucide-zap"
+            class="size-5 text-primary"
+          />
           Szybkie działania
         </h2>
         <div class="grid gap-4">
-          <UCard v-if="isAthleteRole" class="hover:bg-muted/10 transition-colors">
-            <NuxtLink to="/athlete/dziennik" class="flex items-center justify-between group">
+          <UCard
+            v-if="isAthleteRole"
+            class="hover:bg-muted/10 transition-colors"
+          >
+            <NuxtLink
+              to="/athlete/dziennik"
+              class="flex items-center justify-between group"
+            >
               <div class="flex items-center gap-3">
                 <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-600">
-                  <UIcon name="i-lucide-book-marked" class="size-5" />
+                  <UIcon
+                    name="i-lucide-book-marked"
+                    class="size-5"
+                  />
                 </div>
                 <div>
                   <h3 class="font-medium group-hover:text-cyan-600 transition-colors">Dziennik treningów</h3>
                   <p class="text-xs text-muted">Wpisy trenera po jednostkach</p>
                 </div>
               </div>
-              <UIcon name="i-lucide-chevron-right" class="size-5 text-muted group-hover:text-cyan-600" />
+              <UIcon
+                name="i-lucide-chevron-right"
+                class="size-5 text-muted group-hover:text-cyan-600"
+              />
             </NuxtLink>
           </UCard>
 
           <UCard class="hover:bg-muted/10 transition-colors">
-            <NuxtLink to="/ranking" class="flex items-center justify-between group">
+            <NuxtLink
+              to="/ranking"
+              class="flex items-center justify-between group"
+            >
               <div class="flex items-center gap-3">
                 <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <UIcon name="i-lucide-trending-up" class="size-5" />
+                  <UIcon
+                    name="i-lucide-trending-up"
+                    class="size-5"
+                  />
                 </div>
                 <div>
                   <h3 class="font-medium group-hover:text-primary transition-colors">Ranking Klubowy</h3>
                   <p class="text-xs text-muted">Zobacz jak wypadasz na tle innych zawodników</p>
                 </div>
               </div>
-              <UIcon name="i-lucide-chevron-right" class="size-5 text-muted group-hover:text-primary" />
+              <UIcon
+                name="i-lucide-chevron-right"
+                class="size-5 text-muted group-hover:text-primary"
+              />
             </NuxtLink>
           </UCard>
 
           <UCard class="hover:bg-muted/10 transition-colors">
-            <NuxtLink to="/kalkulator-sinclair" class="flex items-center justify-between group">
+            <NuxtLink
+              to="/kalkulator-sinclair"
+              class="flex items-center justify-between group"
+            >
               <div class="flex items-center gap-3">
                 <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
-                  <UIcon name="i-lucide-calculator" class="size-5" />
+                  <UIcon
+                    name="i-lucide-calculator"
+                    class="size-5"
+                  />
                 </div>
                 <div>
                   <h3 class="font-medium group-hover:text-emerald-500 transition-colors">Kalkulator Sinclair</h3>
                   <p class="text-xs text-muted">Przelicz swoje wyniki na punkty Sinclaira</p>
                 </div>
               </div>
-              <UIcon name="i-lucide-chevron-right" class="size-5 text-muted group-hover:text-emerald-500" />
+              <UIcon
+                name="i-lucide-chevron-right"
+                class="size-5 text-muted group-hover:text-emerald-500"
+              />
             </NuxtLink>
           </UCard>
 
           <UCard class="hover:bg-muted/10 transition-colors">
-            <NuxtLink to="/kalendarz" class="flex items-center justify-between group">
+            <NuxtLink
+              to="/kalendarz"
+              class="flex items-center justify-between group"
+            >
               <div class="flex items-center gap-3">
                 <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10 text-purple-500">
-                  <UIcon name="i-lucide-calendar" class="size-5" />
+                  <UIcon
+                    name="i-lucide-calendar"
+                    class="size-5"
+                  />
                 </div>
                 <div>
                   <h3 class="font-medium group-hover:text-purple-500 transition-colors">Nadchodzące starty</h3>
                   <p class="text-xs text-muted">Sprawdź kalendarz zawodów klubowych</p>
                 </div>
               </div>
-              <UIcon name="i-lucide-chevron-right" class="size-5 text-muted group-hover:text-purple-500" />
+              <UIcon
+                name="i-lucide-chevron-right"
+                class="size-5 text-muted group-hover:text-purple-500"
+              />
             </NuxtLink>
           </UCard>
         </div>

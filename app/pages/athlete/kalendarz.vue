@@ -60,7 +60,7 @@ const weekDays = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz']
 
 const { getEventClasses, getEventIcon, getEventModalHeaderClass, getEventKindLabel } = useCalendarEventChips()
 
-function getTrainingsForDay (date: Date) {
+function getTrainingsForDay(date: Date) {
   const day = getDay(date)
   if ([1, 3, 5].includes(day)) {
     const ds = format(date, 'yyyy-MM-dd')
@@ -79,7 +79,7 @@ function getTrainingsForDay (date: Date) {
   return []
 }
 
-function getEventsForDay (date: Date) {
+function getEventsForDay(date: Date) {
   const dateStr = format(date, 'yyyy-MM-dd')
   const assigned = (assignedByDate.value.get(dateStr) ?? []).map((entry) => {
     const names = entry.participants.map(p => p.full_name).join(', ')
@@ -102,7 +102,7 @@ function getEventsForDay (date: Date) {
 const modalOpen = ref(false)
 const selectedEvent = ref<Record<string, unknown> | null>(null)
 
-function openDetail (day: Date, ev: Record<string, unknown>) {
+function openDetail(day: Date, ev: Record<string, unknown>) {
   selectedEvent.value = {
     ...ev,
     _dateIso: format(day, 'yyyy-MM-dd')
@@ -133,7 +133,12 @@ const goToToday = () => (currentDate.value = new Date())
         Poniżej tylko zawody i wydarzenia, do których trener lub administrator Cię przypisał — zobaczysz też kto jeszcze startuje.
       </p>
       <div class="mt-4">
-        <UButton to="/kalendarz" variant="soft" color="neutral" icon="i-lucide-calendar-days">
+        <UButton
+          to="/kalendarz"
+          variant="soft"
+          color="neutral"
+          icon="i-lucide-calendar-days"
+        >
           Pełny kalendarz klubu
         </UButton>
       </div>
@@ -141,17 +146,36 @@ const goToToday = () => (currentDate.value = new Date())
 
     <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
       <div class="flex items-center gap-2 bg-muted/20 p-1.5 rounded-xl border border-default">
-        <UButton icon="i-lucide-chevron-left" variant="ghost" color="neutral" @click="prevMonth" />
-        <UButton variant="ghost" color="neutral" class="min-w-[160px] font-bold text-highlighted" @click="goToToday">
+        <UButton
+          icon="i-lucide-chevron-left"
+          variant="ghost"
+          color="neutral"
+          @click="prevMonth"
+        />
+        <UButton
+          variant="ghost"
+          color="neutral"
+          class="min-w-[160px] font-bold text-highlighted"
+          @click="goToToday"
+        >
           {{ format(currentDate, 'MMMM yyyy', { locale: pl }) }}
         </UButton>
-        <UButton icon="i-lucide-chevron-right" variant="ghost" color="neutral" @click="nextMonth" />
+        <UButton
+          icon="i-lucide-chevron-right"
+          variant="ghost"
+          color="neutral"
+          @click="nextMonth"
+        />
       </div>
     </div>
 
     <div class="border border-default rounded-2xl overflow-hidden bg-card shadow-2xl">
       <div class="grid grid-cols-7 border-b border-default bg-muted/30">
-        <div v-for="d in weekDays" :key="d" class="py-4 text-center text-xs font-black uppercase tracking-widest text-muted">
+        <div
+          v-for="d in weekDays"
+          :key="d"
+          class="py-4 text-center text-xs font-black uppercase tracking-widest text-muted"
+        >
           {{ d }}
         </div>
       </div>
@@ -184,10 +208,16 @@ const goToToday = () => (currentDate.value = new Date())
             >
               <div class="flex items-center justify-between gap-1">
                 <span class="truncate font-semibold">{{ ev.title }}</span>
-                <UIcon :name="getEventIcon(ev)" class="size-2.5 shrink-0 opacity-80" />
+                <UIcon
+                  :name="getEventIcon(ev)"
+                  class="size-2.5 shrink-0 opacity-80"
+                />
               </div>
               <span class="opacity-60">{{ ev.time || ev.location }}</span>
-              <span v-if="ev.status && ev.status !== 'scheduled'" class="text-[10px] uppercase tracking-[0.15em] font-semibold mt-1">
+              <span
+                v-if="ev.status && ev.status !== 'scheduled'"
+                class="text-[10px] uppercase tracking-[0.15em] font-semibold mt-1"
+              >
                 {{ ev.status === 'cancelled' ? 'Odwołane' : ev.status === 'moved' ? 'Przesunięte' : '' }}
               </span>
             </button>
@@ -198,31 +228,47 @@ const goToToday = () => (currentDate.value = new Date())
 
     <div class="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 p-5 rounded-2xl bg-muted/10 border border-default">
       <div class="flex items-center gap-3">
-        <div class="w-3 h-7 rounded-full bg-blue-500/40 border border-blue-500/50 shrink-0"></div>
+        <div class="w-3 h-7 rounded-full bg-blue-500/40 border border-blue-500/50 shrink-0" />
         <div>
-          <p class="text-xs font-black text-blue-400 uppercase">Trening</p>
-          <p class="text-[10px] text-muted">Pn, Śr, Pt 15-18</p>
+          <p class="text-xs font-black text-blue-400 uppercase">
+            Trening
+          </p>
+          <p class="text-[10px] text-muted">
+            Pn, Śr, Pt 15-18
+          </p>
         </div>
       </div>
       <div class="flex items-center gap-3">
-        <div class="w-3 h-7 rounded-full bg-red-500/40 border border-red-500/50 shrink-0"></div>
+        <div class="w-3 h-7 rounded-full bg-red-500/40 border border-red-500/50 shrink-0" />
         <div>
-          <p class="text-xs font-black text-red-400 uppercase">Mistrzostwa</p>
-          <p class="text-[10px] text-muted">ogólnopol. / śląskie</p>
+          <p class="text-xs font-black text-red-400 uppercase">
+            Mistrzostwa
+          </p>
+          <p class="text-[10px] text-muted">
+            ogólnopol. / śląskie
+          </p>
         </div>
       </div>
       <div class="flex items-center gap-3">
-        <div class="w-3 h-7 rounded-full bg-amber-500/40 border border-amber-500/50 shrink-0"></div>
+        <div class="w-3 h-7 rounded-full bg-amber-500/40 border border-amber-500/50 shrink-0" />
         <div>
-          <p class="text-xs font-black text-amber-400 uppercase">Liga</p>
-          <p class="text-[10px] text-muted">zawody ligowe</p>
+          <p class="text-xs font-black text-amber-400 uppercase">
+            Liga
+          </p>
+          <p class="text-[10px] text-muted">
+            zawody ligowe
+          </p>
         </div>
       </div>
       <div class="flex items-center gap-3">
-        <div class="w-3 h-7 rounded-full bg-teal-500/40 border border-teal-500/50 shrink-0"></div>
+        <div class="w-3 h-7 rounded-full bg-teal-500/40 border border-teal-500/50 shrink-0" />
         <div>
-          <p class="text-xs font-black text-teal-400 uppercase">Wydarzenie klubowe</p>
-          <p class="text-[10px] text-muted">obóz, zgrupowanie</p>
+          <p class="text-xs font-black text-teal-400 uppercase">
+            Wydarzenie klubowe
+          </p>
+          <p class="text-[10px] text-muted">
+            obóz, zgrupowanie
+          </p>
         </div>
       </div>
     </div>
@@ -236,7 +282,10 @@ const goToToday = () => (currentDate.value = new Date())
       }"
     >
       <template #content>
-        <div v-if="selectedEvent" class="flex max-h-[min(92dvh,880px)] flex-col overflow-y-auto">
+        <div
+          v-if="selectedEvent"
+          class="flex max-h-[min(92dvh,880px)] flex-col overflow-y-auto"
+        >
           <div
             class="relative shrink-0 px-6 pb-8 pt-7 md:px-9 md:pb-10 md:pt-10"
             :class="getEventModalHeaderClass(selectedEvent)"
@@ -244,7 +293,10 @@ const goToToday = () => (currentDate.value = new Date())
             <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_60%_at_90%_-10%,rgba(255,255,255,0.22),transparent_52%)]" />
             <div class="relative space-y-4">
               <div class="flex flex-wrap items-center gap-2">
-                <UBadge color="neutral" class="border-white/25 bg-white/15 font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+                <UBadge
+                  color="neutral"
+                  class="border-white/25 bg-white/15 font-bold uppercase tracking-wider text-white backdrop-blur-sm"
+                >
                   {{ getEventKindLabel(selectedEvent) }}
                 </UBadge>
                 <UBadge
@@ -271,17 +323,26 @@ const goToToday = () => (currentDate.value = new Date())
                 v-if="selectedEvent._dateIso"
                 class="flex items-center gap-2 text-base font-semibold text-white/90 md:text-lg"
               >
-                <UIcon name="i-lucide-calendar-days" class="size-5 shrink-0 opacity-90" />
+                <UIcon
+                  name="i-lucide-calendar-days"
+                  class="size-5 shrink-0 opacity-90"
+                />
                 {{ format(parseISO(String(selectedEvent._dateIso)), 'EEEE, d MMMM yyyy', { locale: pl }) }}
               </p>
-              <p v-if="selectedEvent.time" class="text-sm font-medium text-white/75">
+              <p
+                v-if="selectedEvent.time"
+                class="text-sm font-medium text-white/75"
+              >
                 {{ selectedEvent.time }}
               </p>
             </div>
           </div>
 
           <div class="space-y-5 border-t border-default/40 bg-linear-to-b from-muted/30 to-background px-6 py-6 md:px-9 md:py-8">
-            <p v-if="selectedEvent.modalHint" class="text-[15px] leading-relaxed text-muted">
+            <p
+              v-if="selectedEvent.modalHint"
+              class="text-[15px] leading-relaxed text-muted"
+            >
               {{ selectedEvent.modalHint }}
             </p>
             <div
@@ -294,12 +355,23 @@ const goToToday = () => (currentDate.value = new Date())
               v-if="selectedEvent.location"
               class="flex gap-3 rounded-2xl border border-default/60 bg-muted/20 px-4 py-3 dark:bg-muted/10"
             >
-              <UIcon name="i-lucide-map-pin" class="mt-0.5 size-5 shrink-0 text-primary" />
+              <UIcon
+                name="i-lucide-map-pin"
+                class="mt-0.5 size-5 shrink-0 text-primary"
+              />
               <p class="text-[15px] font-semibold leading-snug text-highlighted">
                 {{ selectedEvent.location }}
               </p>
             </div>
-            <UButton block size="lg" color="neutral" variant="soft" icon="i-lucide-x" class="font-bold" @click="modalOpen = false">
+            <UButton
+              block
+              size="lg"
+              color="neutral"
+              variant="soft"
+              icon="i-lucide-x"
+              class="font-bold"
+              @click="modalOpen = false"
+            >
               Zamknij
             </UButton>
           </div>

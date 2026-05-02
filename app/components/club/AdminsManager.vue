@@ -49,26 +49,26 @@ const accountUsername = ref('')
 const accountEmail = ref('')
 const accountPassword = ref('')
 
-function canEditAccountFor (a: AdminAccount) {
+function canEditAccountFor(a: AdminAccount) {
   if (!canEditAccount.value || auth.user.value?.id === a.id) return false
   if (a.role === 'SuperAdmin' && !canSuper.value) return false
   return true
 }
 
-function canEditRoleFor (a: AdminAccount) {
+function canEditRoleFor(a: AdminAccount) {
   return canSuper.value && auth.user.value?.id !== a.id
 }
 
-function canDeleteAccount (a: AdminAccount) {
+function canDeleteAccount(a: AdminAccount) {
   return canSuper.value && auth.user.value?.id !== a.id
 }
 
-function startRoleEdit (a: AdminAccount) {
+function startRoleEdit(a: AdminAccount) {
   roleEditId.value = a.id
   roleEditValue.value = a.role
 }
 
-function openAccountEdit (a: AdminAccount) {
+function openAccountEdit(a: AdminAccount) {
   accountTarget.value = a
   accountUsername.value = a.username
   accountEmail.value = a.email || ''
@@ -76,7 +76,7 @@ function openAccountEdit (a: AdminAccount) {
   accountModalOpen.value = true
 }
 
-async function saveAccountEdit () {
+async function saveAccountEdit() {
   if (!accountTarget.value) return
   if (!accountUsername.value.trim()) {
     toast.add({ title: 'Login jest wymagany', color: 'warning' })
@@ -114,7 +114,7 @@ async function saveAccountEdit () {
   }
 }
 
-async function changeRole (adminId: string, newRole: string) {
+async function changeRole(adminId: string, newRole: string) {
   try {
     await api(`${apiRoutes.superadmin.admins}/${adminId}/role`, {
       method: 'PATCH',
@@ -132,7 +132,7 @@ async function changeRole (adminId: string, newRole: string) {
   }
 }
 
-async function loadAdmins () {
+async function loadAdmins() {
   loading.value = true
   try {
     const data = await api<GroupedAdminAccounts>(apiRoutes.superadmin.adminsGrouped)
@@ -149,13 +149,13 @@ async function loadAdmins () {
   }
 }
 
-function openCreate () {
+function openCreate() {
   username.value = ''
   password.value = ''
   modalOpen.value = true
 }
 
-async function saveAdmin () {
+async function saveAdmin() {
   if (!username.value.trim() || !password.value) {
     toast.add({ title: 'Podaj nazwę użytkownika i hasło', color: 'warning' })
     return
@@ -181,17 +181,17 @@ async function saveAdmin () {
   }
 }
 
-function askDelete (a: AdminAccount) {
+function askDelete(a: AdminAccount) {
   pendingDelete.value = a
   deleteModalOpen.value = true
 }
 
-function cancelDelete () {
+function cancelDelete() {
   deleteModalOpen.value = false
   pendingDelete.value = null
 }
 
-async function confirmDelete () {
+async function confirmDelete() {
   if (!pendingDelete.value) return
   deleting.value = true
   try {
@@ -280,28 +280,49 @@ onMounted(() => {
                   <p class="font-medium">
                     {{ a.username }}
                   </p>
-                  <p v-if="a.email" class="text-xs text-muted mt-0.5">
+                  <p
+                    v-if="a.email"
+                    class="text-xs text-muted mt-0.5"
+                  >
                     {{ a.email }}
                   </p>
                 </td>
                 <td class="relative z-20 px-4 py-3 align-top">
-                  <div v-if="canEditRoleFor(a) && roleEditId === a.id" class="relative z-30 flex flex-wrap items-center gap-2">
+                  <div
+                    v-if="canEditRoleFor(a) && roleEditId === a.id"
+                    class="relative z-30 flex flex-wrap items-center gap-2"
+                  >
                     <select
                       v-model="roleEditValue"
                       class="slavia-select w-40 min-w-[10rem]"
                     >
-                      <option v-for="r in roles" :key="r" :value="r">
+                      <option
+                        v-for="r in roles"
+                        :key="r"
+                        :value="r"
+                      >
                         {{ r }}
                       </option>
                     </select>
-                    <UButton size="xs" @click="changeRole(a.id, roleEditValue)">
+                    <UButton
+                      size="xs"
+                      @click="changeRole(a.id, roleEditValue)"
+                    >
                       Zmień
                     </UButton>
-                    <UButton size="xs" color="neutral" variant="ghost" @click="roleEditId = null">
+                    <UButton
+                      size="xs"
+                      color="neutral"
+                      variant="ghost"
+                      @click="roleEditId = null"
+                    >
                       Anuluj
                     </UButton>
                   </div>
-                  <div v-else class="flex flex-col gap-1">
+                  <div
+                    v-else
+                    class="flex flex-col gap-1"
+                  >
                     <div class="flex items-center gap-2">
                       <UBadge
                         color="primary"
@@ -318,13 +339,22 @@ onMounted(() => {
                         @click="startRoleEdit(a)"
                       />
                     </div>
-                    <p v-if="a.role === 'Athlete'" class="text-[11px] text-muted leading-snug max-w-xs">
+                    <p
+                      v-if="a.role === 'Athlete'"
+                      class="text-[11px] text-muted leading-snug max-w-xs"
+                    >
                       Konto zawodnika — profil sportowy edytujesz w bazie zawodników.
                     </p>
-                    <p v-else-if="a.role === 'Trainer'" class="text-[11px] text-muted leading-snug max-w-xs">
+                    <p
+                      v-else-if="a.role === 'Trainer'"
+                      class="text-[11px] text-muted leading-snug max-w-xs"
+                    >
                       Trener — dostęp do panelu trenera bez uprawnień administratora.
                     </p>
-                    <p v-else-if="a.role === 'TrainerAdmin'" class="text-[11px] text-muted leading-snug max-w-xs">
+                    <p
+                      v-else-if="a.role === 'TrainerAdmin'"
+                      class="text-[11px] text-muted leading-snug max-w-xs"
+                    >
                       Admin-trener — scalony panel administracyjny z narzędziami trenera.
                     </p>
                   </div>
@@ -363,33 +393,70 @@ onMounted(() => {
       </UCard>
     </div>
 
-    <UModal v-model:open="modalOpen" title="Nowe konto administratora">
+    <UModal
+      v-model:open="modalOpen"
+      title="Nowe konto administratora"
+    >
       <template #content>
         <div class="slavia-form-modal">
-          <form class="slavia-form-stack" @submit.prevent="saveAdmin">
+          <form
+            class="slavia-form-stack"
+            @submit.prevent="saveAdmin"
+          >
             <div class="slavia-form-panel">
               <div class="slavia-form-panel__header">
                 <div class="slavia-form-panel__title">
                   <span class="slavia-form-panel__icon">
-                    <UIcon name="i-lucide-user-plus" class="size-4" />
+                    <UIcon
+                      name="i-lucide-user-plus"
+                      class="size-4"
+                    />
                   </span>
                   Dane konta
                 </div>
               </div>
               <div class="slavia-form-panel__body">
-                <UFormField label="Login (nazwa użytkownika)" required>
-                  <UInput v-model="username" autocomplete="username" size="lg" placeholder="np. admin_klubu" class="w-full" />
+                <UFormField
+                  label="Login (nazwa użytkownika)"
+                  required
+                >
+                  <UInput
+                    v-model="username"
+                    autocomplete="username"
+                    size="lg"
+                    placeholder="np. admin_klubu"
+                    class="w-full"
+                  />
                 </UFormField>
-                <UFormField label="Hasło" required>
-                  <UInput v-model="password" type="password" autocomplete="new-password" size="lg" class="w-full" />
+                <UFormField
+                  label="Hasło"
+                  required
+                >
+                  <UInput
+                    v-model="password"
+                    type="password"
+                    autocomplete="new-password"
+                    size="lg"
+                    class="w-full"
+                  />
                 </UFormField>
               </div>
             </div>
             <div class="slavia-form-actions border-t border-default/60 pt-4">
-              <UButton type="button" color="neutral" variant="outline" size="lg" @click="modalOpen = false">
+              <UButton
+                type="button"
+                color="neutral"
+                variant="outline"
+                size="lg"
+                @click="modalOpen = false"
+              >
                 Anuluj
               </UButton>
-              <UButton type="submit" size="lg" :loading="saving">
+              <UButton
+                type="submit"
+                size="lg"
+                :loading="saving"
+              >
                 Utwórz
               </UButton>
             </div>
@@ -398,35 +465,70 @@ onMounted(() => {
       </template>
     </UModal>
 
-    <UModal v-model:open="accountModalOpen" title="Edycja konta">
+    <UModal
+      v-model:open="accountModalOpen"
+      title="Edycja konta"
+    >
       <template #content>
         <div class="slavia-form-modal">
           <div class="slavia-form-panel">
             <div class="slavia-form-panel__header">
               <div class="slavia-form-panel__title">
                 <span class="slavia-form-panel__icon">
-                  <UIcon name="i-lucide-pencil" class="size-4" />
+                  <UIcon
+                    name="i-lucide-pencil"
+                    class="size-4"
+                  />
                 </span>
                 Dane logowania
               </div>
             </div>
             <div class="slavia-form-panel__body">
-              <UFormField label="Login" required>
-                <UInput v-model="accountUsername" autocomplete="username" size="lg" class="w-full" />
+              <UFormField
+                label="Login"
+                required
+              >
+                <UInput
+                  v-model="accountUsername"
+                  autocomplete="username"
+                  size="lg"
+                  class="w-full"
+                />
               </UFormField>
               <UFormField label="E-mail (opcjonalnie)">
-                <UInput v-model="accountEmail" type="email" autocomplete="email" size="lg" class="w-full" />
+                <UInput
+                  v-model="accountEmail"
+                  type="email"
+                  autocomplete="email"
+                  size="lg"
+                  class="w-full"
+                />
               </UFormField>
               <UFormField label="Nowe hasło (pozostaw puste, by nie zmieniać)">
-                <UInput v-model="accountPassword" type="password" autocomplete="new-password" size="lg" class="w-full" />
+                <UInput
+                  v-model="accountPassword"
+                  type="password"
+                  autocomplete="new-password"
+                  size="lg"
+                  class="w-full"
+                />
               </UFormField>
             </div>
           </div>
           <div class="slavia-form-actions border-t border-default/60 pt-4">
-            <UButton color="neutral" variant="outline" size="lg" @click="accountModalOpen = false">
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="lg"
+              @click="accountModalOpen = false"
+            >
               Anuluj
             </UButton>
-            <UButton size="lg" :loading="accountSaving" @click="saveAccountEdit">
+            <UButton
+              size="lg"
+              :loading="accountSaving"
+              @click="saveAccountEdit"
+            >
               Zapisz
             </UButton>
           </div>
@@ -434,7 +536,10 @@ onMounted(() => {
       </template>
     </UModal>
 
-    <UModal v-model:open="deleteModalOpen" title="Usunąć konto?">
+    <UModal
+      v-model:open="deleteModalOpen"
+      title="Usunąć konto?"
+    >
       <template #content>
         <div class="slavia-form-modal">
           <p
@@ -444,10 +549,20 @@ onMounted(() => {
             Czy na pewno usunąć konto {{ pendingDelete.username }}?
           </p>
           <div class="slavia-form-actions border-t border-default/60 pt-4">
-            <UButton color="neutral" variant="outline" size="lg" @click="cancelDelete">
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="lg"
+              @click="cancelDelete"
+            >
               Wróć
             </UButton>
-            <UButton color="error" size="lg" :loading="deleting" @click="confirmDelete">
+            <UButton
+              color="error"
+              size="lg"
+              :loading="deleting"
+              @click="confirmDelete"
+            >
               Usuń
             </UButton>
           </div>

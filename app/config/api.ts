@@ -65,18 +65,18 @@ export const apiRoutes = {
   }
 } as const
 
-export function urlAdminAthlete (id: string) {
+export function urlAdminAthlete(id: string) {
   return `${apiRoutes.admin.athletes}/${id}`
 }
 
-export function urlAdminPlayer (id: string) {
+export function urlAdminPlayer(id: string) {
   return urlAdminAthlete(id)
 }
 
-export function urlSuperadminAdmin (id: string) {
+export function urlSuperadminAdmin(id: string) {
   return `${apiRoutes.superadmin.admins}/${id}`
 }
 
-export function urlAdminAccount (id: string) {
+export function urlAdminAccount(id: string) {
   return `${apiRoutes.superadmin.admins}/${id}/account`
 }

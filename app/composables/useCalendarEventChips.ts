@@ -8,8 +8,8 @@ export type CalendarChipEvent = {
   external_source?: string | null
 }
 
-export function useCalendarEventChips () {
-  function getEventClasses (event: CalendarChipEvent) {
+export function useCalendarEventChips() {
+  function getEventClasses(event: CalendarChipEvent) {
     if (event.type === 'training' || event.category === 'training')
       return 'bg-blue-500/10 border-blue-500/30 text-blue-400'
     if (event.external_source)
@@ -22,7 +22,7 @@ export function useCalendarEventChips () {
     return 'bg-teal-500/15 border-teal-500/40 text-teal-400 font-bold'
   }
 
-  function getEventIcon (event: CalendarChipEvent) {
+  function getEventIcon(event: CalendarChipEvent) {
     if (event.type === 'training') return 'i-lucide-dumbbell'
     if (event.external_source) return 'i-lucide-globe'
     const cat = event.category || 'club_event'
@@ -32,7 +32,7 @@ export function useCalendarEventChips () {
   }
 
   /** Nagłówek modala — gradient + pierścień (Tailwind). */
-  function getEventModalHeaderClass (event: CalendarChipEvent) {
+  function getEventModalHeaderClass(event: CalendarChipEvent) {
     if (event.type === 'training' || event.category === 'training') {
       return 'bg-linear-to-br from-blue-600 via-blue-700 to-slate-950 text-white ring-2 ring-blue-400/40 shadow-[0_20px_50px_-15px_rgba(37,99,235,0.55)]'
     }
@@ -55,7 +55,7 @@ export function useCalendarEventChips () {
     return 'bg-linear-to-br from-teal-600 via-emerald-800 to-slate-950 text-white ring-2 ring-teal-400/35 shadow-[0_20px_50px_-15px_rgba(20,184,166,0.45)]'
   }
 
-  function getEventKindLabel (event: CalendarChipEvent) {
+  function getEventKindLabel(event: CalendarChipEvent) {
     if (event.type === 'training' || event.category === 'training') return 'Trening klubowy'
     if (event.external_source) return 'Import zewnętrzny'
     const cat = event.category || 'club_event'

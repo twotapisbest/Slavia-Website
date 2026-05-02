@@ -13,7 +13,7 @@ const popoverOpen = ref(false)
 
 let pollTimer: ReturnType<typeof setInterval> | undefined
 
-function relativeTime (iso: string) {
+function relativeTime(iso: string) {
   try {
     return formatDistanceToNow(new Date(iso), { addSuffix: true, locale: pl })
   } catch {
@@ -21,7 +21,7 @@ function relativeTime (iso: string) {
   }
 }
 
-async function onRemove (id: string, e: Event) {
+async function onRemove(id: string, e: Event) {
   e.preventDefault()
   e.stopPropagation()
   try {
@@ -35,7 +35,7 @@ async function onRemove (id: string, e: Event) {
   }
 }
 
-function onRowClick (n: ClubNotification) {
+function onRowClick(n: ClubNotification) {
   const to = resolveLink(n)
   if (to) {
     popoverOpen.value = false
@@ -109,7 +109,10 @@ onBeforeUnmount(() => {
           v-if="!loading && items.length === 0"
           class="flex flex-col items-center gap-2 px-6 py-10 text-center text-sm text-muted"
         >
-          <UIcon name="i-lucide-bell-off" class="size-9 opacity-40" />
+          <UIcon
+            name="i-lucide-bell-off"
+            class="size-9 opacity-40"
+          />
           <span>Brak powiadomień</span>
         </div>
 

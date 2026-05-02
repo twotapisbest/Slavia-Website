@@ -103,6 +103,7 @@ async function deletePost(id: string) {
     await apiFetch(`/api/posts/${id}`, { method: 'DELETE' })
     toast.add({ title: 'Wpis usunięty', color: 'success' })
     await refresh()
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (_error) {
     toast.add({ title: 'Błąd usuwania', color: 'error' })
   }
@@ -111,7 +112,8 @@ async function deletePost(id: string) {
 function formatDate(dateStr: string) {
   try {
     return format(parseISO(dateStr), 'dd MMMM yyyy, HH:mm', { locale: pl })
-  } catch (_e) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (_error) {
     return dateStr
   }
 }
@@ -139,29 +141,65 @@ function formatDate(dateStr: string) {
       </UButton>
     </div>
 
-    <div v-if="pending" class="flex justify-center py-10">
-      <UIcon name="i-lucide-loader-2" class="animate-spin size-8 text-primary" />
+    <div
+      v-if="pending"
+      class="flex justify-center py-10"
+    >
+      <UIcon
+        name="i-lucide-loader-2"
+        class="animate-spin size-8 text-primary"
+      />
     </div>
 
-    <div v-else-if="!posts || posts.length === 0" class="text-center py-20 border border-dashed border-default rounded-xl bg-muted/5">
-      <UIcon name="i-lucide-newspaper" class="size-12 mx-auto text-muted/50 mb-4" />
-      <h3 class="text-lg font-medium text-highlighted">Brak wpisów</h3>
-      <p class="text-muted mt-1">Zaglądaj tu wkrótce po nowości ze świata ciężarów.</p>
+    <div
+      v-else-if="!posts || posts.length === 0"
+      class="text-center py-20 border border-dashed border-default rounded-xl bg-muted/5"
+    >
+      <UIcon
+        name="i-lucide-newspaper"
+        class="size-12 mx-auto text-muted/50 mb-4"
+      />
+      <h3 class="text-lg font-medium text-highlighted">
+        Brak wpisów
+      </h3>
+      <p class="text-muted mt-1">
+        Zaglądaj tu wkrótce po nowości ze świata ciężarów.
+      </p>
     </div>
 
-    <div v-else class="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3 xl:gap-10">
-      <UCard v-for="post in posts" :key="post.id" class="group flex flex-col overflow-hidden border-transparent transition-colors hover:border-primary/50">
+    <div
+      v-else
+      class="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3 xl:gap-10"
+    >
+      <UCard
+        v-for="post in posts"
+        :key="post.id"
+        class="group flex flex-col overflow-hidden border-transparent transition-colors hover:border-primary/50"
+      >
         <!-- Zdjęcie wpisu -->
         <div class="relative mb-4 flex h-44 items-center justify-center overflow-hidden rounded-lg bg-neutral-800 sm:h-48">
-          <img v-if="post.image_url" :src="post.image_url" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-          <div v-else class="w-full h-full bg-linear-to-br from-primary/20 to-neutral-900 flex items-center justify-center">
-            <UIcon name="i-lucide-newspaper" class="size-16 text-primary/10" />
+          <img
+            v-if="post.image_url"
+            :src="post.image_url"
+            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          >
+          <div
+            v-else
+            class="w-full h-full bg-linear-to-br from-primary/20 to-neutral-900 flex items-center justify-center"
+          >
+            <UIcon
+              name="i-lucide-newspaper"
+              class="size-16 text-primary/10"
+            />
           </div>
         </div>
 
         <div class="flex-1 flex flex-col">
           <p class="text-xs font-medium text-primary mb-2 flex items-center gap-1.5">
-            <UIcon name="i-lucide-calendar" class="size-3.5" />
+            <UIcon
+              name="i-lucide-calendar"
+              class="size-3.5"
+            />
             {{ formatDate(post.created_at) }}
           </p>
           <h3 class="text-xl font-bold text-highlighted mb-3 line-clamp-2">
@@ -172,11 +210,25 @@ function formatDate(dateStr: string) {
           </p>
 
           <div class="mt-auto flex flex-col gap-3 border-t border-default pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <UButton :to="`/blog/${post.id}`" variant="link" color="primary" trailing-icon="i-lucide-arrow-right" class="min-h-10 justify-start px-0">
+            <UButton
+              :to="`/blog/${post.id}`"
+              variant="link"
+              color="primary"
+              trailing-icon="i-lucide-arrow-right"
+              class="min-h-10 justify-start px-0"
+            >
               Czytaj więcej
             </UButton>
 
-            <UButton v-if="isAdmin" size="sm" color="error" variant="ghost" icon="i-lucide-trash-2" class="min-h-10 self-start sm:self-auto" @click="deletePost(post.id)">
+            <UButton
+              v-if="isAdmin"
+              size="sm"
+              color="error"
+              variant="ghost"
+              icon="i-lucide-trash-2"
+              class="min-h-10 self-start sm:self-auto"
+              @click="deletePost(post.id)"
+            >
               Usuń
             </UButton>
           </div>
@@ -185,40 +237,93 @@ function formatDate(dateStr: string) {
     </div>
 
     <!-- Modal do dodawania -->
-    <UModal v-model:open="isModalOpen" title="Nowy wpis">
+    <UModal
+      v-model:open="isModalOpen"
+      title="Nowy wpis"
+    >
       <template #content>
         <div class="slavia-form-modal">
-          <form class="slavia-form-stack" @submit.prevent="savePost">
+          <form
+            class="slavia-form-stack"
+            @submit.prevent="savePost"
+          >
             <div class="slavia-form-panel">
               <div class="slavia-form-panel__header">
                 <div class="slavia-form-panel__title">
                   <span class="slavia-form-panel__icon">
-                    <UIcon name="i-lucide-file-text" class="size-4" />
+                    <UIcon
+                      name="i-lucide-file-text"
+                      class="size-4"
+                    />
                   </span>
                   Treść wpisu
                 </div>
               </div>
               <div class="slavia-form-panel__body">
-                <UFormField label="Tytuł" required>
-                  <UInput v-model="formState.title" placeholder="Wpisz chwytliwy tytuł..." size="lg" class="w-full" />
+                <UFormField
+                  label="Tytuł"
+                  required
+                >
+                  <UInput
+                    v-model="formState.title"
+                    placeholder="Wpisz chwytliwy tytuł..."
+                    size="lg"
+                    class="w-full"
+                  />
                 </UFormField>
                 <UFormField label="Zdjęcie (URL lub upload)">
                   <div class="flex flex-wrap items-center gap-2">
-                    <UInput v-model="formState.image_url" placeholder="https://..." size="lg" class="min-w-0 flex-1" />
-                    <UButton icon="i-lucide-upload" color="neutral" variant="soft" size="lg" :loading="uploadLoading" @click="$refs.fileInput.click()" />
-                    <input ref="fileInput" type="file" hidden accept="image/*" @change="onFileChange">
+                    <UInput
+                      v-model="formState.image_url"
+                      placeholder="https://..."
+                      size="lg"
+                      class="min-w-0 flex-1"
+                    />
+                    <UButton
+                      icon="i-lucide-upload"
+                      color="neutral"
+                      variant="soft"
+                      size="lg"
+                      :loading="uploadLoading"
+                      @click="$refs.fileInput.click()"
+                    />
+                    <input
+                      ref="fileInput"
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      @change="onFileChange"
+                    >
                   </div>
                 </UFormField>
-                <UFormField label="Treść" required>
-                  <UTextarea v-model="formState.content" placeholder="O czym chcesz napisać?" :rows="8" class="w-full" />
+                <UFormField
+                  label="Treść"
+                  required
+                >
+                  <UTextarea
+                    v-model="formState.content"
+                    placeholder="O czym chcesz napisać?"
+                    :rows="8"
+                    class="w-full"
+                  />
                 </UFormField>
               </div>
             </div>
             <div class="slavia-form-actions border-t border-default/60 pt-4">
-              <UButton color="neutral" variant="soft" size="lg" @click="isModalOpen = false">
+              <UButton
+                color="neutral"
+                variant="soft"
+                size="lg"
+                @click="isModalOpen = false"
+              >
                 Anuluj
               </UButton>
-              <UButton type="submit" color="primary" size="lg" :loading="isSubmitting">
+              <UButton
+                type="submit"
+                color="primary"
+                size="lg"
+                :loading="isSubmitting"
+              >
                 Opublikuj
               </UButton>
             </div>

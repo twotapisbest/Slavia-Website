@@ -34,7 +34,7 @@ const athleteName = computed(() => {
 const entries = ref<TrainingLogEntry[]>([])
 const loading = ref(true)
 
-async function loadEntries () {
+async function loadEntries() {
   if (!athleteId.value) {
     return
   }
@@ -62,7 +62,7 @@ const newForm = reactive({
 })
 const adding = ref(false)
 
-async function addEntry () {
+async function addEntry() {
   const notes = newForm.notes.trim()
   if (!notes) {
     toast.add({ title: 'Uzupełnij treść wpisu', color: 'warning' })
@@ -102,7 +102,7 @@ const editForm = reactive({
 })
 const savingEdit = ref(false)
 
-function openEdit (e: TrainingLogEntry) {
+function openEdit(e: TrainingLogEntry) {
   editEntry.value = e
   editForm.session_date = e.session_date.slice(0, 10)
   editForm.title = e.title || ''
@@ -110,7 +110,7 @@ function openEdit (e: TrainingLogEntry) {
   editOpen.value = true
 }
 
-async function saveEdit () {
+async function saveEdit() {
   if (!editEntry.value) {
     return
   }
@@ -143,7 +143,7 @@ async function saveEdit () {
   }
 }
 
-async function removeEntry (e: TrainingLogEntry) {
+async function removeEntry(e: TrainingLogEntry) {
   if (!confirm(`Usunąć wpis z dnia ${e.session_date.slice(0, 10)}?`)) {
     return
   }
@@ -176,10 +176,20 @@ async function removeEntry (e: TrainingLogEntry) {
         </p>
       </div>
       <div class="flex flex-wrap gap-2">
-        <UButton to="/trainer/dziennik" variant="soft" color="neutral" icon="i-lucide-users">
+        <UButton
+          to="/trainer/dziennik"
+          variant="soft"
+          color="neutral"
+          icon="i-lucide-users"
+        >
           Inny zawodnik
         </UButton>
-        <UButton to="/trainer" variant="ghost" color="neutral" icon="i-lucide-arrow-left">
+        <UButton
+          to="/trainer"
+          variant="ghost"
+          color="neutral"
+          icon="i-lucide-arrow-left"
+        >
           Panel trenera
         </UButton>
       </div>
@@ -189,7 +199,10 @@ async function removeEntry (e: TrainingLogEntry) {
       <div class="slavia-form-panel__header">
         <div class="slavia-form-panel__title">
           <span class="slavia-form-panel__icon">
-            <UIcon name="i-lucide-plus" class="size-4" />
+            <UIcon
+              name="i-lucide-plus"
+              class="size-4"
+            />
           </span>
           Nowy wpis
         </div>
@@ -199,17 +212,44 @@ async function removeEntry (e: TrainingLogEntry) {
       </div>
       <div class="slavia-form-panel__body">
         <div class="grid gap-5 sm:grid-cols-2">
-          <UFormField label="Data jednostki" required>
-            <UInput v-model="newForm.session_date" type="date" size="lg" class="w-full" />
+          <UFormField
+            label="Data jednostki"
+            required
+          >
+            <UInput
+              v-model="newForm.session_date"
+              type="date"
+              size="lg"
+              class="w-full"
+            />
           </UFormField>
           <UFormField label="Temat (opcjonalnie)">
-            <UInput v-model="newForm.title" placeholder="np. Technika rwania" size="lg" class="w-full" />
+            <UInput
+              v-model="newForm.title"
+              placeholder="np. Technika rwania"
+              size="lg"
+              class="w-full"
+            />
           </UFormField>
         </div>
-        <UFormField label="Treść / obciążenia / uwagi" required>
-          <UTextarea v-model="newForm.notes" :rows="5" autoresize placeholder="Opisz przebieg treningu…" class="w-full" />
+        <UFormField
+          label="Treść / obciążenia / uwagi"
+          required
+        >
+          <UTextarea
+            v-model="newForm.notes"
+            :rows="5"
+            autoresize
+            placeholder="Opisz przebieg treningu…"
+            class="w-full"
+          />
         </UFormField>
-        <UButton size="lg" :loading="adding" icon="i-lucide-plus" @click="addEntry">
+        <UButton
+          size="lg"
+          :loading="adding"
+          icon="i-lucide-plus"
+          @click="addEntry"
+        >
           Dodaj wpis
         </UButton>
       </div>
@@ -219,24 +259,46 @@ async function removeEntry (e: TrainingLogEntry) {
       Historia wpisów
     </h2>
 
-    <div v-if="loading" class="flex items-center gap-2 py-12 text-muted">
-      <UIcon name="i-lucide-loader-2" class="size-6 animate-spin" />
+    <div
+      v-if="loading"
+      class="flex items-center gap-2 py-12 text-muted"
+    >
+      <UIcon
+        name="i-lucide-loader-2"
+        class="size-6 animate-spin"
+      />
       Wczytywanie…
     </div>
 
-    <div v-else-if="entries.length === 0" class="rounded-xl border border-dashed border-default py-14 text-center text-muted">
+    <div
+      v-else-if="entries.length === 0"
+      class="rounded-xl border border-dashed border-default py-14 text-center text-muted"
+    >
       Brak wpisów — dodaj pierwszą jednostkę powyżej.
     </div>
 
-    <div v-else class="space-y-4">
-      <UCard v-for="e in entries" :key="e.id" class="overflow-hidden">
+    <div
+      v-else
+      class="space-y-4"
+    >
+      <UCard
+        v-for="e in entries"
+        :key="e.id"
+        class="overflow-hidden"
+      >
         <div class="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
           <div class="min-w-0 flex-1 space-y-2">
             <div class="flex flex-wrap items-center gap-2">
-              <UBadge color="primary" variant="subtle">
+              <UBadge
+                color="primary"
+                variant="subtle"
+              >
                 {{ e.session_date.slice(0, 10) }}
               </UBadge>
-              <span v-if="e.title" class="font-semibold text-highlighted">{{ e.title }}</span>
+              <span
+                v-if="e.title"
+                class="font-semibold text-highlighted"
+              >{{ e.title }}</span>
             </div>
             <p class="text-sm text-highlighted whitespace-pre-wrap leading-relaxed">
               {{ e.notes }}
@@ -247,10 +309,21 @@ async function removeEntry (e: TrainingLogEntry) {
             </p>
           </div>
           <div class="flex shrink-0 gap-1 sm:flex-col">
-            <UButton size="xs" variant="soft" icon="i-lucide-pencil" @click="openEdit(e)">
+            <UButton
+              size="xs"
+              variant="soft"
+              icon="i-lucide-pencil"
+              @click="openEdit(e)"
+            >
               Edytuj
             </UButton>
-            <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" @click="removeEntry(e)">
+            <UButton
+              size="xs"
+              color="error"
+              variant="ghost"
+              icon="i-lucide-trash-2"
+              @click="removeEntry(e)"
+            >
               Usuń
             </UButton>
           </div>
@@ -258,35 +331,68 @@ async function removeEntry (e: TrainingLogEntry) {
       </UCard>
     </div>
 
-    <UModal v-model:open="editOpen" title="Edytuj wpis" :ui="{ overlay: 'z-[190]', content: 'z-[200]' }">
+    <UModal
+      v-model:open="editOpen"
+      title="Edytuj wpis"
+      :ui="{ overlay: 'z-[190]', content: 'z-[200]' }"
+    >
       <template #content>
         <div class="slavia-form-modal">
           <div class="slavia-form-panel">
             <div class="slavia-form-panel__header">
               <div class="slavia-form-panel__title">
                 <span class="slavia-form-panel__icon">
-                  <UIcon name="i-lucide-book-open" class="size-4" />
+                  <UIcon
+                    name="i-lucide-book-open"
+                    class="size-4"
+                  />
                 </span>
                 Wpis w dzienniku
               </div>
             </div>
             <div class="slavia-form-panel__body">
               <UFormField label="Data">
-                <UInput v-model="editForm.session_date" type="date" size="lg" class="w-full" />
+                <UInput
+                  v-model="editForm.session_date"
+                  type="date"
+                  size="lg"
+                  class="w-full"
+                />
               </UFormField>
               <UFormField label="Temat">
-                <UInput v-model="editForm.title" size="lg" class="w-full" />
+                <UInput
+                  v-model="editForm.title"
+                  size="lg"
+                  class="w-full"
+                />
               </UFormField>
-              <UFormField label="Treść" required>
-                <UTextarea v-model="editForm.notes" :rows="6" autoresize class="w-full" />
+              <UFormField
+                label="Treść"
+                required
+              >
+                <UTextarea
+                  v-model="editForm.notes"
+                  :rows="6"
+                  autoresize
+                  class="w-full"
+                />
               </UFormField>
             </div>
           </div>
           <div class="slavia-form-actions border-t border-default/60 pt-4">
-            <UButton color="neutral" variant="outline" size="lg" @click="editOpen = false">
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="lg"
+              @click="editOpen = false"
+            >
               Anuluj
             </UButton>
-            <UButton size="lg" :loading="savingEdit" @click="saveEdit">
+            <UButton
+              size="lg"
+              :loading="savingEdit"
+              @click="saveEdit"
+            >
               Zapisz
             </UButton>
           </div>

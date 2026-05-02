@@ -3,14 +3,14 @@ import type { ClubNotification } from '~/types/notifications'
 
 export type { ClubNotification } from '~/types/notifications'
 
-export function useNotifications () {
+export function useNotifications() {
   const auth = useAuth()
   const api = useApi()
 
   const items = ref<ClubNotification[]>([])
   const loading = ref(false)
 
-  async function refresh () {
+  async function refresh() {
     if (!auth.isLoggedIn.value) return
     loading.value = true
     try {
@@ -20,12 +20,12 @@ export function useNotifications () {
     }
   }
 
-  async function remove (id: string) {
+  async function remove(id: string) {
     await api(apiRoutes.notifications.one(id), { method: 'DELETE' })
     items.value = items.value.filter(i => i.id !== id)
   }
 
-  function clearLocal () {
+  function clearLocal() {
     items.value = []
   }
 

@@ -69,11 +69,11 @@ const formAdd = reactive({
   date: ''
 })
 
-function defaultDateStr () {
+function defaultDateStr() {
   return new Date().toISOString().slice(0, 10)
 }
 
-function openAddModal () {
+function openAddModal() {
   formAdd.athlete_id = athleteSelectOptions.value[0]?.id ?? ''
   formAdd.snatch = 0
   formAdd.clean_and_jerk = 0
@@ -82,7 +82,7 @@ function openAddModal () {
   addModalOpen.value = true
 }
 
-async function submitAdd () {
+async function submitAdd() {
   if (!formAdd.athlete_id) {
     toast.add({ title: 'Wybierz zawodnika', color: 'warning' })
     return
@@ -121,7 +121,7 @@ async function submitAdd () {
   }
 }
 
-function openEdit (r: CompetitionResult) {
+function openEdit(r: CompetitionResult) {
   editing.value = r
   form.snatch = r.snatch
   form.clean_and_jerk = r.clean_and_jerk
@@ -131,7 +131,7 @@ function openEdit (r: CompetitionResult) {
   modalOpen.value = true
 }
 
-async function saveEdit () {
+async function saveEdit() {
   if (!editing.value) {
     return
   }
@@ -161,7 +161,7 @@ async function saveEdit () {
   }
 }
 
-async function removeRow (r: CompetitionResult) {
+async function removeRow(r: CompetitionResult) {
   if (!confirm(`Usunąć start z dnia ${r.date}?`)) {
     return
   }
@@ -204,10 +204,18 @@ watch([() => formAdd.snatch, () => formAdd.clean_and_jerk], () => {
         </p>
       </div>
       <div class="flex flex-wrap gap-2">
-        <UButton icon="i-lucide-plus-circle" @click="openAddModal">
+        <UButton
+          icon="i-lucide-plus-circle"
+          @click="openAddModal"
+        >
           Dodaj start (zatwierdzony)
         </UButton>
-        <UButton icon="i-lucide-refresh-ccw" variant="soft" :loading="pending" @click="refresh()">
+        <UButton
+          icon="i-lucide-refresh-ccw"
+          variant="soft"
+          :loading="pending"
+          @click="refresh()"
+        >
           Odśwież
         </UButton>
       </div>
@@ -242,17 +250,30 @@ watch([() => formAdd.snatch, () => formAdd.clean_and_jerk], () => {
         </thead>
         <tbody class="divide-y divide-default">
           <tr v-if="pending">
-            <td colspan="7" class="px-4 py-10 text-center text-muted">
-              <UIcon name="i-lucide-loader-2" class="inline size-6 animate-spin" />
+            <td
+              colspan="7"
+              class="px-4 py-10 text-center text-muted"
+            >
+              <UIcon
+                name="i-lucide-loader-2"
+                class="inline size-6 animate-spin"
+              />
             </td>
           </tr>
           <tr v-else-if="rows.length === 0">
-            <td colspan="7" class="px-4 py-10 text-center text-muted">
+            <td
+              colspan="7"
+              class="px-4 py-10 text-center text-muted"
+            >
               Brak zapisanych startów.
             </td>
           </tr>
           <template v-else>
-            <tr v-for="r in rows" :key="r.id" class="hover:bg-muted/15 transition-colors">
+            <tr
+              v-for="r in rows"
+              :key="r.id"
+              class="hover:bg-muted/15 transition-colors"
+            >
               <td class="px-4 py-3 whitespace-nowrap">
                 {{ r.date.slice(0, 10) }}
               </td>
@@ -269,14 +290,28 @@ watch([() => formAdd.snatch, () => formAdd.clean_and_jerk], () => {
                 {{ r.total }}
               </td>
               <td class="px-4 py-3">
-                <UBadge :color="r.status === 'Approved' ? 'success' : 'warning'" variant="subtle">
+                <UBadge
+                  :color="r.status === 'Approved' ? 'success' : 'warning'"
+                  variant="subtle"
+                >
                   {{ r.status === 'Approved' ? 'Zatwierdzony' : 'Oczekuje' }}
                 </UBadge>
               </td>
               <td class="px-4 py-3 text-right">
                 <div class="flex justify-end gap-1">
-                  <UButton size="xs" variant="soft" icon="i-lucide-pencil" @click="openEdit(r)" />
-                  <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" @click="removeRow(r)" />
+                  <UButton
+                    size="xs"
+                    variant="soft"
+                    icon="i-lucide-pencil"
+                    @click="openEdit(r)"
+                  />
+                  <UButton
+                    size="xs"
+                    color="error"
+                    variant="ghost"
+                    icon="i-lucide-trash-2"
+                    @click="removeRow(r)"
+                  />
                 </div>
               </td>
             </tr>
@@ -285,14 +320,21 @@ watch([() => formAdd.snatch, () => formAdd.clean_and_jerk], () => {
       </table>
     </UCard>
 
-    <UModal v-model:open="modalOpen" title="Edytuj start" :ui="{ overlay: 'z-[190]', content: 'z-[200]' }">
+    <UModal
+      v-model:open="modalOpen"
+      title="Edytuj start"
+      :ui="{ overlay: 'z-[190]', content: 'z-[200]' }"
+    >
       <template #content>
         <div class="slavia-form-modal">
           <div class="slavia-form-panel">
             <div class="slavia-form-panel__header">
               <div class="slavia-form-panel__title">
                 <span class="slavia-form-panel__icon">
-                  <UIcon name="i-lucide-pencil" class="size-4" />
+                  <UIcon
+                    name="i-lucide-pencil"
+                    class="size-4"
+                  />
                 </span>
                 Wynik startu
               </div>
@@ -300,17 +342,37 @@ watch([() => formAdd.snatch, () => formAdd.clean_and_jerk], () => {
             <div class="slavia-form-panel__body">
               <div class="grid grid-cols-2 gap-4">
                 <UFormField label="Rwanie (kg)">
-                  <UInput v-model.number="form.snatch" type="number" step="0.5" size="lg" class="w-full tabular-nums" />
+                  <UInput
+                    v-model.number="form.snatch"
+                    type="number"
+                    step="0.5"
+                    size="lg"
+                    class="w-full tabular-nums"
+                  />
                 </UFormField>
                 <UFormField label="Podrzut (kg)">
-                  <UInput v-model.number="form.clean_and_jerk" type="number" step="0.5" size="lg" class="w-full tabular-nums" />
+                  <UInput
+                    v-model.number="form.clean_and_jerk"
+                    type="number"
+                    step="0.5"
+                    size="lg"
+                    class="w-full tabular-nums"
+                  />
                 </UFormField>
               </div>
               <UFormField label="Data">
-                <UInput v-model="form.date" type="date" size="lg" class="w-full" />
+                <UInput
+                  v-model="form.date"
+                  type="date"
+                  size="lg"
+                  class="w-full"
+                />
               </UFormField>
               <UFormField label="Status">
-                <select v-model="form.status" class="slavia-select w-full py-3 text-[15px]">
+                <select
+                  v-model="form.status"
+                  class="slavia-select w-full py-3 text-[15px]"
+                >
                   <option value="Pending">
                     Oczekuje na akceptację
                   </option>
@@ -325,10 +387,19 @@ watch([() => formAdd.snatch, () => formAdd.clean_and_jerk], () => {
             </div>
           </div>
           <div class="slavia-form-actions border-t border-default/60 pt-4">
-            <UButton color="neutral" variant="outline" size="lg" @click="modalOpen = false">
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="lg"
+              @click="modalOpen = false"
+            >
               Anuluj
             </UButton>
-            <UButton size="lg" :loading="saving" @click="saveEdit">
+            <UButton
+              size="lg"
+              :loading="saving"
+              @click="saveEdit"
+            >
               Zapisz
             </UButton>
           </div>
@@ -336,7 +407,11 @@ watch([() => formAdd.snatch, () => formAdd.clean_and_jerk], () => {
       </template>
     </UModal>
 
-    <UModal v-model:open="addModalOpen" title="Nowy start (kadra)" :ui="{ overlay: 'z-[190]', content: 'z-[200]' }">
+    <UModal
+      v-model:open="addModalOpen"
+      title="Nowy start (kadra)"
+      :ui="{ overlay: 'z-[190]', content: 'z-[200]' }"
+    >
       <template #content>
         <div class="slavia-form-modal">
           <p class="rounded-xl border border-default/60 bg-muted/15 px-4 py-3 text-sm text-muted dark:bg-muted/10">
@@ -347,15 +422,24 @@ watch([() => formAdd.snatch, () => formAdd.clean_and_jerk], () => {
             <div class="slavia-form-panel__header">
               <div class="slavia-form-panel__title">
                 <span class="slavia-form-panel__icon">
-                  <UIcon name="i-lucide-plus" class="size-4" />
+                  <UIcon
+                    name="i-lucide-plus"
+                    class="size-4"
+                  />
                 </span>
                 Dane startu
               </div>
             </div>
             <div class="slavia-form-panel__body">
               <UFormField label="Zawodnik">
-                <select v-model="formAdd.athlete_id" class="slavia-select w-full py-3 text-[15px]">
-                  <option disabled value="">
+                <select
+                  v-model="formAdd.athlete_id"
+                  class="slavia-select w-full py-3 text-[15px]"
+                >
+                  <option
+                    disabled
+                    value=""
+                  >
                     — wybierz —
                   </option>
                   <option
@@ -369,14 +453,33 @@ watch([() => formAdd.snatch, () => formAdd.clean_and_jerk], () => {
               </UFormField>
               <div class="grid grid-cols-2 gap-4">
                 <UFormField label="Rwanie (kg)">
-                  <UInput v-model.number="formAdd.snatch" type="number" step="0.5" min="0" size="lg" class="w-full tabular-nums" />
+                  <UInput
+                    v-model.number="formAdd.snatch"
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    size="lg"
+                    class="w-full tabular-nums"
+                  />
                 </UFormField>
                 <UFormField label="Podrzut (kg)">
-                  <UInput v-model.number="formAdd.clean_and_jerk" type="number" step="0.5" min="0" size="lg" class="w-full tabular-nums" />
+                  <UInput
+                    v-model.number="formAdd.clean_and_jerk"
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    size="lg"
+                    class="w-full tabular-nums"
+                  />
                 </UFormField>
               </div>
               <UFormField label="Data startu">
-                <UInput v-model="formAdd.date" type="date" size="lg" class="w-full" />
+                <UInput
+                  v-model="formAdd.date"
+                  type="date"
+                  size="lg"
+                  class="w-full"
+                />
               </UFormField>
               <p class="text-xs text-muted">
                 Dwubój (auto): <strong class="tabular-nums text-highlighted">{{ formAdd.total }}</strong> kg
@@ -384,10 +487,19 @@ watch([() => formAdd.snatch, () => formAdd.clean_and_jerk], () => {
             </div>
           </div>
           <div class="slavia-form-actions border-t border-default/60 pt-4">
-            <UButton color="neutral" variant="outline" size="lg" @click="addModalOpen = false">
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="lg"
+              @click="addModalOpen = false"
+            >
               Anuluj
             </UButton>
-            <UButton size="lg" :loading="savingAdd" @click="submitAdd">
+            <UButton
+              size="lg"
+              :loading="savingAdd"
+              @click="submitAdd"
+            >
               Zapisz start
             </UButton>
           </div>

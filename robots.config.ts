@@ -1,5 +1,5 @@
 export default {
-    rules: [
-      { userAgent: '*', allow: '/' }
-    ]
-  }
+  rules: [
+    { userAgent: '*', allow: '/' }
+  ]
+}

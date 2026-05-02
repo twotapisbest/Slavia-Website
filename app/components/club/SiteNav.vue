@@ -222,9 +222,9 @@ const items = computed(() => {
               {{ link.label }}
             </UButton>
           </template>
-          
+
           <USeparator class="my-4" />
-          
+
           <template v-if="!auth.isLoggedIn.value">
             <UButton
               to="/logowanie"
@@ -238,10 +238,21 @@ const items = computed(() => {
           </template>
           <template v-else>
             <div class="mb-4 rounded-xl bg-muted/30 px-3 py-3">
-              <p class="text-xs text-muted uppercase font-bold tracking-wider mb-1">Zalogowany jako</p>
+              <p class="text-xs text-muted uppercase font-bold tracking-wider mb-1">
+                Zalogowany jako
+              </p>
               <div class="flex items-center justify-between">
-                <p class="font-bold text-highlighted">{{ auth.user.value?.username }}</p>
-                <UBadge size="xs" variant="subtle" color="primary" class="uppercase text-[10px]">{{ auth.user.value?.role }}</UBadge>
+                <p class="font-bold text-highlighted">
+                  {{ auth.user.value?.username }}
+                </p>
+                <UBadge
+                  size="xs"
+                  variant="subtle"
+                  color="primary"
+                  class="uppercase text-[10px]"
+                >
+                  {{ auth.user.value?.role }}
+                </UBadge>
               </div>
             </div>
             <UButton

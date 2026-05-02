@@ -4,13 +4,13 @@ import type { Athlete as AthleteModel, CompetitionResult } from '~/types/models'
 import type { SinclairGender } from '~/utils/sinclair'
 import { sinclairTotal } from '~/utils/sinclair'
 
-function cardGender (g: string | null | undefined): SinclairGender | null {
+function cardGender(g: string | null | undefined): SinclairGender | null {
   return g === 'male' || g === 'female' ? g : null
 }
 
 const config = useRuntimeConfig()
 
-function publicBase () {
+function publicBase() {
   return String(config.public.apiBase || '').replace(/\/$/, '')
 }
 
@@ -147,7 +147,10 @@ const filteredRankings = computed(() => {
     <!-- Header Section -->
     <div class="mb-10 px-1 text-center md:mb-16">
       <div class="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.25em] text-primary sm:gap-3 sm:text-sm sm:tracking-[0.3em]">
-        <UIcon name="i-lucide-trophy" class="size-5 shrink-0 sm:size-6" />
+        <UIcon
+          name="i-lucide-trophy"
+          class="size-5 shrink-0 sm:size-6"
+        />
         Kadra i Ranking
       </div>
       <h1 class="mt-4 text-4xl font-black uppercase italic tracking-tighter text-highlighted sm:mt-6 sm:text-6xl md:text-7xl lg:text-8xl lg:tracking-tighter">
@@ -160,19 +163,34 @@ const filteredRankings = computed(() => {
     </div>
 
     <!-- Podium Section -->
-    <div v-if="podium.length > 0" class="relative mb-16 pt-8 sm:mb-24 sm:pt-12">
+    <div
+      v-if="podium.length > 0"
+      class="relative mb-16 pt-8 sm:mb-24 sm:pt-12"
+    >
       <div class="absolute inset-0 -z-10 bg-linear-to-b from-primary/5 to-transparent blur-3xl opacity-50" />
       <div class="mx-auto grid max-w-4xl grid-cols-1 items-end gap-8 px-2 sm:gap-10 sm:px-4 md:grid-cols-3">
         <!-- 2nd Place -->
-        <div v-if="podium[1]" class="order-2 md:order-1 group">
+        <div
+          v-if="podium[1]"
+          class="order-2 md:order-1 group"
+        >
           <div class="flex flex-col items-center">
             <div class="relative mb-4">
-              <img :src="podium[1].photo || 'https://via.placeholder.com/300?text=Athlete'" class="size-32 rounded-full border-4 border-slate-400/50 object-cover shadow-xl grayscale-[0.3] group-hover:grayscale-0 transition-all duration-500 group-hover:scale-105" />
-              <div class="absolute -bottom-2 -right-2 bg-slate-400 text-slate-950 size-10 rounded-full flex items-center justify-center font-black text-xl shadow-lg ring-4 ring-background">2</div>
+              <img
+                :src="podium[1].photo || 'https://via.placeholder.com/300?text=Athlete'"
+                class="size-32 rounded-full border-4 border-slate-400/50 object-cover shadow-xl grayscale-[0.3] group-hover:grayscale-0 transition-all duration-500 group-hover:scale-105"
+              >
+              <div class="absolute -bottom-2 -right-2 bg-slate-400 text-slate-950 size-10 rounded-full flex items-center justify-center font-black text-xl shadow-lg ring-4 ring-background">
+                2
+              </div>
             </div>
             <div class="text-center p-4 bg-slate-400/10 rounded-t-2xl w-full border-t border-x border-slate-400/30 backdrop-blur-md">
-              <h3 class="text-base font-black text-highlighted truncate uppercase italic">{{ podium[1].name }}</h3>
-              <p class="text-primary font-mono font-black text-lg">{{ podium[1].sinclair }}</p>
+              <h3 class="text-base font-black text-highlighted truncate uppercase italic">
+                {{ podium[1].name }}
+              </h3>
+              <p class="text-primary font-mono font-black text-lg">
+                {{ podium[1].sinclair }}
+              </p>
             </div>
             <div class="h-24 w-full bg-linear-to-b from-slate-400 to-slate-700 rounded-b-xl shadow-xl flex items-center justify-center">
               <span class="text-white/10 text-4xl font-black tracking-tighter">SILVER</span>
@@ -181,18 +199,33 @@ const filteredRankings = computed(() => {
         </div>
 
         <!-- 1st Place -->
-        <div v-if="podium[0]" class="order-1 md:order-2 group -mt-6 md:-mt-16">
+        <div
+          v-if="podium[0]"
+          class="order-1 md:order-2 group -mt-6 md:-mt-16"
+        >
           <div class="flex flex-col items-center">
             <div class="relative mb-6">
               <div class="absolute -top-12 left-1/2 -translate-x-1/2 text-yellow-500 animate-pulse">
-                <UIcon name="i-lucide-crown" class="size-14 drop-shadow-[0_0_10px_rgba(234,179,8,0.5)]" />
+                <UIcon
+                  name="i-lucide-crown"
+                  class="size-14 drop-shadow-[0_0_10px_rgba(234,179,8,0.5)]"
+                />
               </div>
-              <img :src="podium[0].photo || 'https://via.placeholder.com/300?text=Athlete'" class="size-48 rounded-full border-4 border-yellow-500 object-cover shadow-[0_0_30px_rgba(234,179,8,0.3)] ring-6 ring-yellow-500/10 group-hover:scale-110 transition-all duration-700" />
-              <div class="absolute -bottom-2 -right-2 bg-yellow-500 text-yellow-950 size-14 rounded-full flex items-center justify-center font-black text-2xl shadow-xl ring-4 ring-background">1</div>
+              <img
+                :src="podium[0].photo || 'https://via.placeholder.com/300?text=Athlete'"
+                class="size-48 rounded-full border-4 border-yellow-500 object-cover shadow-[0_0_30px_rgba(234,179,8,0.3)] ring-6 ring-yellow-500/10 group-hover:scale-110 transition-all duration-700"
+              >
+              <div class="absolute -bottom-2 -right-2 bg-yellow-500 text-yellow-950 size-14 rounded-full flex items-center justify-center font-black text-2xl shadow-xl ring-4 ring-background">
+                1
+              </div>
             </div>
             <div class="text-center p-6 bg-yellow-500/10 rounded-t-2xl w-full border-t border-x border-yellow-500/30 backdrop-blur-md">
-              <h3 class="text-xl font-black text-highlighted truncate uppercase italic">{{ podium[0].name }}</h3>
-              <p class="text-primary text-2xl font-mono font-black">{{ podium[0].sinclair }}</p>
+              <h3 class="text-xl font-black text-highlighted truncate uppercase italic">
+                {{ podium[0].name }}
+              </h3>
+              <p class="text-primary text-2xl font-mono font-black">
+                {{ podium[0].sinclair }}
+              </p>
             </div>
             <div class="h-40 w-full bg-linear-to-b from-yellow-400 to-yellow-600 rounded-b-xl shadow-[0_15px_30px_rgba(234,179,8,0.2)] flex items-center justify-center">
               <span class="text-white/20 text-6xl font-black tracking-tighter">GOLD</span>
@@ -201,15 +234,27 @@ const filteredRankings = computed(() => {
         </div>
 
         <!-- 3rd Place -->
-        <div v-if="podium[2]" class="order-3 md:order-3 group">
+        <div
+          v-if="podium[2]"
+          class="order-3 md:order-3 group"
+        >
           <div class="flex flex-col items-center">
             <div class="relative mb-4">
-              <img :src="podium[2].photo || 'https://via.placeholder.com/300?text=Athlete'" class="size-28 rounded-full border-4 border-amber-700/50 object-cover shadow-lg grayscale-[0.5] group-hover:grayscale-0 transition-all duration-500 group-hover:scale-105" />
-              <div class="absolute -bottom-2 -right-2 bg-amber-700 text-white size-8 rounded-full flex items-center justify-center font-black text-lg shadow-lg ring-4 ring-background">3</div>
+              <img
+                :src="podium[2].photo || 'https://via.placeholder.com/300?text=Athlete'"
+                class="size-28 rounded-full border-4 border-amber-700/50 object-cover shadow-lg grayscale-[0.5] group-hover:grayscale-0 transition-all duration-500 group-hover:scale-105"
+              >
+              <div class="absolute -bottom-2 -right-2 bg-amber-700 text-white size-8 rounded-full flex items-center justify-center font-black text-lg shadow-lg ring-4 ring-background">
+                3
+              </div>
             </div>
             <div class="text-center p-3 bg-amber-700/10 rounded-t-2xl w-full border-t border-x border-amber-700/30 backdrop-blur-md">
-              <h3 class="text-base font-black text-highlighted truncate uppercase italic">{{ podium[2].name }}</h3>
-              <p class="text-primary font-mono font-black text-lg">{{ podium[2].sinclair }}</p>
+              <h3 class="text-base font-black text-highlighted truncate uppercase italic">
+                {{ podium[2].name }}
+              </h3>
+              <p class="text-primary font-mono font-black text-lg">
+                {{ podium[2].sinclair }}
+              </p>
             </div>
             <div class="h-20 w-full bg-linear-to-b from-amber-600 to-amber-900 rounded-b-xl shadow-lg flex items-center justify-center">
               <span class="text-white/10 text-3xl font-black tracking-tighter">BRONZE</span>
@@ -224,7 +269,10 @@ const filteredRankings = computed(() => {
       <div class="mb-8 flex flex-col justify-between gap-6 sm:mb-12 md:flex-row md:items-end lg:mb-14">
         <div class="min-w-0">
           <h2 class="flex items-center gap-3 text-2xl font-black uppercase italic tracking-tight text-highlighted sm:gap-4 sm:text-3xl lg:text-4xl">
-            <UIcon name="i-lucide-list-ordered" class="size-7 shrink-0 text-primary sm:size-8" />
+            <UIcon
+              name="i-lucide-list-ordered"
+              class="size-7 shrink-0 text-primary sm:size-8"
+            />
             Tabela Rankingowa
           </h2>
           <p class="mt-2 font-medium text-muted">
@@ -266,16 +314,26 @@ const filteredRankings = computed(() => {
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="border-b border-white/10 bg-white/5">
-                <th class="px-3 py-3 text-[10px] font-black uppercase tracking-wider text-muted sm:px-6 sm:py-5 sm:text-xs sm:tracking-widest lg:px-8">Msc.</th>
-                <th class="px-3 py-3 text-[10px] font-black uppercase tracking-wider text-muted sm:px-6 sm:py-5 sm:text-xs sm:tracking-widest lg:px-8">Zawodnik</th>
-                <th class="hidden px-3 py-3 text-right text-[10px] font-black uppercase tracking-wider text-muted md:table-cell md:px-6 md:py-5 md:text-xs md:tracking-widest lg:px-8">Waga</th>
-                <th class="px-3 py-3 text-right text-[10px] font-black uppercase tracking-wider text-muted sm:px-6 sm:py-5 sm:text-xs sm:tracking-widest lg:px-8">Dwubój</th>
-                <th class="px-3 py-3 text-right text-[10px] font-black uppercase tracking-wider text-muted sm:px-6 sm:py-5 sm:text-xs sm:tracking-widest lg:px-8">Sinclair</th>
+                <th class="px-3 py-3 text-[10px] font-black uppercase tracking-wider text-muted sm:px-6 sm:py-5 sm:text-xs sm:tracking-widest lg:px-8">
+                  Msc.
+                </th>
+                <th class="px-3 py-3 text-[10px] font-black uppercase tracking-wider text-muted sm:px-6 sm:py-5 sm:text-xs sm:tracking-widest lg:px-8">
+                  Zawodnik
+                </th>
+                <th class="hidden px-3 py-3 text-right text-[10px] font-black uppercase tracking-wider text-muted md:table-cell md:px-6 md:py-5 md:text-xs md:tracking-widest lg:px-8">
+                  Waga
+                </th>
+                <th class="px-3 py-3 text-right text-[10px] font-black uppercase tracking-wider text-muted sm:px-6 sm:py-5 sm:text-xs sm:tracking-widest lg:px-8">
+                  Dwubój
+                </th>
+                <th class="px-3 py-3 text-right text-[10px] font-black uppercase tracking-wider text-muted sm:px-6 sm:py-5 sm:text-xs sm:tracking-widest lg:px-8">
+                  Sinclair
+                </th>
               </tr>
             </thead>
             <tbody class="divide-y divide-white/5">
-              <tr 
-                v-for="(p, idx) in filteredRankings" 
+              <tr
+                v-for="(p, idx) in filteredRankings"
                 :key="p.name"
                 class="group transition-all hover:bg-primary/10"
               >
@@ -286,7 +344,12 @@ const filteredRankings = computed(() => {
                 </td>
                 <td class="min-w-0 px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
                   <div class="flex min-w-0 items-center gap-2 sm:gap-4">
-                    <UAvatar :src="p.photo" :alt="p.name" size="sm" class="shrink-0 ring-1 ring-white/10" />
+                    <UAvatar
+                      :src="p.photo"
+                      :alt="p.name"
+                      size="sm"
+                      class="shrink-0 ring-1 ring-white/10"
+                    />
                     <span class="truncate font-bold text-highlighted">{{ p.name }}</span>
                   </div>
                   <p class="mt-0.5 font-mono text-[11px] text-muted md:hidden">
@@ -312,14 +375,20 @@ const filteredRankings = computed(() => {
     </div>
 
     <!-- Full Athlete List Section -->
-    <div v-if="mappedPlayers.length > 0" class="mb-20">
+    <div
+      v-if="mappedPlayers.length > 0"
+      class="mb-20"
+    >
       <h2 class="mb-8 flex items-center gap-3 text-2xl font-black uppercase italic tracking-tight text-highlighted sm:mb-12 sm:gap-4 sm:text-3xl lg:text-4xl">
-        <UIcon name="i-lucide-users" class="size-7 shrink-0 text-primary sm:size-8" />
+        <UIcon
+          name="i-lucide-users"
+          class="size-7 shrink-0 text-primary sm:size-8"
+        />
         Karty Zawodników
       </h2>
       <div class="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12 xl:gap-14">
-        <AtheleteCard 
-          v-for="player in mappedPlayers" 
+        <AtheleteCard
+          v-for="player in mappedPlayers"
           :key="player.name"
           :model-value="player"
         />

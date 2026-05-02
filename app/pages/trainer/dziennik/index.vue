@@ -55,12 +55,21 @@ const filtered = computed(() => {
       />
     </div>
 
-    <div v-if="pending" class="flex items-center gap-2 text-muted py-10">
-      <UIcon name="i-lucide-loader-2" class="size-6 animate-spin" />
+    <div
+      v-if="pending"
+      class="flex items-center gap-2 text-muted py-10"
+    >
+      <UIcon
+        name="i-lucide-loader-2"
+        class="size-6 animate-spin"
+      />
       Ładowanie listy…
     </div>
 
-    <div v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div
+      v-else
+      class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+    >
       <NuxtLink
         v-for="a in filtered"
         :key="a.id"
@@ -76,16 +85,27 @@ const filtered = computed(() => {
             <span v-if="a.birth_year"> · r. {{ a.birth_year }}</span>
           </p>
         </div>
-        <UIcon name="i-lucide-chevron-right" class="size-5 shrink-0 text-muted group-hover:text-primary" />
+        <UIcon
+          name="i-lucide-chevron-right"
+          class="size-5 shrink-0 text-muted group-hover:text-primary"
+        />
       </NuxtLink>
     </div>
 
-    <p v-if="!pending && filtered.length === 0" class="py-12 text-center text-muted">
+    <p
+      v-if="!pending && filtered.length === 0"
+      class="py-12 text-center text-muted"
+    >
       Brak zawodników spełniających kryteria.
     </p>
 
     <div class="mt-10">
-      <UButton to="/trainer" variant="soft" color="neutral" icon="i-lucide-arrow-left">
+      <UButton
+        to="/trainer"
+        variant="soft"
+        color="neutral"
+        icon="i-lucide-arrow-left"
+      >
         Wróć do panelu trenera
       </UButton>
     </div>

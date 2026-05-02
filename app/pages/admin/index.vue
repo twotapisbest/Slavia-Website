@@ -43,7 +43,7 @@ const athleteNameById = computed(() => {
   return m
 })
 
-function labelForResult (r: CompetitionResult) {
+function labelForResult(r: CompetitionResult) {
   return athleteNameById.value.get(r.athlete_id) || r.athlete_id
 }
 
@@ -57,7 +57,7 @@ const athletesCount = computed(() => {
 const pendingCount = computed(() => Array.isArray(pendingResults.value) ? pendingResults.value.length : 0)
 const competitionsCount = computed(() => Array.isArray(competitions.value) ? competitions.value.length : 0)
 
-async function approveResult (id: string) {
+async function approveResult(id: string) {
   try {
     await apiFetch(`/api/results/${id}/approve`, { method: 'PATCH' })
     toast.add({ title: 'Wynik zatwierdzony', color: 'success' })
@@ -178,17 +178,32 @@ const quickLinks = computed(() => {
     </div>
 
     <!-- SuperAdmin Banner -->
-    <div v-if="isSuperAdmin" class="mb-8 flex flex-col gap-4 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 to-purple-500/10 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+    <div
+      v-if="isSuperAdmin"
+      class="mb-8 flex flex-col gap-4 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 to-purple-500/10 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
+    >
       <div class="flex items-start gap-3 sm:items-center sm:gap-4">
         <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/20 text-primary sm:h-12 sm:w-12">
-          <UIcon name="i-lucide-shield-check" class="size-6" />
+          <UIcon
+            name="i-lucide-shield-check"
+            class="size-6"
+          />
         </div>
         <div class="min-w-0">
-          <p class="text-xs font-bold uppercase tracking-wider text-primary sm:text-sm">Tryb SuperAdmin</p>
-          <p class="mt-0.5 text-sm text-muted">Masz dostęp do zaawansowanych narzędzi systemowych.</p>
+          <p class="text-xs font-bold uppercase tracking-wider text-primary sm:text-sm">
+            Tryb SuperAdmin
+          </p>
+          <p class="mt-0.5 text-sm text-muted">
+            Masz dostęp do zaawansowanych narzędzi systemowych.
+          </p>
         </div>
       </div>
-      <UButton to="/superadmin" trailing-icon="i-lucide-arrow-right" size="lg" class="min-h-11 w-full shrink-0 justify-center sm:w-auto">
+      <UButton
+        to="/superadmin"
+        trailing-icon="i-lucide-arrow-right"
+        size="lg"
+        class="min-h-11 w-full shrink-0 justify-center sm:w-auto"
+      >
         Panel SuperAdmin
       </UButton>
     </div>
@@ -198,77 +213,136 @@ const quickLinks = computed(() => {
       <UCard>
         <div class="flex items-center gap-4">
           <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
-            <UIcon name="i-lucide-users" class="size-6" />
+            <UIcon
+              name="i-lucide-users"
+              class="size-6"
+            />
           </div>
           <div>
-            <p class="text-sm font-medium text-muted">Zarejestrowani Zawodnicy</p>
-            <p class="text-2xl font-bold text-highlighted">{{ athletesCount }}</p>
+            <p class="text-sm font-medium text-muted">
+              Zarejestrowani Zawodnicy
+            </p>
+            <p class="text-2xl font-bold text-highlighted">
+              {{ athletesCount }}
+            </p>
           </div>
         </div>
       </UCard>
       <UCard>
         <div class="flex items-center gap-4">
           <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-500/10 text-yellow-500">
-            <UIcon name="i-lucide-activity" class="size-6" />
+            <UIcon
+              name="i-lucide-activity"
+              class="size-6"
+            />
           </div>
           <div>
-            <p class="text-sm font-medium text-muted">Wyniki oczekujące</p>
-            <p class="text-2xl font-bold text-highlighted">{{ pendingCount }}</p>
+            <p class="text-sm font-medium text-muted">
+              Wyniki oczekujące
+            </p>
+            <p class="text-2xl font-bold text-highlighted">
+              {{ pendingCount }}
+            </p>
           </div>
         </div>
       </UCard>
       <UCard>
         <div class="flex items-center gap-4">
           <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500">
-            <UIcon name="i-lucide-calendar" class="size-6" />
+            <UIcon
+              name="i-lucide-calendar"
+              class="size-6"
+            />
           </div>
           <div>
-            <p class="text-sm font-medium text-muted">Zaplanowane zawody</p>
-            <p class="text-2xl font-bold text-highlighted">{{ competitionsCount }}</p>
+            <p class="text-sm font-medium text-muted">
+              Zaplanowane zawody
+            </p>
+            <p class="text-2xl font-bold text-highlighted">
+              {{ competitionsCount }}
+            </p>
           </div>
         </div>
       </UCard>
     </div>
 
     <!-- Wyniki oczekujące — kotwica działa także przy 0 pozycjach -->
-    <div id="wyniki-oczekujace" class="mb-12 scroll-mt-24 rounded-2xl border border-default bg-card p-6">
+    <div
+      id="wyniki-oczekujace"
+      class="mb-12 scroll-mt-24 rounded-2xl border border-default bg-card p-6"
+    >
       <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 class="text-lg font-semibold text-highlighted sm:text-xl">
-          <UIcon name="i-lucide-clipboard-clock" class="mr-2 inline" />
+          <UIcon
+            name="i-lucide-clipboard-clock"
+            class="mr-2 inline"
+          />
           Wyniki do zatwierdzenia ({{ pendingCount }})
         </h2>
         <div class="flex flex-wrap gap-2">
-          <UButton variant="soft" size="sm" icon="i-lucide-refresh-ccw" class="min-h-10 shrink-0" @click="refreshPending()">
+          <UButton
+            variant="soft"
+            size="sm"
+            icon="i-lucide-refresh-ccw"
+            class="min-h-10 shrink-0"
+            @click="refreshPending()"
+          >
             Odśwież listę
           </UButton>
-          <UButton size="sm" variant="outline" to="/trainer/wyniki" class="min-h-10 shrink-0">
+          <UButton
+            size="sm"
+            variant="outline"
+            to="/trainer/wyniki"
+            class="min-h-10 shrink-0"
+          >
             Wszystkie starty / dodaj wpis
           </UButton>
         </div>
       </div>
-      <div v-if="pendingCount === 0" class="rounded-xl border border-dashed border-default/70 bg-muted/10 px-4 py-8 text-center text-sm text-muted">
+      <div
+        v-if="pendingCount === 0"
+        class="rounded-xl border border-dashed border-default/70 bg-muted/10 px-4 py-8 text-center text-sm text-muted"
+      >
         Brak oczekujących zgłoszeń. Start dodany przez kadrę trafia od razu jako zatwierdzony —
-        <NuxtLink to="/trainer/wyniki" class="font-semibold text-primary underline-offset-2 hover:underline">
+        <NuxtLink
+          to="/trainer/wyniki"
+          class="font-semibold text-primary underline-offset-2 hover:underline"
+        >
           otwórz listę startów
         </NuxtLink>
         .
       </div>
-      <div v-else class="space-y-3">
-        <div v-for="result in pendingResults || []" :key="result.id" class="flex flex-col gap-3 rounded-xl border border-default/50 bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div
+        v-else
+        class="space-y-3"
+      >
+        <div
+          v-for="result in pendingResults || []"
+          :key="result.id"
+          class="flex flex-col gap-3 rounded-xl border border-default/50 bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between"
+        >
           <div class="min-w-0">
-            <p class="font-medium text-highlighted">{{ labelForResult(result) }}</p>
+            <p class="font-medium text-highlighted">
+              {{ labelForResult(result) }}
+            </p>
             <p class="text-sm text-muted">
               Rwanie {{ result.snatch }} kg · Podrzut {{ result.clean_and_jerk }} kg · Razem {{ result.total }} kg · {{ result.date.slice(0, 10) }}
             </p>
           </div>
-          <UButton size="sm" class="min-h-10 w-full shrink-0 sm:w-auto" @click="approveResult(result.id)">
+          <UButton
+            size="sm"
+            class="min-h-10 w-full shrink-0 sm:w-auto"
+            @click="approveResult(result.id)"
+          >
             Zatwierdź
           </UButton>
         </div>
       </div>
     </div>
 
-    <h2 class="mb-4 text-xl font-semibold text-highlighted">Szybki dostęp</h2>
+    <h2 class="mb-4 text-xl font-semibold text-highlighted">
+      Szybki dostęp
+    </h2>
     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:gap-8">
       <NuxtLink
         v-for="link in quickLinks"
@@ -279,7 +353,10 @@ const quickLinks = computed(() => {
         <UCard class="h-full border border-default transition-colors group-hover:border-primary/50 group-hover:shadow-md">
           <div class="flex items-start gap-4">
             <div :class="['flex h-10 w-10 shrink-0 items-center justify-center rounded-lg', link.bg, link.color]">
-              <UIcon :name="link.icon" class="size-5" />
+              <UIcon
+                :name="link.icon"
+                class="size-5"
+              />
             </div>
             <div>
               <h3 class="font-medium text-highlighted group-hover:text-primary transition-colors">

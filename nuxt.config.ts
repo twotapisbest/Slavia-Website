@@ -5,22 +5,15 @@ export default defineNuxtConfig({
     '@nuxt/ui'
   ],
 
+  devtools: {
+    enabled: true
+  },
+
   app: {
     pageTransition: { name: 'page', mode: 'out-in' }
   },
 
-  /** Kalendarz: wyłącz SSR — unika 500 przy hydracji dat i braku API po stronie Node. */
-  routeRules: {
-    '/kalendarz': { ssr: false }
-  },
-
-  icon: {
-    serverBundle: 'local',
-    clientBundle: {
-      scan: true
-    },
-    fetchTimeout: 8000
-  },
+  css: ['~/assets/css/main.css'],
   runtimeConfig: {
     public: {
       /**
@@ -35,9 +28,12 @@ export default defineNuxtConfig({
     }
   },
 
-  devtools: {
-    enabled: true
+  /** Kalendarz: wyłącz SSR — unika 500 przy hydracji dat i braku API po stronie Node. */
+  routeRules: {
+    '/kalendarz': { ssr: false }
   },
+
+  compatibilityDate: '2025-01-15',
 
   nitro: {
     /** Mniejszy narzut Rollupa na Windows (AV / blokady plików). */
@@ -76,10 +72,6 @@ export default defineNuxtConfig({
     }
   },
 
-  css: ['~/assets/css/main.css'],
-
-  compatibilityDate: '2025-01-15',
-
   eslint: {
     config: {
       stylistic: {
@@ -87,5 +79,13 @@ export default defineNuxtConfig({
         braceStyle: '1tbs'
       }
     }
+  },
+
+  icon: {
+    serverBundle: 'local',
+    clientBundle: {
+      scan: true
+    },
+    fetchTimeout: 8000
   }
 })

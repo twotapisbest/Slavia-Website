@@ -58,7 +58,7 @@ const saving = ref(false)
 const uploadLoading = ref(false)
 const avatarFileInput = ref<HTMLInputElement | null>(null)
 
-function resetForm () {
+function resetForm() {
   const u = auth.user.value
   if (!u) {
     return
@@ -70,7 +70,7 @@ function resetForm () {
   avatarBroken.value = false
 }
 
-async function onAvatarFileChange (e: Event) {
+async function onAvatarFileChange(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
   input.value = ''
@@ -102,7 +102,7 @@ onMounted(() => {
   }
 })
 
-async function save () {
+async function save() {
   if (form.newPassword && form.newPassword !== form.confirmPassword) {
     toast.add({ title: 'Hasła się nie zgadzają', color: 'warning' })
     return
@@ -168,10 +168,20 @@ async function save () {
                 Zmiana loginu jest po stronie administratorów — tutaj ustawiasz e-mail, zdjęcie oraz opcjonalnie nowe hasło.
               </p>
               <div class="mt-5 flex flex-wrap items-center gap-2">
-                <UBadge color="neutral" variant="subtle" size="md" class="font-semibold">
+                <UBadge
+                  color="neutral"
+                  variant="subtle"
+                  size="md"
+                  class="font-semibold"
+                >
                   {{ auth.user.value?.username }}
                 </UBadge>
-                <UBadge color="primary" variant="subtle" size="md" class="font-semibold uppercase">
+                <UBadge
+                  color="primary"
+                  variant="subtle"
+                  size="md"
+                  class="font-semibold uppercase"
+                >
                   {{ auth.user.value?.role }}
                 </UBadge>
               </div>
@@ -189,7 +199,10 @@ async function save () {
             <div class="border-b border-default/60 bg-muted/25 px-5 py-4 dark:bg-muted/15">
               <h2 class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-highlighted">
                 <span class="flex size-8 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/25">
-                  <UIcon name="i-lucide-image-plus" class="size-4" />
+                  <UIcon
+                    name="i-lucide-image-plus"
+                    class="size-4"
+                  />
                 </span>
                 Zdjęcie profilowe
               </h2>
@@ -217,7 +230,10 @@ async function save () {
                     v-else
                     class="flex size-full flex-col items-center justify-center gap-2 bg-linear-to-br from-muted to-muted/70 px-4 text-center"
                   >
-                    <UIcon name="i-lucide-user-round" class="size-16 text-muted/90" />
+                    <UIcon
+                      name="i-lucide-user-round"
+                      class="size-16 text-muted/90"
+                    />
                     <span class="text-[11px] font-medium leading-tight text-muted">Brak zdjęcia lub błędny URL</span>
                   </div>
                 </div>
@@ -252,13 +268,19 @@ async function save () {
             <div class="border-b border-default/60 bg-muted/20 px-5 py-4 dark:bg-muted/10 md:px-6">
               <h2 class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-highlighted">
                 <span class="flex size-8 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/25">
-                  <UIcon name="i-lucide-mail" class="size-4" />
+                  <UIcon
+                    name="i-lucide-mail"
+                    class="size-4"
+                  />
                 </span>
                 Dane kontaktowe
               </h2>
             </div>
             <div class="space-y-6 p-5 md:p-8">
-              <UFormField label="Adres e-mail" description="Powiadomienia i odzyskiwanie dostępu">
+              <UFormField
+                label="Adres e-mail"
+                description="Powiadomienia i odzyskiwanie dostępu"
+              >
                 <UInput
                   v-model="form.email"
                   type="email"
@@ -269,7 +291,10 @@ async function save () {
                 />
               </UFormField>
 
-              <UFormField label="Adres URL zdjęcia" description="Opcjonalnie zamiast lub oprócz wgrywania pliku">
+              <UFormField
+                label="Adres URL zdjęcia"
+                description="Opcjonalnie zamiast lub oprócz wgrywania pliku"
+              >
                 <UInput
                   v-model="form.avatar_url"
                   type="url"
@@ -289,7 +314,10 @@ async function save () {
             <div class="border-b border-default/60 bg-muted/20 px-5 py-4 dark:bg-muted/10 md:px-6">
               <h2 class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-highlighted">
                 <span class="flex size-8 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/25">
-                  <UIcon name="i-lucide-key-round" class="size-4" />
+                  <UIcon
+                    name="i-lucide-key-round"
+                    class="size-4"
+                  />
                 </span>
                 Hasło
               </h2>
@@ -298,7 +326,10 @@ async function save () {
               </p>
             </div>
             <div class="grid gap-6 p-5 md:grid-cols-2 md:p-8">
-              <UFormField label="Nowe hasło" class="md:col-span-1">
+              <UFormField
+                label="Nowe hasło"
+                class="md:col-span-1"
+              >
                 <UInput
                   v-model="form.newPassword"
                   type="password"
@@ -308,7 +339,10 @@ async function save () {
                   class="w-full"
                 />
               </UFormField>
-              <UFormField label="Powtórz nowe hasło" class="md:col-span-1">
+              <UFormField
+                label="Powtórz nowe hasło"
+                class="md:col-span-1"
+              >
                 <UInput
                   v-model="form.confirmPassword"
                   type="password"
@@ -324,14 +358,30 @@ async function save () {
           <div
             class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between"
           >
-              <UButton color="neutral" variant="ghost" icon="i-lucide-arrow-left" to="/" size="lg">
+            <UButton
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-arrow-left"
+              to="/"
+              size="lg"
+            >
               Strona główna
             </UButton>
             <div class="flex flex-wrap gap-2 sm:justify-end">
-              <UButton color="neutral" variant="soft" size="lg" @click="resetForm">
+              <UButton
+                color="neutral"
+                variant="soft"
+                size="lg"
+                @click="resetForm"
+              >
                 Przywróć zapisane
               </UButton>
-              <UButton :loading="saving" size="lg" class="min-w-44 justify-center font-bold shadow-md shadow-primary/20" @click="save">
+              <UButton
+                :loading="saving"
+                size="lg"
+                class="min-w-44 justify-center font-bold shadow-md shadow-primary/20"
+                @click="save"
+              >
                 Zapisz zmiany
               </UButton>
             </div>

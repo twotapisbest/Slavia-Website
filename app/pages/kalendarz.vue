@@ -31,7 +31,7 @@ const apiFetch = useApi()
 const toast = useToast()
 const config = useRuntimeConfig()
 
-function publicBase () {
+function publicBase() {
   return String(config.public.apiBase || '').replace(/\/$/, '')
 }
 
@@ -49,7 +49,7 @@ const { data: competitions, refresh, pending: competitionsPending } = await useA
 const athletesPickList = ref<Array<{ id: string, full_name: string }>>([])
 const participantIds = ref<string[]>([])
 
-async function loadAthletesPickList () {
+async function loadAthletesPickList() {
   try {
     if (!auth.token.value) {
       athletesPickList.value = []
@@ -67,7 +67,7 @@ async function loadAthletesPickList () {
 
 // Stan kalendarza — przechowujemy ms **pierwszego dnia miesiąca** (number),
 // żeby uniknąć psucia `Date` przy serializacji payloadu Nuxt (SSR → hydration).
-function monthFirstMsFromDate (d: Date | number | string) {
+function monthFirstMsFromDate(d: Date | number | string) {
   const dt = d instanceof Date ? d : new Date(d)
   if (!isValid(dt)) {
     const now = new Date()
@@ -136,9 +136,9 @@ const getTrainingsForDay = (date: Date) => {
 
 const getEventsForDay = (date: Date) => {
   const dateStr = format(date, 'yyyy-MM-dd')
-  
+
   // Lokalne zawody z bazy danych
-  const comps = (competitions.value || []).filter((e: any) => typeof e?.date === 'string' && e.date.startsWith(dateStr)).map((e: any) => ({
+  const comps = (competitions.value || []).filter((e: Competition) => typeof e?.date === 'string' && e.date.startsWith(dateStr)).map((e: Competition) => ({
     ...e,
     type: e.external_source ? 'external' : 'competition',
     external_source: e.external_source || undefined
@@ -147,7 +147,7 @@ const getEventsForDay = (date: Date) => {
   return [...getTrainingsForDay(date), ...comps]
 }
 
-async function syncExternalCalendars () {
+async function syncExternalCalendars() {
   if (!canManageEvents.value) return
   syncLoading.value = true
   try {
@@ -169,10 +169,10 @@ async function syncExternalCalendars () {
         + `Czyszczenie poza bieżącym i następnym rokiem: ${res.stale_removed} (importy: ${res.stale_import_removed}, ręczne: ${res.stale_manual_removed}).`,
       color: 'success'
     })
-  } catch (e) {
+  } catch (err) {
     toast.add({
       title: 'Synchronizacja nie powiodła się',
-      description: getApiErrorMessage(e),
+      description: getApiErrorMessage(err),
       color: 'error'
     })
   } finally {
@@ -181,7 +181,7 @@ async function syncExternalCalendars () {
 }
 
 /** Kontekst otwartego wpisu (banner w modalu — external/training vs gość). */
-const bannerEvent = ref<any>(null)
+const bannerEvent = ref<Competition | null>(null)
 
 // Zarządzanie wydarzeniami
 const isModalOpen = ref(false)
@@ -208,12 +208,12 @@ const categories = [
   { value: 'championship', label: '🏆 Mistrzostwa', desc: 'ogólnopol. / śląskie' },
   { value: 'league', label: '🥈 Liga', desc: 'zawody ligowe' },
   { value: 'club_event', label: '🌿 Wydarzenie klubowe', desc: 'obóz, zgrupowanie' },
-  { value: 'training', label: '💪 Trening', desc: 'planowany trening lub zgrupowanie' },
+  { value: 'training', label: '💪 Trening', desc: 'planowany trening lub zgrupowanie' }
 ]
 
 const { getEventClasses, getEventIcon } = useCalendarEventChips()
 
-async function openModal (date?: Date, event?: any) {
+async function openModal(date?: Date, event?: Competition) {
   if (auth.token.value) {
     await auth.fetchMe()
   }
@@ -338,7 +338,7 @@ async function deleteEvent(id: string) {
     return
   }
 
-  const row = (competitions.value || []).find((c: any) => c.id === id)
+  const row = (competitions.value || []).find((c: Competition) => c.id === id)
   if (row?.external_source) {
     toast.add({
       title: 'Nie można usunąć',
@@ -353,7 +353,8 @@ async function deleteEvent(id: string) {
     await apiFetch(apiRoutes.competitions.one(id), { method: 'DELETE' })
     toast.add({ title: 'Usunięto', color: 'success' })
     await refresh()
-  } catch (err) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (_err) {
     toast.add({ title: 'Błąd usuwania', color: 'error' })
   }
 }
@@ -381,15 +382,32 @@ function handleDayClick(day: Date) {
         <h1 class="text-2xl font-black uppercase italic tracking-tight text-highlighted sm:text-3xl md:text-4xl lg:text-5xl">
           Kalendarz <span class="text-primary italic">Slavia</span>
         </h1>
-        <p class="mt-1 font-medium text-muted">Harmonogram treningów i startów klubowych.</p>
+        <p class="mt-1 font-medium text-muted">
+          Harmonogram treningów i startów klubowych.
+        </p>
       </div>
 
       <div class="flex w-full items-center justify-center gap-2 rounded-xl border border-default bg-muted/20 p-1.5 md:w-auto">
-        <UButton icon="i-lucide-chevron-left" variant="ghost" color="neutral" @click="prevMonth" />
-        <UButton variant="ghost" color="neutral" class="min-w-0 flex-1 truncate px-2 font-bold text-highlighted sm:min-w-[140px] sm:flex-none" @click="goToToday">
+        <UButton
+          icon="i-lucide-chevron-left"
+          variant="ghost"
+          color="neutral"
+          @click="prevMonth"
+        />
+        <UButton
+          variant="ghost"
+          color="neutral"
+          class="min-w-0 flex-1 truncate px-2 font-bold text-highlighted sm:min-w-[140px] sm:flex-none"
+          @click="goToToday"
+        >
           {{ format(currentDate, 'MMMM yyyy', { locale: pl }) }}
         </UButton>
-        <UButton icon="i-lucide-chevron-right" variant="ghost" color="neutral" @click="nextMonth" />
+        <UButton
+          icon="i-lucide-chevron-right"
+          variant="ghost"
+          color="neutral"
+          @click="nextMonth"
+        />
       </div>
 
       <div class="flex w-full flex-col gap-2 sm:flex-row sm:justify-end md:w-auto md:flex-none">
@@ -405,7 +423,13 @@ function handleDayClick(day: Date) {
         >
           Synchronizuj PZPC i PC
         </UButton>
-        <UButton v-if="canManageEvents" icon="i-lucide-plus" size="lg" class="min-h-11 w-full justify-center sm:w-auto" @click="openModal()">
+        <UButton
+          v-if="canManageEvents"
+          icon="i-lucide-plus"
+          size="lg"
+          class="min-h-11 w-full justify-center sm:w-auto"
+          @click="openModal()"
+        >
           Dodaj wydarzenie
         </UButton>
       </div>
@@ -423,7 +447,10 @@ function handleDayClick(day: Date) {
       v-if="competitionsPending"
       class="mb-4 flex items-center gap-2 rounded-xl border border-dashed border-default bg-muted/20 px-4 py-3 text-sm text-muted"
     >
-      <UIcon name="i-lucide-loader-2" class="size-4 shrink-0 animate-spin" />
+      <UIcon
+        name="i-lucide-loader-2"
+        class="size-4 shrink-0 animate-spin"
+      />
       Ładowanie wydarzeń z serwera…
     </div>
 
@@ -431,16 +458,20 @@ function handleDayClick(day: Date) {
     <div class="overflow-x-auto rounded-2xl border border-default bg-card shadow-2xl sm:overflow-visible">
       <!-- Header -->
       <div class="grid min-w-[520px] grid-cols-7 border-b border-default bg-muted/30 sm:min-w-0">
-        <div v-for="day in weekDays" :key="day" class="py-2 text-center text-[10px] font-black uppercase tracking-wide text-muted sm:py-4 sm:text-xs sm:tracking-widest">
+        <div
+          v-for="day in weekDays"
+          :key="day"
+          class="py-2 text-center text-[10px] font-black uppercase tracking-wide text-muted sm:py-4 sm:text-xs sm:tracking-widest"
+        >
           {{ day }}
         </div>
       </div>
 
       <!-- Days -->
       <div class="grid min-w-[520px] grid-cols-7 sm:min-w-0">
-        <div 
-          v-for="day in days" 
-          :key="day.toString()" 
+        <div
+          v-for="day in days"
+          :key="day.toString()"
           class="group relative min-h-[92px] border-b border-r border-default p-1.5 transition-colors last:border-r-0 hover:bg-primary/5 sm:min-h-[120px] sm:p-2 md:min-h-[140px]"
           :class="[
             !isSameMonth(day, monthStart) ? 'bg-muted/10 opacity-30' : '',
@@ -449,25 +480,25 @@ function handleDayClick(day: Date) {
           @click="handleDayClick(day)"
         >
           <div class="flex justify-between items-start mb-2">
-            <span 
+            <span
               class="text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full"
               :class="isToday(day) ? 'bg-primary text-white shadow-lg' : 'text-muted'"
             >
               {{ format(day, 'd') }}
             </span>
-            <UButton 
-              v-if="canManageEvents && isSameMonth(day, monthStart)" 
-              icon="i-lucide-plus" 
-              variant="ghost" 
-              size="xs" 
-              class="opacity-0 group-hover:opacity-100 transition-opacity" 
+            <UButton
+              v-if="canManageEvents && isSameMonth(day, monthStart)"
+              icon="i-lucide-plus"
+              variant="ghost"
+              size="xs"
+              class="opacity-0 group-hover:opacity-100 transition-opacity"
               @click.stop="openModal(day)"
             />
           </div>
 
           <div class="scrollbar-hide max-h-[76px] space-y-1 overflow-y-auto sm:max-h-[100px]">
-            <div 
-              v-for="event in getEventsForDay(day)" 
+            <div
+              v-for="event in getEventsForDay(day)"
               :key="event.id"
               class="text-[10px] p-1.5 rounded-lg border flex flex-col leading-tight cursor-pointer transition-all hover:brightness-110"
               :class="getEventClasses(event)"
@@ -475,10 +506,16 @@ function handleDayClick(day: Date) {
             >
               <div class="flex items-center justify-between gap-1">
                 <span class="truncate">{{ event.title }}</span>
-                <UIcon :name="getEventIcon(event)" class="size-2.5 shrink-0 opacity-80" />
+                <UIcon
+                  :name="getEventIcon(event)"
+                  class="size-2.5 shrink-0 opacity-80"
+                />
               </div>
               <span class="opacity-60">{{ event.time || event.location }}</span>
-              <span v-if="event.status && event.status !== 'scheduled'" class="text-[10px] uppercase tracking-[0.15em] font-semibold mt-1">
+              <span
+                v-if="event.status && event.status !== 'scheduled'"
+                class="text-[10px] uppercase tracking-[0.15em] font-semibold mt-1"
+              >
                 {{ event.status === 'cancelled' ? 'Odwołane' : event.status === 'moved' ? 'Przesunięte' : '' }}
               </span>
             </div>
@@ -490,38 +527,58 @@ function handleDayClick(day: Date) {
     <!-- Legenda -->
     <div class="mt-6 grid grid-cols-1 gap-4 rounded-2xl border border-default bg-muted/10 p-4 sm:mt-8 sm:grid-cols-2 sm:gap-3 sm:p-5 lg:grid-cols-4">
       <div class="flex items-center gap-3">
-        <div class="w-3 h-7 rounded-full bg-blue-500/40 border border-blue-500/50 shrink-0"></div>
+        <div class="w-3 h-7 rounded-full bg-blue-500/40 border border-blue-500/50 shrink-0" />
         <div>
-          <p class="text-xs font-black text-blue-400 uppercase">Trening</p>
-          <p class="text-[10px] text-muted">Pn, Śr, Pt 15-18</p>
+          <p class="text-xs font-black text-blue-400 uppercase">
+            Trening
+          </p>
+          <p class="text-[10px] text-muted">
+            Pn, Śr, Pt 15-18
+          </p>
         </div>
       </div>
       <div class="flex items-center gap-3">
-        <div class="w-3 h-7 rounded-full bg-red-500/40 border border-red-500/50 shrink-0"></div>
+        <div class="w-3 h-7 rounded-full bg-red-500/40 border border-red-500/50 shrink-0" />
         <div>
-          <p class="text-xs font-black text-red-400 uppercase">Mistrzostwa</p>
-          <p class="text-[10px] text-muted">ogólnopol. / śląskie</p>
+          <p class="text-xs font-black text-red-400 uppercase">
+            Mistrzostwa
+          </p>
+          <p class="text-[10px] text-muted">
+            ogólnopol. / śląskie
+          </p>
         </div>
       </div>
       <div class="flex items-center gap-3">
-        <div class="w-3 h-7 rounded-full bg-amber-500/40 border border-amber-500/50 shrink-0"></div>
+        <div class="w-3 h-7 rounded-full bg-amber-500/40 border border-amber-500/50 shrink-0" />
         <div>
-          <p class="text-xs font-black text-amber-400 uppercase">Liga</p>
-          <p class="text-[10px] text-muted">zawody ligowe</p>
+          <p class="text-xs font-black text-amber-400 uppercase">
+            Liga
+          </p>
+          <p class="text-[10px] text-muted">
+            zawody ligowe
+          </p>
         </div>
       </div>
       <div class="flex items-center gap-3">
-        <div class="w-3 h-7 rounded-full bg-teal-500/40 border border-teal-500/50 shrink-0"></div>
+        <div class="w-3 h-7 rounded-full bg-teal-500/40 border border-teal-500/50 shrink-0" />
         <div>
-          <p class="text-xs font-black text-teal-400 uppercase">Wydarzenie klubowe</p>
-          <p class="text-[10px] text-muted">obóz, zgrupowanie</p>
+          <p class="text-xs font-black text-teal-400 uppercase">
+            Wydarzenie klubowe
+          </p>
+          <p class="text-[10px] text-muted">
+            obóz, zgrupowanie
+          </p>
         </div>
       </div>
       <div class="flex items-center gap-3 sm:col-span-2">
-        <div class="w-3 h-7 rounded-full bg-indigo-500/35 border border-indigo-500/50 shrink-0"></div>
+        <div class="w-3 h-7 rounded-full bg-indigo-500/35 border border-indigo-500/50 shrink-0" />
         <div>
-          <p class="text-xs font-black text-indigo-300 uppercase">Import zewnętrzny</p>
-          <p class="text-[10px] text-muted">PZPC lub PodnoszenieCiezarow.pl — synchronizacja do bazy</p>
+          <p class="text-xs font-black text-indigo-300 uppercase">
+            Import zewnętrzny
+          </p>
+          <p class="text-[10px] text-muted">
+            PZPC lub PodnoszenieCiezarow.pl — synchronizacja do bazy
+          </p>
         </div>
       </div>
     </div>
@@ -534,7 +591,10 @@ function handleDayClick(day: Date) {
     >
       <template #content>
         <div class="slavia-form-modal">
-          <div v-if="readOnlyEvent" class="rounded-xl border border-amber-400/40 bg-amber-500/10 p-3 text-sm text-amber-900 dark:text-amber-100">
+          <div
+            v-if="readOnlyEvent"
+            class="rounded-xl border border-amber-400/40 bg-amber-500/10 p-3 text-sm text-amber-900 dark:text-amber-100"
+          >
             <template v-if="bannerEvent?.external_source || bannerEvent?.type === 'external'">
               <span v-if="canManageEvents">Zawody z kalendarza zewnętrznego (PZPC lub PodnoszenieCiezarow.pl) — nazwa i termin są aktualizowane przy synchronizacji. Możesz zmienić status oraz przypisać zawodników klubu.</span>
               <span v-else>Importer z krajowych kalendarzy — szczegóły tylko do odczytu. Przypisania widzą zawodnicy po zalogowaniu.</span>
@@ -547,7 +607,10 @@ function handleDayClick(day: Date) {
               Podgląd tylko do odczytu. Zaloguj się jako trener lub administrator, aby dodawać i edytować wydarzenia z bazy klubu.
             </template>
           </div>
-          <UFormField label="Kategoria" required>
+          <UFormField
+            label="Kategoria"
+            required
+          >
             <div class="grid grid-cols-3 gap-2">
               <button
                 v-for="cat in categories"
@@ -557,25 +620,52 @@ function handleDayClick(day: Date) {
                 :class="formState.category === cat.value
                   ? cat.value === 'championship' ? 'bg-red-500/20 border-red-500 text-red-400'
                     : cat.value === 'league' ? 'bg-amber-500/20 border-amber-500 text-amber-400'
-                    : 'bg-teal-500/20 border-teal-500 text-teal-400'
+                      : 'bg-teal-500/20 border-teal-500 text-teal-400'
                   : 'border-default bg-muted/10 text-muted hover:bg-muted/30'"
-                @click="!readOnlyEvent && !bannerEvent?.external_source && (formState.category = cat.value)"
                 :disabled="readOnlyEvent || !!bannerEvent?.external_source"
+                @click="!readOnlyEvent && !bannerEvent?.external_source && (formState.category = cat.value)"
               >
                 {{ cat.label }}
               </button>
             </div>
           </UFormField>
 
-          <UFormField label="Nazwa" required>
-            <UInput v-model="formState.title" placeholder="Mistrzostwa Polski..." size="lg" class="w-full" :disabled="readOnlyEvent || !!bannerEvent?.external_source" />
+          <UFormField
+            label="Nazwa"
+            required
+          >
+            <UInput
+              v-model="formState.title"
+              placeholder="Mistrzostwa Polski..."
+              size="lg"
+              class="w-full"
+              :disabled="readOnlyEvent || !!bannerEvent?.external_source"
+            />
           </UFormField>
           <div class="grid grid-cols-2 gap-4">
-            <UFormField label="Data" required>
-              <UInput v-model="formState.date" type="date" size="lg" class="w-full" :disabled="readOnlyEvent || !!bannerEvent?.external_source" />
+            <UFormField
+              label="Data"
+              required
+            >
+              <UInput
+                v-model="formState.date"
+                type="date"
+                size="lg"
+                class="w-full"
+                :disabled="readOnlyEvent || !!bannerEvent?.external_source"
+              />
             </UFormField>
-            <UFormField label="Lokalizacja" required>
-              <UInput v-model="formState.location" placeholder="Ruda Śląska" size="lg" class="w-full" :disabled="readOnlyEvent || !!bannerEvent?.external_source" />
+            <UFormField
+              label="Lokalizacja"
+              required
+            >
+              <UInput
+                v-model="formState.location"
+                placeholder="Ruda Śląska"
+                size="lg"
+                class="w-full"
+                :disabled="readOnlyEvent || !!bannerEvent?.external_source"
+              />
             </UFormField>
           </div>
           <UFormField label="Status">
@@ -584,12 +674,21 @@ function handleDayClick(day: Date) {
               class="slavia-select w-full"
               :disabled="readOnlyEvent && !bannerEvent?.external_source"
             >
-              <option value="scheduled">Zaplanowane</option>
-              <option value="cancelled">Odwołane</option>
-              <option value="moved">Przesunięte</option>
+              <option value="scheduled">
+                Zaplanowane
+              </option>
+              <option value="cancelled">
+                Odwołane
+              </option>
+              <option value="moved">
+                Przesunięte
+              </option>
             </select>
           </UFormField>
-          <div v-if="canManageEvents && !readOnlyEvent && athletesPickList.length && (editingId == null || !String(editingId).startsWith('training-'))" class="rounded-xl border border-default p-3 space-y-2">
+          <div
+            v-if="canManageEvents && !readOnlyEvent && athletesPickList.length && (editingId == null || !String(editingId).startsWith('training-'))"
+            class="rounded-xl border border-default p-3 space-y-2"
+          >
             <p class="text-xs font-bold text-muted uppercase tracking-wide">
               Przypisani zawodnicy (startują razem)
             </p>
@@ -610,9 +709,18 @@ function handleDayClick(day: Date) {
             </div>
           </div>
           <UFormField label="Opis">
-            <UTextarea v-model="formState.description" placeholder="Szczegóły..." :rows="4" class="w-full" :disabled="readOnlyEvent || !!bannerEvent?.external_source" />
+            <UTextarea
+              v-model="formState.description"
+              placeholder="Szczegóły..."
+              :rows="4"
+              class="w-full"
+              :disabled="readOnlyEvent || !!bannerEvent?.external_source"
+            />
           </UFormField>
-          <div v-if="bannerEvent?.external_url" class="text-sm">
+          <div
+            v-if="bannerEvent?.external_url"
+            class="text-sm"
+          >
             <a
               :href="bannerEvent.external_url"
               target="_blank"
@@ -636,7 +744,12 @@ function handleDayClick(day: Date) {
               </UButton>
             </div>
             <div class="slavia-form-actions w-full sm:w-auto">
-              <UButton color="neutral" variant="soft" size="lg" @click="isModalOpen = false">
+              <UButton
+                color="neutral"
+                variant="soft"
+                size="lg"
+                @click="isModalOpen = false"
+              >
                 Anuluj
               </UButton>
               <UButton

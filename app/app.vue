@@ -86,13 +86,28 @@ async function logout() {
       >
         <div class="relative flex flex-col items-center px-6">
           <div class="absolute -inset-8 animate-pulse rounded-full bg-primary/20 blur-2xl" />
-          <img src="/logo.png" alt="Slavia Logo" class="relative h-32 w-auto animate-bounce mb-8" />
+          <img
+            src="/logo.png"
+            alt="Slavia Logo"
+            class="relative h-32 w-auto animate-bounce mb-8"
+          >
           <div class="flex items-center gap-2">
-            <div class="h-2 w-2 animate-bounce rounded-full bg-primary" style="animation-delay: 0.1s" />
-            <div class="h-2 w-2 animate-bounce rounded-full bg-primary" style="animation-delay: 0.2s" />
-            <div class="h-2 w-2 animate-bounce rounded-full bg-primary" style="animation-delay: 0.3s" />
+            <div
+              class="h-2 w-2 animate-bounce rounded-full bg-primary"
+              style="animation-delay: 0.1s"
+            />
+            <div
+              class="h-2 w-2 animate-bounce rounded-full bg-primary"
+              style="animation-delay: 0.2s"
+            />
+            <div
+              class="h-2 w-2 animate-bounce rounded-full bg-primary"
+              style="animation-delay: 0.3s"
+            />
           </div>
-          <p class="mt-4 text-sm font-bold uppercase tracking-[0.3em] text-primary italic">Ładowanie...</p>
+          <p class="mt-4 text-sm font-bold uppercase tracking-[0.3em] text-primary italic">
+            Ładowanie...
+          </p>
         </div>
       </Transition>
     </div>
@@ -101,106 +116,121 @@ async function logout() {
       class="transition-opacity duration-300 ease-out"
       :class="isAppLoading ? 'opacity-0 pointer-events-none select-none' : 'opacity-100'"
     >
-    <!-- Na mobile bez border-b na całym UHeader: linia pod belką z 4 linkami „cięła” pierwszą linię treści; odstęp daje belka (SiteNav public-mobile). Od lg zostaje klasyczna linia pod nagłówkiem. -->
-    <UHeader :toggle="false" class="border-default backdrop-blur-md bg-background/80 sticky top-0 z-50 lg:border-b">
-      <template #left>
-        <div class="flex min-w-0 items-center gap-2 sm:gap-4 lg:gap-6 xl:gap-8">
-          <ClubBrand />
-          <ClubSiteNav mode="drawer" />
-        </div>
-      </template>
+      <!-- Na mobile bez border-b na całym UHeader: linia pod belką z 4 linkami „cięła” pierwszą linię treści; odstęp daje belka (SiteNav public-mobile). Od lg zostaje klasyczna linia pod nagłówkiem. -->
+      <UHeader
+        :toggle="false"
+        class="border-default backdrop-blur-md bg-background/80 sticky top-0 z-50 lg:border-b"
+      >
+        <template #left>
+          <div class="flex min-w-0 items-center gap-2 sm:gap-4 lg:gap-6 xl:gap-8">
+            <ClubBrand />
+            <ClubSiteNav mode="drawer" />
+          </div>
+        </template>
 
-      <template #default>
-        <ClubSiteNav mode="links" />
-      </template>
+        <template #default>
+          <ClubSiteNav mode="links" />
+        </template>
 
-      <template #bottom>
-        <ClubSiteNav mode="public-mobile" />
-      </template>
+        <template #bottom>
+          <ClubSiteNav mode="public-mobile" />
+        </template>
 
-      <template #right>
-        <div class="flex shrink-0 items-center gap-1.5 sm:gap-3">
-          <template v-if="auth.isLoggedIn.value">
-            <ClubNotificationBell />
-            <NuxtLink
-              :to="dashboardLink"
-              class="flex h-10 w-10 items-center justify-center rounded-full ring-1 ring-primary/25 transition-colors hover:bg-primary/10 sm:hidden"
-              :aria-label="`Panel: ${auth.user.value?.username ?? ''}`"
-            >
-              <UAvatar
-                :alt="auth.user.value?.username"
-                size="xs"
-                class="ring-1 ring-primary/30"
-              />
-            </NuxtLink>
-            <div class="hidden items-center gap-4 sm:flex lg:gap-5">
-              <NuxtLink 
+        <template #right>
+          <div class="flex shrink-0 items-center gap-1.5 sm:gap-3">
+            <template v-if="auth.isLoggedIn.value">
+              <ClubNotificationBell />
+              <NuxtLink
                 :to="dashboardLink"
-                class="group flex items-center gap-2 rounded-full bg-primary/5 px-4 py-1.5 transition-all hover:bg-primary/10 ring-1 ring-primary/20 lg:px-5"
+                class="flex h-10 w-10 items-center justify-center rounded-full ring-1 ring-primary/25 transition-colors hover:bg-primary/10 sm:hidden"
+                :aria-label="`Panel: ${auth.user.value?.username ?? ''}`"
               >
                 <UAvatar
                   :alt="auth.user.value?.username"
                   size="xs"
-                  class="ring-1 ring-primary/20"
+                  class="ring-1 ring-primary/30"
                 />
-                <span class="text-sm font-semibold text-highlighted group-hover:text-primary">
-                  {{ auth.user.value?.username }}
-                </span>
               </NuxtLink>
-              <UButton
-                color="neutral"
-                variant="ghost"
-                size="sm"
-                icon="i-lucide-log-out"
-                class="text-muted hover:text-error"
-                @click="logout"
-              />
-            </div>
-          </template>
-          <div v-else class="hidden sm:block">
-            <UButton
-              to="/logowanie"
-              icon="i-lucide-log-in"
-              size="sm"
-              variant="solid"
-              class="font-bold"
+              <div class="hidden items-center gap-4 sm:flex lg:gap-5">
+                <NuxtLink
+                  :to="dashboardLink"
+                  class="group flex items-center gap-2 rounded-full bg-primary/5 px-4 py-1.5 transition-all hover:bg-primary/10 ring-1 ring-primary/20 lg:px-5"
+                >
+                  <UAvatar
+                    :alt="auth.user.value?.username"
+                    size="xs"
+                    class="ring-1 ring-primary/20"
+                  />
+                  <span class="text-sm font-semibold text-highlighted group-hover:text-primary">
+                    {{ auth.user.value?.username }}
+                  </span>
+                </NuxtLink>
+                <UButton
+                  color="neutral"
+                  variant="ghost"
+                  size="sm"
+                  icon="i-lucide-log-out"
+                  class="text-muted hover:text-error"
+                  @click="logout"
+                />
+              </div>
+            </template>
+            <div
+              v-else
+              class="hidden sm:block"
             >
-              Zaloguj się
-            </UButton>
+              <UButton
+                to="/logowanie"
+                icon="i-lucide-log-in"
+                size="sm"
+                variant="solid"
+                class="font-bold"
+              >
+                Zaloguj się
+              </UButton>
+            </div>
+            <UColorModeButton />
           </div>
-          <UColorModeButton />
-        </div>
-      </template>
-    </UHeader>
+        </template>
+      </UHeader>
 
-    <UMain class="slavia-safe-x">
-      <NuxtPage />
-    </UMain>
+      <UMain class="slavia-safe-x">
+        <NuxtPage />
+      </UMain>
 
-    <UFooter class="border-t border-default bg-muted/5 py-8 slavia-safe-bottom slavia-safe-x lg:py-10" :ui="{ container: 'flex flex-col gap-8 md:flex-row md:items-center md:justify-between lg:gap-12' }">
-      <template #left>
-        <div class="flex flex-col gap-2">
-          <p class="text-sm font-bold text-highlighted uppercase tracking-widest">
-            CKS Slavia Ruda Śląska
-          </p>
-          <div class="flex flex-col text-xs text-muted">
-            <span class="flex items-center gap-2"><UIcon name="i-lucide-map-pin" class="size-3" /> ul. Konopnickiej 13, 41-700 Ruda Śląska</span>
-            <span class="flex items-center gap-2"><UIcon name="i-lucide-calendar" class="size-3" /> Treningi: Pn, Śr, Pt (15:00 - 18:00)</span>
+      <UFooter
+        class="border-t border-default bg-muted/5 py-8 slavia-safe-bottom slavia-safe-x lg:py-10"
+        :ui="{ container: 'flex flex-col gap-8 md:flex-row md:items-center md:justify-between lg:gap-12' }"
+      >
+        <template #left>
+          <div class="flex flex-col gap-2">
+            <p class="text-sm font-bold text-highlighted uppercase tracking-widest">
+              CKS Slavia Ruda Śląska
+            </p>
+            <div class="flex flex-col text-xs text-muted">
+              <span class="flex items-center gap-2"><UIcon
+                name="i-lucide-map-pin"
+                class="size-3"
+              /> ul. Konopnickiej 13, 41-700 Ruda Śląska</span>
+              <span class="flex items-center gap-2"><UIcon
+                name="i-lucide-calendar"
+                class="size-3"
+              /> Treningi: Pn, Śr, Pt (15:00 - 18:00)</span>
+            </div>
           </div>
-        </div>
-      </template>
+        </template>
 
-      <template #right>
-        <div class="flex w-full flex-col gap-2 text-left md:w-auto md:items-end md:text-right">
-          <p class="text-xs text-muted">
-            © {{ new Date().getFullYear() }} Slavia Ruda Śląska.
-          </p>
-          <p class="text-[10px] text-muted/50">
-            Realizacja: Neution Studio · Jakub Gawron
-          </p>
-        </div>
-      </template>
-    </UFooter>
+        <template #right>
+          <div class="flex w-full flex-col gap-2 text-left md:w-auto md:items-end md:text-right">
+            <p class="text-xs text-muted">
+              © {{ new Date().getFullYear() }} Slavia Ruda Śląska.
+            </p>
+            <p class="text-[10px] text-muted/50">
+              Realizacja: Neution Studio · Jakub Gawron
+            </p>
+          </div>
+        </template>
+      </UFooter>
     </div>
   </UApp>
 </template>

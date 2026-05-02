@@ -3,7 +3,7 @@ import type { AuthUser, LoginResponse } from '~/types/models'
 
 const USER_STATE_KEY = 'slavia-auth-user'
 
-export function useAuth () {
+export function useAuth() {
   const config = useRuntimeConfig()
   const token = useCookie<string | null>('slavia_token', {
     maxAge: 60 * 60 * 24 * 14,
@@ -26,7 +26,7 @@ export function useAuth () {
   )
   const isAdmin = computed(() => user.value?.role === 'Admin' || isTrainerAdmin.value || isSuperAdmin.value)
 
-  async function fetchMe (): Promise<AuthUser | null> {
+  async function fetchMe(): Promise<AuthUser | null> {
     if (!token.value) {
       user.value = null
       return null
@@ -46,13 +46,13 @@ export function useAuth () {
 
   const isAthlete = computed(() => user.value?.role === 'Athlete')
 
-  async function login (username: string, password: string) {
+  async function login(username: string, password: string) {
     const res = await $fetch<LoginResponse>(`${apiBase.value}${apiRoutes.auth.login}`, {
       method: 'POST',
       body: { username, password }
     })
     token.value = res.token
-    
+
     // Po zalogowaniu pobieramy dane usera /me (albo ustawiamy tymczasowe jesli login zwraca info)
     // Backend LoginResponse zwraca role i user_id, wiec mozemy ustawić wstępny stan
     user.value = {
@@ -63,13 +63,13 @@ export function useAuth () {
     return user.value
   }
 
-  function logout () {
+  function logout() {
     token.value = null
     user.value = null
   }
 
   /** Używane w middleware: odśwież sesję jeśli jest token. */
-  async function ensureSession () {
+  async function ensureSession() {
     if (!token.value) {
       user.value = null
       return

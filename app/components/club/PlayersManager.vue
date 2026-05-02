@@ -39,7 +39,7 @@ const competitionsCatalog = ref<Competition[]>([])
 const assignedCompetitionIds = ref<string[]>([])
 const assignmentsLoading = ref(false)
 
-async function loadAthleteAssignments (athleteId: string) {
+async function loadAthleteAssignments(athleteId: string) {
   assignmentsLoading.value = true
   try {
     const mine = await api<Competition[]>(apiRoutes.athletes.competitions(athleteId))
@@ -69,7 +69,7 @@ watch(modalOpen, async (open) => {
   await loadAthleteAssignments(editingId.value)
 })
 
-function resetForm () {
+function resetForm() {
   editingId.value = null
   form.full_name = ''
   form.birth_year = null
@@ -95,7 +95,7 @@ watch(() => [form.best_snatch_kg, form.best_clean_jerk_kg], ([snatch, cj]) => {
 const currentYear = new Date().getFullYear()
 
 /** Rok jako liczba całkowita bez separatorów (UInputNumber potrafiło pokazywać „2 010”). */
-function setBirthYear (v: string | number | null | undefined) {
+function setBirthYear(v: string | number | null | undefined) {
   if (v === null || v === undefined) {
     form.birth_year = null
     return
@@ -113,7 +113,7 @@ function setBirthYear (v: string | number | null | undefined) {
   form.birth_year = Number.isFinite(n) ? n : null
 }
 
-async function loadPlayers () {
+async function loadPlayers() {
   loading.value = true
   try {
     players.value = await api<Player[]>(apiRoutes.athletes.listAdmin)
@@ -128,35 +128,35 @@ async function loadPlayers () {
   }
 }
 
-function openCreate () {
+function openCreate() {
   resetForm()
   modalOpen.value = true
 }
 
-function openEdit (p: Player) {
+function openEdit(p: Player) {
   editingId.value = p.id
   form.full_name = p.full_name
   form.birth_year = p.birth_year ?? null
-  form.gender = (p as any).gender || 'male'
+  form.gender = p.gender || 'male'
   form.weight_category = p.weight_category ?? null
-  form.bodyweight = (p as any).bodyweight ?? null
+  form.bodyweight = p.bodyweight ?? null
   form.best_snatch_kg = p.best_snatch_kg ?? null
   form.best_clean_jerk_kg = p.best_clean_jerk_kg ?? null
   form.total_kg = p.total_kg ?? null
-  form.image_url = (p as any).image_url || null
+  form.image_url = p.image_url || null
   form.notes = p.notes ?? null
   form.is_active = p.is_active !== false
   modalOpen.value = true
 }
 
-async function onFileChange (e: Event) {
+async function onFileChange(e: Event) {
   const input = e.target as HTMLInputElement
   if (!input.files?.length) return
-  
+
   const file = input.files[0]
   const formData = new FormData()
   formData.append('file', file)
-  
+
   uploadLoading.value = true
   try {
     const res = await api<{ url: string }>(apiRoutes.upload, {
@@ -172,7 +172,7 @@ async function onFileChange (e: Event) {
   }
 }
 
-async function savePlayer () {
+async function savePlayer() {
   if (!form.full_name.trim()) {
     toast.add({ title: 'Uzupełnij nazwisko i imię', color: 'warning' })
     return
@@ -180,7 +180,7 @@ async function savePlayer () {
   saving.value = true
   const wasEditing = !!editingId.value
   try {
-    const body: any = {
+    const body: Record<string, unknown> = {
       full_name: form.full_name.trim(),
       birth_year: form.birth_year,
       gender: form.gender,
@@ -235,17 +235,17 @@ async function savePlayer () {
   }
 }
 
-function askDelete (p: Player) {
+function askDelete(p: Player) {
   pendingDelete.value = p
   deleteModalOpen.value = true
 }
 
-function cancelDelete () {
+function cancelDelete() {
   deleteModalOpen.value = false
   pendingDelete.value = null
 }
 
-async function confirmDelete () {
+async function confirmDelete() {
   if (!pendingDelete.value) return
   deleting.value = true
   try {
@@ -335,15 +335,26 @@ onMounted(() => {
             >
               <td class="px-4 py-3 font-medium">
                 <div class="flex items-center gap-3">
-                  <UAvatar :src="(p as any).image_url" size="xs" />
+                  <UAvatar
+                    :src="(p as any).image_url"
+                    size="xs"
+                  />
                   <div>
                     <div class="flex items-center gap-2">
                       <p>{{ p.full_name }}</p>
-                      <UTooltip v-if="p.user_id" text="Konto powiązane">
-                        <UIcon name="i-lucide-user-check" class="size-3.5 text-primary" />
+                      <UTooltip
+                        v-if="p.user_id"
+                        text="Konto powiązane"
+                      >
+                        <UIcon
+                          name="i-lucide-user-check"
+                          class="size-3.5 text-primary"
+                        />
                       </UTooltip>
                     </div>
-                    <p class="text-[10px] uppercase font-bold text-muted">{{ (p as any).gender === 'male' ? 'Mężczyzna' : 'Kobieta' }}</p>
+                    <p class="text-[10px] uppercase font-bold text-muted">
+                      {{ (p as any).gender === 'male' ? 'Mężczyzna' : 'Kobieta' }}
+                    </p>
                   </div>
                 </div>
               </td>
@@ -352,7 +363,10 @@ onMounted(() => {
               </td>
               <td class="px-4 py-3 text-center text-muted">
                 {{ p.weight_category ?? '—' }}
-                <span v-if="(p as any).bodyweight" class="block text-[10px]">({{ (p as any).bodyweight }} kg)</span>
+                <span
+                  v-if="(p as any).bodyweight"
+                  class="block text-[10px]"
+                >({{ (p as any).bodyweight }} kg)</span>
               </td>
               <td class="px-4 py-3 text-center tabular-nums">
                 {{ p.best_snatch_kg ?? '—' }}
@@ -415,18 +429,27 @@ onMounted(() => {
     >
       <template #content>
         <div class="slavia-form-modal">
-          <form class="slavia-form-stack" @submit.prevent="savePlayer">
+          <form
+            class="slavia-form-stack"
+            @submit.prevent="savePlayer"
+          >
             <div class="slavia-form-panel">
               <div class="slavia-form-panel__header">
                 <div class="slavia-form-panel__title">
                   <span class="slavia-form-panel__icon">
-                    <UIcon name="i-lucide-user" class="size-4" />
+                    <UIcon
+                      name="i-lucide-user"
+                      class="size-4"
+                    />
                   </span>
                   Dane podstawowe
                 </div>
               </div>
               <div class="slavia-form-panel__body">
-                <UFormField label="Nazwisko i imię" required>
+                <UFormField
+                  label="Nazwisko i imię"
+                  required
+                >
                   <UInput
                     v-model="form.full_name"
                     autocomplete="name"
@@ -436,8 +459,14 @@ onMounted(() => {
                   />
                 </UFormField>
                 <div class="grid gap-5 sm:grid-cols-2">
-                  <UFormField label="Płeć" required>
-                    <select v-model="form.gender" class="slavia-select w-full py-3 text-[15px]">
+                  <UFormField
+                    label="Płeć"
+                    required
+                  >
+                    <select
+                      v-model="form.gender"
+                      class="slavia-select w-full py-3 text-[15px]"
+                    >
                       <option value="male">
                         Mężczyzna
                       </option>
@@ -448,9 +477,27 @@ onMounted(() => {
                   </UFormField>
                   <UFormField label="Zdjęcie (URL lub wgrywanie)">
                     <div class="flex flex-wrap items-center gap-2">
-                      <UInput v-model="form.image_url" placeholder="https://..." size="lg" class="min-w-0 flex-1" />
-                      <UButton icon="i-lucide-upload" color="neutral" variant="soft" size="lg" :loading="uploadLoading" @click="$refs.fileInput.click()" />
-                      <input ref="fileInput" type="file" hidden accept="image/*" @change="onFileChange">
+                      <UInput
+                        v-model="form.image_url"
+                        placeholder="https://..."
+                        size="lg"
+                        class="min-w-0 flex-1"
+                      />
+                      <UButton
+                        icon="i-lucide-upload"
+                        color="neutral"
+                        variant="soft"
+                        size="lg"
+                        :loading="uploadLoading"
+                        @click="$refs.fileInput.click()"
+                      />
+                      <input
+                        ref="fileInput"
+                        type="file"
+                        hidden
+                        accept="image/*"
+                        @change="onFileChange"
+                      >
                     </div>
                   </UFormField>
                 </div>
@@ -461,7 +508,10 @@ onMounted(() => {
               <div class="slavia-form-panel__header">
                 <div class="slavia-form-panel__title">
                   <span class="slavia-form-panel__icon">
-                    <UIcon name="i-lucide-dumbbell" class="size-4" />
+                    <UIcon
+                      name="i-lucide-dumbbell"
+                      class="size-4"
+                    />
                   </span>
                   Parametry sportowe
                 </div>
@@ -541,7 +591,10 @@ onMounted(() => {
               <div class="slavia-form-panel__header">
                 <div class="slavia-form-panel__title">
                   <span class="slavia-form-panel__icon">
-                    <UIcon name="i-lucide-key-round" class="size-4" />
+                    <UIcon
+                      name="i-lucide-key-round"
+                      class="size-4"
+                    />
                   </span>
                   Konto i dostęp
                 </div>
@@ -559,17 +612,40 @@ onMounted(() => {
                     </div>
                     <USwitch v-model="form.create_account" />
                   </div>
-                  <div v-if="form.create_account" class="mt-5 grid gap-5 sm:grid-cols-2">
-                    <UFormField label="Login" required>
-                      <UInput v-model="form.username" placeholder="np. jgawron" size="lg" class="w-full" />
+                  <div
+                    v-if="form.create_account"
+                    class="mt-5 grid gap-5 sm:grid-cols-2"
+                  >
+                    <UFormField
+                      label="Login"
+                      required
+                    >
+                      <UInput
+                        v-model="form.username"
+                        placeholder="np. jgawron"
+                        size="lg"
+                        class="w-full"
+                      />
                     </UFormField>
                     <UFormField label="Hasło (opcjonalnie)">
-                      <UInput v-model="form.password" type="password" placeholder="Domyślnie: Slavia2026" size="lg" class="w-full" />
+                      <UInput
+                        v-model="form.password"
+                        type="password"
+                        placeholder="Domyślnie: Slavia2026"
+                        size="lg"
+                        class="w-full"
+                      />
                     </UFormField>
                   </div>
                 </div>
-                <div v-else class="flex items-start gap-3 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
-                  <UIcon name="i-lucide-user-check" class="size-5 shrink-0 text-primary" />
+                <div
+                  v-else
+                  class="flex items-start gap-3 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3"
+                >
+                  <UIcon
+                    name="i-lucide-user-check"
+                    class="size-5 shrink-0 text-primary"
+                  />
                   <div>
                     <p class="text-sm font-bold text-primary">
                       Konto powiązane
@@ -588,14 +664,26 @@ onMounted(() => {
                     <p class="mt-1 text-xs text-muted">
                       Zaznaczone pozycje trafiają do osobistego kalendarza zawodnika.
                     </p>
-                    <div v-if="assignmentsLoading" class="mt-4 flex items-center gap-2 text-sm text-muted">
-                      <UIcon name="i-lucide-loader-2" class="size-4 animate-spin shrink-0" />
+                    <div
+                      v-if="assignmentsLoading"
+                      class="mt-4 flex items-center gap-2 text-sm text-muted"
+                    >
+                      <UIcon
+                        name="i-lucide-loader-2"
+                        class="size-4 animate-spin shrink-0"
+                      />
                       Wczytywanie…
                     </div>
-                    <div v-else-if="!competitionsCatalog.length" class="mt-3 text-xs text-muted">
+                    <div
+                      v-else-if="!competitionsCatalog.length"
+                      class="mt-3 text-xs text-muted"
+                    >
                       Brak wpisów w kalendarzu — dodaj wydarzenie w zakładce Kalendarz.
                     </div>
-                    <div v-else class="mt-4 max-h-52 space-y-2 overflow-y-auto pr-1">
+                    <div
+                      v-else
+                      class="mt-4 max-h-52 space-y-2 overflow-y-auto pr-1"
+                    >
                       <label
                         v-for="c in competitionsCatalog"
                         :key="c.id"
@@ -622,7 +710,10 @@ onMounted(() => {
               <div class="slavia-form-panel__header">
                 <div class="slavia-form-panel__title">
                   <span class="slavia-form-panel__icon">
-                    <UIcon name="i-lucide-sticky-note" class="size-4" />
+                    <UIcon
+                      name="i-lucide-sticky-note"
+                      class="size-4"
+                    />
                   </span>
                   Notatki i status
                 </div>
@@ -643,10 +734,20 @@ onMounted(() => {
                     <span class="text-sm font-semibold text-highlighted">Aktywny w kadrze</span>
                   </div>
                   <div class="slavia-form-actions w-full sm:w-auto">
-                    <UButton type="button" color="neutral" variant="outline" size="lg" @click="modalOpen = false">
+                    <UButton
+                      type="button"
+                      color="neutral"
+                      variant="outline"
+                      size="lg"
+                      @click="modalOpen = false"
+                    >
                       Anuluj
                     </UButton>
-                    <UButton type="submit" size="lg" :loading="saving">
+                    <UButton
+                      type="submit"
+                      size="lg"
+                      :loading="saving"
+                    >
                       Zapisz
                     </UButton>
                   </div>

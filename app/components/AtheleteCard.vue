@@ -219,7 +219,10 @@ function clearHover() {
         <div class="rounded-xl border border-default/30 bg-muted/5 p-4">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
             <p class="text-xs font-bold text-muted flex items-center gap-2 uppercase tracking-wider">
-              <UIcon name="i-lucide-trending-up" class="text-primary size-4" />
+              <UIcon
+                name="i-lucide-trending-up"
+                class="text-primary size-4"
+              />
               Progresja totalu
             </p>
             <p class="text-[10px] text-muted font-medium">
@@ -263,7 +266,10 @@ function clearHover() {
                     <span class="text-muted">Sinclair</span>
                     <span class="font-mono font-bold text-amber-400 text-right">
                       {{ tooltipPoint.sinclair != null ? tooltipPoint.sinclair : '—' }}
-                      <span v-if="tooltipPoint.sinclair != null" class="text-[10px] font-normal text-muted">pkt</span>
+                      <span
+                        v-if="tooltipPoint.sinclair != null"
+                        class="text-[10px] font-normal text-muted"
+                      >pkt</span>
                     </span>
                   </div>
                 </div>
@@ -276,17 +282,56 @@ function clearHover() {
               preserveAspectRatio="xMidYMid meet"
             >
               <defs>
-                <linearGradient :id="chartSvgIds.gradArea" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="rgb(var(--ui-primary))" stop-opacity="0.38" />
-                  <stop offset="50%" stop-color="rgb(var(--ui-primary))" stop-opacity="0.1" />
-                  <stop offset="100%" stop-color="rgb(var(--ui-primary))" stop-opacity="0" />
+                <linearGradient
+                  :id="chartSvgIds.gradArea"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop
+                    offset="0%"
+                    stop-color="rgb(var(--ui-primary))"
+                    stop-opacity="0.38"
+                  />
+                  <stop
+                    offset="50%"
+                    stop-color="rgb(var(--ui-primary))"
+                    stop-opacity="0.1"
+                  />
+                  <stop
+                    offset="100%"
+                    stop-color="rgb(var(--ui-primary))"
+                    stop-opacity="0"
+                  />
                 </linearGradient>
-                <linearGradient :id="chartSvgIds.gradLine" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stop-color="rgb(var(--ui-primary))" />
-                  <stop offset="100%" stop-color="#22c55e" />
+                <linearGradient
+                  :id="chartSvgIds.gradLine"
+                  x1="0"
+                  y1="0"
+                  x2="1"
+                  y2="0"
+                >
+                  <stop
+                    offset="0%"
+                    stop-color="rgb(var(--ui-primary))"
+                  />
+                  <stop
+                    offset="100%"
+                    stop-color="#22c55e"
+                  />
                 </linearGradient>
-                <filter :id="chartSvgIds.filterGlow" x="-25%" y="-25%" width="150%" height="150%">
-                  <feGaussianBlur stdDeviation="0.85" result="blur" />
+                <filter
+                  :id="chartSvgIds.filterGlow"
+                  x="-25%"
+                  y="-25%"
+                  width="150%"
+                  height="150%"
+                >
+                  <feGaussianBlur
+                    stdDeviation="0.85"
+                    result="blur"
+                  />
                   <feMerge>
                     <feMergeNode in="blur" />
                     <feMergeNode in="SourceGraphic" />
@@ -432,7 +477,10 @@ function clearHover() {
             </div>
           </div>
 
-          <div v-else class="flex h-28 items-center justify-center px-2 rounded-xl bg-muted/10 ring-1 ring-dashed ring-default/40">
+          <div
+            v-else
+            class="flex h-28 items-center justify-center px-2 rounded-xl bg-muted/10 ring-1 ring-dashed ring-default/40"
+          >
             <p class="text-center text-xs text-muted leading-relaxed max-w-sm">
               Brak zatwierdzonych wyników startowych — po akceptacji zgłoszenia pojawi się tu wykres z podziałem rwanie / podrzut i pkt Sinclair.
             </p>

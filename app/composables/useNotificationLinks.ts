@@ -1,6 +1,6 @@
 import type { ClubNotification } from '~/types/notifications'
 
-function parsePayload (raw: string | null | undefined): Record<string, string> {
+function parsePayload(raw: string | null | undefined): Record<string, string> {
   if (!raw) return {}
   try {
     const o = JSON.parse(raw) as unknown
@@ -16,10 +16,10 @@ function parsePayload (raw: string | null | undefined): Record<string, string> {
 }
 
 /** Opcjonalny skrót do powiązanej podstrony (bez blokowania usuwania z listy). */
-export function useNotificationLinks () {
+export function useNotificationLinks() {
   const auth = useAuth()
 
-  function resolveLink (n: ClubNotification): string | null {
+  function resolveLink(n: ClubNotification): string | null {
     const p = parsePayload(n.payload)
     const competitionId = p.competition_id
     const athleteId = p.athlete_id

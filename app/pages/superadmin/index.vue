@@ -14,7 +14,7 @@ const { data: athletes } = await useAsyncData('super-dashboard-athletes', () => 
 const { data: adminsGrouped } = await useAsyncData(
   'super-dashboard-admins-grouped',
   () =>
-    apiFetch<{ staff_admins: unknown[]; club_members: unknown[] }>('/api/admins/grouped').catch(() => ({
+    apiFetch<{ staff_admins: unknown[], club_members: unknown[] }>('/api/admins/grouped').catch(() => ({
       staff_admins: [],
       club_members: []
     }))
@@ -105,7 +105,10 @@ const quickLinks = [
   <UContainer class="py-8 md:py-14 lg:py-16">
     <div class="mb-8">
       <p class="text-sm font-medium uppercase tracking-wider text-primary flex items-center gap-2">
-        <UIcon name="i-lucide-crown" class="size-4" />
+        <UIcon
+          name="i-lucide-crown"
+          class="size-4"
+        />
         SuperAdministracja
       </p>
       <h1 class="mt-2 text-3xl font-bold tracking-tight text-highlighted">
@@ -121,39 +124,62 @@ const quickLinks = [
       <UCard>
         <div class="flex items-center gap-4">
           <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/10 text-red-500">
-            <UIcon name="i-lucide-shield-check" class="size-6" />
+            <UIcon
+              name="i-lucide-shield-check"
+              class="size-6"
+            />
           </div>
           <div>
-            <p class="text-sm font-medium text-muted">Konta administracyjne</p>
-            <p class="text-2xl font-bold text-highlighted">{{ adminsCount }}</p>
+            <p class="text-sm font-medium text-muted">
+              Konta administracyjne
+            </p>
+            <p class="text-2xl font-bold text-highlighted">
+              {{ adminsCount }}
+            </p>
           </div>
         </div>
       </UCard>
       <UCard>
         <div class="flex items-center gap-4">
           <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
-            <UIcon name="i-lucide-users" class="size-6" />
+            <UIcon
+              name="i-lucide-users"
+              class="size-6"
+            />
           </div>
           <div>
-            <p class="text-sm font-medium text-muted">Zawodnicy</p>
-            <p class="text-2xl font-bold text-highlighted">{{ athletesCount }}</p>
+            <p class="text-sm font-medium text-muted">
+              Zawodnicy
+            </p>
+            <p class="text-2xl font-bold text-highlighted">
+              {{ athletesCount }}
+            </p>
           </div>
         </div>
       </UCard>
       <UCard>
         <div class="flex items-center gap-4">
           <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500">
-            <UIcon name="i-lucide-calendar" class="size-6" />
+            <UIcon
+              name="i-lucide-calendar"
+              class="size-6"
+            />
           </div>
           <div>
-            <p class="text-sm font-medium text-muted">Wydarzenia łącznie</p>
-            <p class="text-2xl font-bold text-highlighted">{{ competitionsCount }}</p>
+            <p class="text-sm font-medium text-muted">
+              Wydarzenia łącznie
+            </p>
+            <p class="text-2xl font-bold text-highlighted">
+              {{ competitionsCount }}
+            </p>
           </div>
         </div>
       </UCard>
     </div>
 
-    <h2 class="mb-4 text-xl font-semibold text-highlighted">Zarządzanie Ostateczne</h2>
+    <h2 class="mb-4 text-xl font-semibold text-highlighted">
+      Zarządzanie Ostateczne
+    </h2>
     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
       <NuxtLink
         v-for="link in quickLinks"
@@ -164,7 +190,10 @@ const quickLinks = [
         <UCard class="h-full border border-default transition-colors group-hover:border-primary/50 group-hover:shadow-md">
           <div class="flex flex-col items-center text-center p-2">
             <div :class="['mb-3 flex h-14 w-14 items-center justify-center rounded-full', link.bg, link.color]">
-              <UIcon :name="link.icon" class="size-7" />
+              <UIcon
+                :name="link.icon"
+                class="size-7"
+              />
             </div>
             <h3 class="font-medium text-highlighted group-hover:text-primary transition-colors">
               {{ link.title }}
