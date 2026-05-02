@@ -19,6 +19,7 @@ const bodyweightRaw = ref('')
 
 // I watcher, który reaguje na zmiany tekstu:
 watch(bodyweightRaw, (newVal) => {
+  if (typeof newVal !== 'string') return
   const normalized = newVal.replace(',', '.')
   const parsed = parseFloat(normalized)
   // Liczymy tylko jeśli to faktycznie liczba i nie kończy się kropką/przecinkiem (żeby dało się pisać dalej)
@@ -103,8 +104,10 @@ useSeoMeta({
                 class="w-full tabular-nums"
                 @update:model-value="val => {
                   // To wymusi przeliczenie Sinclaira natychmiast
-                  const n = parseFloat(String(val).replace(',', '.'));
-                  if (!isNaN(n)) bodyweight = n;
+                  if (val) {
+                    const n = parseFloat(String(val).replace(',', '.'));
+                    if (!isNaN(n)) bodyweight = n;
+                  }
                 }"
               />
             </UFormField>

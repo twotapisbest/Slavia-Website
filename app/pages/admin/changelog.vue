@@ -8,6 +8,19 @@ useSeoMeta({
 
 const updates = [
   {
+    version: 'v1.10.0',
+    date: '2 Maj 2026',
+    title: 'Poprawki konfiguracji budowania i błędów TypeScript',
+    features: [
+      'Naprawiono błędy TypeScript w kalendarzu — dodano typ CalendarEvent dla wydarzeń treningowych i zawodów.',
+      'Zresetowano konfigurację Nuxt do domyślnej — usunięto niestandardowe optymalizacje, zachowując niezbędne moduły i runtimeConfig.',
+      'Uproszczono konfigurację Netlify — usunięto zmienne środowiskowe z pliku, przeniesiono do instrukcji deploy.txt.',
+      'Dodano sprawdzenia bezpieczeństwa w kalkulatorze Sinclair — zapobieganie błędom runtime przy undefined wartościach.',
+      'Wszystkie komendy pnpm (build, lint, typecheck) przechodzą bez błędów.'
+    ],
+    type: 'fix'
+  },
+  {
     version: 'v1.9.0',
     date: '2 Maj 2026',
     title: 'Porządki zależności i modularna struktura',

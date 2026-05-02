@@ -15,7 +15,7 @@ import {
 } from 'date-fns'
 import { pl } from 'date-fns/locale'
 import { apiRoutes } from '~/config/api'
-import type { Athlete, Competition } from '~/types/models'
+import type { Athlete, Competition, CalendarEvent } from '~/types/models'
 import { getApiErrorMessage } from '~/composables/useApi'
 
 useSeoMeta({
@@ -40,9 +40,9 @@ const canManageEvents = computed(() => auth.isAdmin.value || auth.isTrainer.valu
 const syncLoading = ref(false)
 
 // Bez SSR: na hostingu Node często nie ma dostępu do API / złego apiBase — strona się wywalała u gości.
-const { data: competitions, refresh, pending: competitionsPending } = await useAsyncData(
+const { data: competitions, refresh, pending: competitionsPending } = await useAsyncData<Competition[]>(
   'competitions-public',
-  () => $fetch<unknown[]>(`${publicBase()}${apiRoutes.competitions.collection}`).catch(() => []),
+  () => $fetch<Competition[]>(`${publicBase()}${apiRoutes.competitions.collection}`).catch(() => []),
   { default: () => [], server: false, lazy: true }
 )
 
@@ -134,11 +134,11 @@ const getTrainingsForDay = (date: Date) => {
   return []
 }
 
-const getEventsForDay = (date: Date) => {
+const getEventsForDay = (date: Date): CalendarEvent[] => {
   const dateStr = format(date, 'yyyy-MM-dd')
 
   // Lokalne zawody z bazy danych
-  const comps = (competitions.value || []).filter((e: Competition) => typeof e?.date === 'string' && e.date.startsWith(dateStr)).map((e: Competition) => ({
+  const comps: CalendarEvent[] = (competitions.value || []).filter((e: Competition) => typeof e?.date === 'string' && e.date.startsWith(dateStr)).map((e: Competition): CalendarEvent => ({
     ...e,
     type: e.external_source ? 'external' : 'competition',
     external_source: e.external_source || undefined
@@ -181,7 +181,7 @@ async function syncExternalCalendars() {
 }
 
 /** Kontekst otwartego wpisu (banner w modalu — external/training vs gość). */
-const bannerEvent = ref<Competition | null>(null)
+const bannerEvent = ref<CalendarEvent | null>(null)
 
 // Zarządzanie wydarzeniami
 const isModalOpen = ref(false)
@@ -213,7 +213,7 @@ const categories = [
 
 const { getEventClasses, getEventIcon } = useCalendarEventChips()
 
-async function openModal(date?: Date, event?: Competition) {
+async function openModal(date?: Date, event?: CalendarEvent) {
   if (auth.token.value) {
     await auth.fetchMe()
   }
