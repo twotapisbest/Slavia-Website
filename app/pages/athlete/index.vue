@@ -20,7 +20,7 @@ const { data: bundle, refresh: refreshAthletePage } = await useAsyncData(
     }
     const a = await apiFetch<Athlete | null>(`/api/athletes/me`).catch(() => null)
     const results = a?.id
-      ? await apiFetch<CompetitionResult[]>(`/api/results/athlete/${a.id}`).catch(() => [])
+      ? await apiFetch<CompetitionResult[]>(`/api/results/athlete/${a.id}/submissions`).catch(() => [])
       : []
     return { athlete: a, results } satisfies AthleteBundle
   },

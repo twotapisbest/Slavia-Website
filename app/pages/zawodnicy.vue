@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import AtheleteCard from '~/components/AtheleteCard.vue'
 import type { Athlete as AthleteModel, CompetitionResult } from '~/types/models'
+import type { SinclairGender } from '~/utils/sinclair'
 import { sinclairTotal } from '~/utils/sinclair'
+
+function cardGender (g: string | null | undefined): SinclairGender | null {
+  return g === 'male' || g === 'female' ? g : null
+}
 
 const config = useRuntimeConfig()
 
@@ -38,43 +43,71 @@ useSeoMeta({
   twitterCard: 'summary'
 })
 
-/** Mapowanie modelu z API na model komponentu karty */
+/** Karty i ranking: wyłącznie zatwierdzone zgłoszenia (`/api/results/athlete/:id`). */
 function mapToCard(p: AthleteModel, rb: Record<string, CompetitionResult[]>) {
-  const totalKg = (p.best_snatch_kg || 0) + (p.best_clean_jerk_kg || 0)
+  const approved = (rb[p.id] ?? [])
+    .slice()
+    .sort((a, b) => a.date.localeCompare(b.date))
+
+  let bestRow: CompetitionResult | null = null
+  for (const r of approved) {
+    if (
+      !bestRow
+      || r.total > bestRow.total
+      || (r.total === bestRow.total && r.date.localeCompare(bestRow.date) > 0)
+    ) {
+      bestRow = r
+    }
+  }
+
+  const snatchKg = bestRow?.snatch ?? 0
+  const cjKg = bestRow?.clean_and_jerk ?? 0
+  const totalKg = bestRow?.total ?? 0
+
   const weightNum = p.weight_category ? parseInt(p.weight_category.replace(/\D/g, '')) : (p.bodyweight || 0)
   const effectiveWeight = p.bodyweight || weightNum
-  
-  // Obliczamy Sinclaira (zabezpieczenie przed brakiem danych)
+
+  const sg = cardGender(p.gender ?? undefined)
   let sc = 0
-  if (totalKg > 0 && effectiveWeight > 0 && p.gender) {
-    const calculated = sinclairTotal(totalKg, effectiveWeight, p.gender as any)
-    if (!isNaN(calculated)) {
+  if (totalKg > 0 && effectiveWeight > 0 && sg) {
+    const calculated = sinclairTotal(totalKg, effectiveWeight, sg)
+    if (!Number.isNaN(calculated)) {
       sc = calculated
     }
   }
 
-  // Historia ze zgłoszonych wyników (wszystkie statusy z endpointu zawodnika)
-  const athleteResults = (rb[p.id] ?? [])
-    .slice()
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .map(r => r.total)
+  const chartHistory = approved.map((r) => {
+    let sinclairPt: number | null = null
+    if (effectiveWeight > 0 && sg) {
+      const c = sinclairTotal(r.total, effectiveWeight, sg)
+      if (!Number.isNaN(c)) sinclairPt = Number(c.toFixed(2))
+    }
+    const raw = r.date || ''
+    const dateShort = raw.length >= 10 ? raw.slice(0, 10) : raw
+    return {
+      date: dateShort,
+      total: r.total,
+      snatch: r.snatch,
+      clean_and_jerk: r.clean_and_jerk,
+      sinclair: sinclairPt
+    }
+  })
 
-  // Jeśli brak historii, używamy bieżącego totalu jako punkt bazowy
-  const history = athleteResults.length > 0 ? athleteResults : [totalKg].filter(v => v > 0)
-  const maxHistory = Math.max(...history) * 1.15 || 300
+  const totals = chartHistory.map(x => x.total)
+  const maxHistory = totals.length > 0 ? Math.max(...totals) * 1.15 || 300 : 300
 
   return {
     id: p.id,
     name: p.full_name,
     birthYear: p.birth_year || 0,
     weightCategory: Math.round(weightNum),
-    snatch: p.best_snatch_kg || 0,
-    cleanAndJerk: p.best_clean_jerk_kg || 0,
+    snatch: snatchKg,
+    cleanAndJerk: cjKg,
     total: totalKg,
     sinclair: Number(sc.toFixed(2)),
     description: p.notes || 'Zawodnik klubu CKS Slavia Ruda Śląska.',
     photo: p.image_url || undefined,
-    history,
+    chartHistory,
     maxHistory
   }
 }
@@ -84,7 +117,10 @@ const mappedPlayers = computed(() => {
   return players.value.map(p => mapToCard(p, rb)).sort((a, b) => b.sinclair - a.sinclair)
 })
 
-const podium = computed(() => mappedPlayers.value.slice(0, 3))
+/** Podium i tabela — tylko osoby z co najmniej jednym zatwierdzonym wynikiem. */
+const rankingPlayers = computed(() => mappedPlayers.value.filter(x => x.chartHistory.length > 0))
+
+const podium = computed(() => rankingPlayers.value.slice(0, 3))
 
 // Kategorie dla rankingu
 const categories = [
@@ -96,9 +132,13 @@ const selectedCategory = ref('all')
 
 const filteredRankings = computed(() => {
   const rb = resultsByAthlete.value
-  if (selectedCategory.value === 'all') return mappedPlayers.value
-  const gender = selectedCategory.value
-  return players.value.filter(p => p.gender === gender).map(p => mapToCard(p, rb)).sort((a, b) => b.sinclair - a.sinclair)
+  const genderOk = (p: AthleteModel) =>
+    selectedCategory.value === 'all' || p.gender === selectedCategory.value
+  return players.value
+    .filter(genderOk)
+    .map(p => mapToCard(p, rb))
+    .filter(x => x.chartHistory.length > 0)
+    .sort((a, b) => b.sinclair - a.sinclair)
 })
 </script>
 
@@ -114,7 +154,8 @@ const filteredRankings = computed(() => {
         Elita <span class="text-primary">Slavii</span>
       </h1>
       <p class="mx-auto mt-6 max-w-2xl text-xl font-medium text-muted/80 leading-relaxed">
-        Poznaj naszych reprezentantów i zobacz aktualny ranking klubu oparty na punktacji Sinclaira.
+        Poznaj naszych reprezentantów. Ranking i wykresy na kartach bazują wyłącznie na zatwierdzonych zgłoszeniach wyników
+        (po weryfikacji przez trenera lub administrację).
       </p>
     </div>
 
@@ -186,7 +227,9 @@ const filteredRankings = computed(() => {
             <UIcon name="i-lucide-list-ordered" class="text-primary size-8" />
             Tabela Rankingowa
           </h2>
-          <p class="mt-2 text-muted font-medium">Oficjalne zestawienie punktacji Sinclair na rok 2025-2028.</p>
+          <p class="mt-2 text-muted font-medium">
+            Zestawienie Sinclair — uwzględniani są tylko zawodnicy z co najmniej jednym zatwierdzonym wynikiem.
+          </p>
         </div>
         <div
           class="flex flex-wrap gap-2 p-1.5 rounded-2xl bg-muted/30 border border-default w-full md:w-auto"
@@ -206,7 +249,19 @@ const filteredRankings = computed(() => {
         </div>
       </div>
 
-      <UCard class="overflow-hidden border-primary/20 shadow-2xl bg-linear-to-b from-primary/5 to-transparent backdrop-blur-md">
+      <UAlert
+        v-if="filteredRankings.length === 0 && players.length > 0"
+        color="neutral"
+        variant="subtle"
+        class="mb-6"
+        title="Ranking Sinclair jest pusty"
+        description="Żaden zawodnik nie ma jeszcze zatwierdzonego wyniku w systemie zgłoszeń. Po akceptacji wpisów przez trenera lub administrację pozycje pojawią się tutaj automatycznie."
+      />
+
+      <UCard
+        v-if="filteredRankings.length > 0"
+        class="overflow-hidden border-primary/20 shadow-2xl bg-linear-to-b from-primary/5 to-transparent backdrop-blur-md"
+      >
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
