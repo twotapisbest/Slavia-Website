@@ -1,23 +1,34 @@
 <script setup lang="ts">
 import AtheleteCard from '~/components/AtheleteCard.vue'
-import { apiRoutes } from '~/config/api'
-import type { Athlete as AthleteModel } from '~/types/models'
+import type { Athlete as AthleteModel, CompetitionResult } from '~/types/models'
 import { sinclairTotal } from '~/utils/sinclair'
 
-const api = useApi()
+const config = useRuntimeConfig()
 
-const { data: players, status, refresh, error } = await useAsyncData(
-  'players-public',
-  () => api<AthleteModel[]>(apiRoutes.athletes.list),
-  { default: () => [] }
+function publicBase () {
+  return String(config.public.apiBase || '').replace(/\/$/, '')
+}
+
+const { data: pageBundle, status, error } = await useAsyncData(
+  'players-public-bundle',
+  async () => {
+    const base = publicBase()
+    const players = await $fetch<AthleteModel[]>(`${base}/api/athletes`).catch(() => [] as AthleteModel[])
+    const resultsByAthlete: Record<string, CompetitionResult[]> = {}
+    await Promise.all(
+      players.map(async (p) => {
+        resultsByAthlete[p.id] = await $fetch<CompetitionResult[]>(`${base}/api/results/athlete/${p.id}`).catch(
+          () => []
+        )
+      })
+    )
+    return { players, resultsByAthlete }
+  },
+  { default: () => ({ players: [] as AthleteModel[], resultsByAthlete: {} as Record<string, CompetitionResult[]> }) }
 )
 
-// Pobieramy historię wyników (zatwierdzone)
-const { data: allResults } = await useAsyncData(
-  'results-approved',
-  () => api<any[]>('/api/results').catch(() => []),
-  { default: () => [] }
-)
+const players = computed(() => pageBundle.value?.players ?? [])
+const resultsByAthlete = computed(() => pageBundle.value?.resultsByAthlete ?? {})
 
 useSeoMeta({
   title: 'Zawodnicy i Ranking — Slavia Ruda Śląska',
@@ -28,7 +39,7 @@ useSeoMeta({
 })
 
 /** Mapowanie modelu z API na model komponentu karty */
-function mapToCard(p: AthleteModel) {
+function mapToCard(p: AthleteModel, rb: Record<string, CompetitionResult[]>) {
   const totalKg = (p.best_snatch_kg || 0) + (p.best_clean_jerk_kg || 0)
   const weightNum = p.weight_category ? parseInt(p.weight_category.replace(/\D/g, '')) : (p.bodyweight || 0)
   const effectiveWeight = p.bodyweight || weightNum
@@ -42,11 +53,11 @@ function mapToCard(p: AthleteModel) {
     }
   }
 
-  // Historia wyników z zawodów (posortowana chronologicznie)
-  const athleteResults = (allResults.value ?? [])
-    .filter((r: any) => r.athlete_id === p.id)
-    .sort((a: any, b: any) => a.date.localeCompare(b.date))
-    .map((r: any) => r.total as number)
+  // Historia ze zgłoszonych wyników (wszystkie statusy z endpointu zawodnika)
+  const athleteResults = (rb[p.id] ?? [])
+    .slice()
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map(r => r.total)
 
   // Jeśli brak historii, używamy bieżącego totalu jako punkt bazowy
   const history = athleteResults.length > 0 ? athleteResults : [totalKg].filter(v => v > 0)
@@ -69,9 +80,8 @@ function mapToCard(p: AthleteModel) {
 }
 
 const mappedPlayers = computed(() => {
-  return (players.value ?? [])
-    .map(mapToCard)
-    .sort((a, b) => b.sinclair - a.sinclair)
+  const rb = resultsByAthlete.value
+  return players.value.map(p => mapToCard(p, rb)).sort((a, b) => b.sinclair - a.sinclair)
 })
 
 const podium = computed(() => mappedPlayers.value.slice(0, 3))
@@ -85,12 +95,10 @@ const categories = [
 const selectedCategory = ref('all')
 
 const filteredRankings = computed(() => {
+  const rb = resultsByAthlete.value
   if (selectedCategory.value === 'all') return mappedPlayers.value
   const gender = selectedCategory.value
-  return (players.value ?? [])
-    .filter(p => p.gender === gender)
-    .map(mapToCard)
-    .sort((a, b) => b.sinclair - a.sinclair)
+  return players.value.filter(p => p.gender === gender).map(p => mapToCard(p, rb)).sort((a, b) => b.sinclair - a.sinclair)
 })
 </script>
 
@@ -180,12 +188,22 @@ const filteredRankings = computed(() => {
           </h2>
           <p class="mt-2 text-muted font-medium">Oficjalne zestawienie punktacji Sinclair na rok 2025-2028.</p>
         </div>
-        <UTabs
-          v-model="selectedCategory"
-          :items="categories"
-          class="w-full md:w-auto"
-          :ui="{ list: 'bg-muted/30 p-1 rounded-2xl', indicator: 'bg-primary shadow-lg' }"
-        />
+        <div
+          class="flex flex-wrap gap-2 p-1.5 rounded-2xl bg-muted/30 border border-default w-full md:w-auto"
+          role="tablist"
+        >
+          <UButton
+            v-for="c in categories"
+            :key="c.value"
+            size="sm"
+            class="min-h-10"
+            :variant="selectedCategory === c.value ? 'solid' : 'ghost'"
+            :color="selectedCategory === c.value ? 'primary' : 'neutral'"
+            @click="selectedCategory = c.value"
+          >
+            {{ c.label }}
+          </UButton>
+        </div>
       </div>
 
       <UCard class="overflow-hidden border-primary/20 shadow-2xl bg-linear-to-b from-primary/5 to-transparent backdrop-blur-md">

@@ -2,11 +2,13 @@
  * Kształt JSON z zewnętrznego backendu — dopasuj pola do odpowiedzi z Rust.
  * Ścieżki HTTP: `app/config/api.ts` + `NUXT_PUBLIC_API_BASE_URL`.
  */
-export type UserRole = 'Athlete' | 'Admin' | 'SuperAdmin'
+export type UserRole = 'Athlete' | 'Trainer' | 'TrainerAdmin' | 'Admin' | 'SuperAdmin'
 
 export interface AuthUser {
   id: string
   username: string
+  email?: string | null
+  avatar_url?: string | null
   role: UserRole
 }
 
@@ -41,6 +43,18 @@ export interface Competition {
   date: string
   location: string
   description?: string
+  category?: string | null
+  status?: string | null
+}
+
+export interface CalendarParticipantBrief {
+  athlete_id: string
+  full_name: string
+}
+
+export interface MyCalendarEntry {
+  competition: Competition
+  participants: CalendarParticipantBrief[]
 }
 
 export interface CompetitionResult {
@@ -51,6 +65,18 @@ export interface CompetitionResult {
   total: number
   status: 'Pending' | 'Approved'
   date: string
+}
+
+/** Wpis w dzienniku treningów (zawodnik edytuje/usuwa tylko wpisy z własnym `author_user_id`). */
+export interface TrainingLogEntry {
+  id: string
+  athlete_id: string
+  session_date: string
+  title?: string | null
+  notes: string
+  created_at: string
+  author_user_id?: string | null
+  author_username?: string | null
 }
 
 export interface AdminAccount extends AuthUser {

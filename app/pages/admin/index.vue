@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Athlete, CompetitionResult } from '~/types/models'
+
 definePageMeta({ middleware: 'admin' })
 
 useSeoMeta({
@@ -8,16 +10,52 @@ useSeoMeta({
 
 const auth = useAuth()
 const apiFetch = useApi()
-const isSuperAdmin = computed(() => auth.user.value?.role === 'superadmin')
+const isSuperAdmin = computed(() => auth.user.value?.role === 'SuperAdmin')
 
 // Pobieranie podstawowych statystyk
-const { data: athletes } = await useAsyncData('dashboard-athletes', () => apiFetch('/api/athletes'))
-const { data: pendingResults } = await useAsyncData('dashboard-pending', () => apiFetch('/api/results/pending').catch(() => []))
+const { data: athletes } = await useAsyncData(
+  'dashboard-athletes',
+  async (): Promise<Athlete[]> => {
+    try {
+      return await apiFetch<Athlete[]>('/api/athletes/admin')
+    } catch {
+      return await apiFetch<Athlete[]>('/api/athletes')
+    }
+  }
+)
+const { data: pendingResults, refresh: refreshPending } = await useAsyncData(
+  'dashboard-pending',
+  async (): Promise<CompetitionResult[]> =>
+    apiFetch<CompetitionResult[]>('/api/results/pending').catch(() => [])
+)
 const { data: competitions } = await useAsyncData('dashboard-competitions', () => apiFetch('/api/competitions').catch(() => []))
 
-const athletesCount = computed(() => Array.isArray(athletes.value) ? athletes.value.length : 0)
+const athleteNameById = computed(() => {
+  const m = new Map<string, string>()
+  for (const a of (athletes.value || []) as Athlete[]) {
+    m.set(a.id, a.full_name)
+  }
+  return m
+})
+
+function labelForResult (r: CompetitionResult) {
+  return athleteNameById.value.get(r.athlete_id) || r.athlete_id
+}
+
+const athletesCount = computed(() => {
+  const list = athletes.value
+  if (!Array.isArray(list)) {
+    return 0
+  }
+  return list.filter(a => a.is_active !== false).length
+})
 const pendingCount = computed(() => Array.isArray(pendingResults.value) ? pendingResults.value.length : 0)
 const competitionsCount = computed(() => Array.isArray(competitions.value) ? competitions.value.length : 0)
+
+async function approveResult (id: string) {
+  await apiFetch(`/api/results/${id}/approve`, { method: 'PATCH' })
+  await refreshPending()
+}
 
 const quickLinks = [
   {
@@ -59,6 +97,38 @@ const quickLinks = [
     to: '/admin/changelog',
     color: 'text-emerald-500',
     bg: 'bg-emerald-500/10'
+  },
+  {
+    title: 'Konta kadry',
+    description: 'Login, e-mail i hasła kont administracyjnych',
+    icon: 'i-lucide-key-round',
+    to: '/admin/konta',
+    color: 'text-rose-500',
+    bg: 'bg-rose-500/10'
+  },
+  {
+    title: 'Wszystkie starty',
+    description: 'Historia startów — poprawki i usuwanie wpisów',
+    icon: 'i-lucide-list-checks',
+    to: '/trainer/wyniki',
+    color: 'text-teal-500',
+    bg: 'bg-teal-500/10'
+  },
+  {
+    title: 'Dzienniki treningów',
+    description: 'Wpisy po jednostkach — widok trenera',
+    icon: 'i-lucide-book-marked',
+    to: '/trainer/dziennik',
+    color: 'text-cyan-600',
+    bg: 'bg-cyan-500/10'
+  },
+  {
+    title: 'Moje konto',
+    description: 'E-mail, avatar i hasło',
+    icon: 'i-lucide-user-cog',
+    to: '/profil',
+    color: 'text-neutral-500',
+    bg: 'bg-neutral-500/10'
   }
 ]
 </script>
@@ -128,6 +198,30 @@ const quickLinks = [
           </div>
         </div>
       </UCard>
+    </div>
+
+    <!-- Wyniki oczekujące -->
+    <div id="wyniki-oczekujace" v-if="pendingCount > 0" class="mb-12 scroll-mt-24 rounded-2xl border border-default bg-card p-6">
+      <div class="mb-6 flex items-center justify-between">
+        <h2 class="text-xl font-semibold text-highlighted">
+          <UIcon name="i-lucide-pending" class="mr-2 inline" />
+          Wyniki do zatwierdzenia ({{ pendingCount }})
+        </h2>
+        <UButton @click="refreshPending()">
+          Odśwież
+        </UButton>
+      </div>
+      <div class="space-y-3">
+        <div v-for="result in pendingResults || []" :key="result.id" class="flex items-center justify-between gap-4 rounded-xl bg-muted/20 p-4 border border-default/50">
+          <div>
+            <p class="font-medium text-highlighted">{{ labelForResult(result) }}</p>
+            <p class="text-sm text-muted">Razem: {{ result.total }}kg ({{ result.date }})</p>
+          </div>
+          <UButton size="sm" @click="approveResult(result.id)">
+            Zatwierdź
+          </UButton>
+        </div>
+      </div>
     </div>
 
     <h2 class="mb-4 text-xl font-semibold text-highlighted">Szybki dostęp</h2>

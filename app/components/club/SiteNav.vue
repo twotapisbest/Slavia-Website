@@ -16,13 +16,24 @@ const items = computed(() => {
 
   const management = []
   if (auth.isLoggedIn.value) {
-    if (auth.user.value?.role === 'superadmin') {
+    if (auth.user.value?.role === 'SuperAdmin') {
       management.push({ label: 'SuperAdmin', to: '/superadmin', color: 'primary' })
-      management.push({ label: 'Admin Panel', to: '/admin', color: 'neutral' })
-    } else if (auth.user.value?.role === 'admin') {
+      management.push({ label: 'Panel Admina', to: '/admin', color: 'neutral' })
+      management.push({ label: 'Panel Trenera', to: '/trainer', color: 'secondary' })
+      management.push({ label: 'Moje konto', to: '/profil', color: 'primary' })
+    } else if (auth.user.value?.role === 'Admin') {
       management.push({ label: 'Panel Admina', to: '/admin', color: 'primary' })
-    } else if (auth.user.value?.role === 'athlete') {
+      management.push({ label: 'Moje konto', to: '/profil', color: 'neutral' })
+    } else if (auth.user.value?.role === 'TrainerAdmin') {
+      management.push({ label: 'Panel Trenera', to: '/trainer', color: 'primary' })
+      management.push({ label: 'Moje konto', to: '/profil', color: 'neutral' })
+    } else if (auth.user.value?.role === 'Trainer') {
+      management.push({ label: 'Panel Trenera', to: '/trainer', color: 'primary' })
+      management.push({ label: 'Moje konto', to: '/profil', color: 'neutral' })
+    } else if (auth.user.value?.role === 'Athlete') {
       management.push({ label: 'Mój Profil', to: '/athlete', color: 'primary' })
+      management.push({ label: 'Mój kalendarz', to: '/athlete/kalendarz', color: 'secondary' })
+      management.push({ label: 'Dziennik treningów', to: '/athlete/dziennik', color: 'neutral' })
     }
   }
   

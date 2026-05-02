@@ -16,6 +16,7 @@ async function submit() {
   loading.value = true
   try {
     const user = await auth.login(username.value.trim(), password.value)
+    await auth.fetchMe()
     const raw = route.query.redirect
     const redirect = typeof raw === 'string' ? raw : undefined
     
@@ -23,8 +24,10 @@ async function submit() {
       await navigateTo(redirect)
     } else if (user.role === 'SuperAdmin') {
       await navigateTo('/superadmin')
-    } else if (user.role === 'Admin') {
+    } else if (user.role === 'Admin' || user.role === 'TrainerAdmin') {
       await navigateTo('/admin')
+    } else if (user.role === 'Trainer') {
+      await navigateTo('/trainer')
     } else {
       await navigateTo('/athlete')
     }

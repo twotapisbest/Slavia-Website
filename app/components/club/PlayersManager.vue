@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { apiRoutes, urlAdminPlayer } from '~/config/api'
-import type { Player, PlayerPayload } from '~/types/models'
+import type { Competition, Player } from '~/types/models'
 
 const api = useApi()
 const toast = useToast()
@@ -35,6 +35,39 @@ const form = reactive({
 
 const uploadLoading = ref(false)
 
+const competitionsCatalog = ref<Competition[]>([])
+const assignedCompetitionIds = ref<string[]>([])
+const assignmentsLoading = ref(false)
+
+async function loadAthleteAssignments (athleteId: string) {
+  assignmentsLoading.value = true
+  try {
+    const mine = await api<Competition[]>(`/api/athletes/${athleteId}/competitions`)
+    assignedCompetitionIds.value = mine.map(c => c.id)
+  } catch {
+    assignedCompetitionIds.value = []
+  } finally {
+    assignmentsLoading.value = false
+  }
+}
+
+watch(modalOpen, async (open) => {
+  if (!open) {
+    return
+  }
+  try {
+    const rows = await api<Competition[]>('/api/competitions')
+    competitionsCatalog.value = [...rows].sort((a, b) => a.date.localeCompare(b.date))
+  } catch {
+    competitionsCatalog.value = []
+  }
+  if (editingId.value) {
+    await loadAthleteAssignments(editingId.value)
+  } else {
+    assignedCompetitionIds.value = []
+  }
+})
+
 function resetForm () {
   editingId.value = null
   form.full_name = ''
@@ -51,6 +84,7 @@ function resetForm () {
   form.create_account = false
   form.username = ''
   form.password = ''
+  assignedCompetitionIds.value = []
 }
 
 watch(() => [form.best_snatch_kg, form.best_clean_jerk_kg], ([snatch, cj]) => {
@@ -138,13 +172,30 @@ async function savePlayer () {
       username: form.create_account ? form.username : undefined,
       password: form.create_account ? form.password : undefined
     }
+    let athleteId: string
     if (editingId.value) {
       await api(urlAdminPlayer(editingId.value), { method: 'PATCH', body })
+      athleteId = editingId.value
       toast.add({ title: 'Zapisano zmiany', color: 'success', icon: 'i-lucide-check' })
     } else {
-      await api(apiRoutes.admin.players, { method: 'POST', body })
+      const created = await api<Player>(apiRoutes.admin.players, { method: 'POST', body })
+      athleteId = created.id
       toast.add({ title: 'Dodano zawodnika', color: 'success', icon: 'i-lucide-check' })
     }
+
+    try {
+      await api(`/api/athletes/${athleteId}/competitions`, {
+        method: 'PUT',
+        body: { competition_ids: [...assignedCompetitionIds.value] }
+      })
+    } catch (e) {
+      toast.add({
+        title: 'Zapisano zawodnika — nie zapisano przypisań do zawodów',
+        description: getApiErrorMessage(e),
+        color: 'warning'
+      })
+    }
+
     modalOpen.value = false
     resetForm()
     await loadPlayers()
@@ -356,7 +407,14 @@ onMounted(() => {
 
             <div class="grid gap-4 sm:grid-cols-2">
               <UFormField label="Płeć" required>
-                <USelect v-model="form.gender" :options="[{ label: 'Mężczyzna', value: 'male' }, { label: 'Kobieta', value: 'female' }]" class="w-full" />
+                <select v-model="form.gender" class="slavia-select w-full">
+                  <option value="male">
+                    Mężczyzna
+                  </option>
+                  <option value="female">
+                    Kobieta
+                  </option>
+                </select>
               </UFormField>
               <UFormField label="Zdjęcie (URL lub Upload)">
                 <div class="flex gap-2 items-center">
@@ -450,6 +508,43 @@ onMounted(() => {
               <div>
                 <p class="text-sm font-bold text-primary">Konto powiązane</p>
                 <p class="text-xs text-muted">Ten zawodnik posiada już konto w systemie.</p>
+              </div>
+            </div>
+
+            <USeparator />
+            <div class="rounded-xl border border-default bg-muted/10 p-4 space-y-3">
+              <div>
+                <h4 class="text-sm font-bold text-highlighted">
+                  Przypisania do zawodów (kalendarz klubu)
+                </h4>
+                <p class="text-xs text-muted mt-0.5">
+                  Zaznaczone pozycje trafiają do osobistego kalendarza zawodnika i są widoczne przy wspólnych startach.
+                </p>
+              </div>
+              <div v-if="assignmentsLoading" class="flex items-center gap-2 text-sm text-muted py-2">
+                <UIcon name="i-lucide-loader-2" class="size-4 animate-spin shrink-0" />
+                Wczytywanie listy i przypisań…
+              </div>
+              <div v-else-if="!competitionsCatalog.length" class="text-xs text-muted py-1">
+                Brak wpisów w kalendarzu zawodów — dodaj wydarzenie w zakładce Kalendarz.
+              </div>
+              <div v-else class="max-h-52 overflow-y-auto space-y-2 pr-1">
+                <label
+                  v-for="c in competitionsCatalog"
+                  :key="c.id"
+                  class="flex gap-3 cursor-pointer items-start rounded-lg border border-default/60 bg-background/80 px-3 py-2.5 transition-colors hover:border-primary/35 hover:bg-primary/5"
+                >
+                  <input
+                    v-model="assignedCompetitionIds"
+                    type="checkbox"
+                    :value="c.id"
+                    class="mt-1 size-4 rounded border-default text-primary focus:ring-primary/40"
+                  >
+                  <span class="text-sm leading-snug">
+                    <span class="font-semibold text-highlighted">{{ c.title }}</span>
+                    <span class="block text-xs text-muted tabular-nums">{{ (c.date || '').slice(0, 10) }} · {{ c.location }}</span>
+                  </span>
+                </label>
               </div>
             </div>
 

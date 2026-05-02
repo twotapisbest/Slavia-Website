@@ -1,18 +1,22 @@
 <script setup lang="ts">
 const auth = useAuth()
+/** Krótki splash tylko przy pierwszym paint — długi overlay blokował interakcję i powodował „trzeba odświeżyć”. */
 const isAppLoading = ref(true)
 const config = useRuntimeConfig()
 
 onMounted(() => {
-  // Symulacja ładowania dla splash screena
-  setTimeout(() => {
+  if (auth.token.value) {
+    auth.fetchMe()
+  }
+  requestAnimationFrame(() => {
     isAppLoading.value = false
-  }, 1000)
+  })
 })
 
 const dashboardLink = computed(() => {
   if (auth.isSuperAdmin.value) return '/superadmin'
   if (auth.isAdmin.value) return '/admin'
+  if (auth.isTrainer.value) return '/trainer'
   return '/athlete'
 })
 

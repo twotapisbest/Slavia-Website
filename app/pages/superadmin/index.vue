@@ -10,11 +10,17 @@ const auth = useAuth()
 const apiFetch = useApi()
 
 // Pobieranie podstawowych statystyk
-const { data: athletes } = await useAsyncData('super-dashboard-athletes', () => apiFetch('/api/athletes').catch(() => []))
+const { data: athletes } = await useAsyncData('super-dashboard-athletes', () => apiFetch('/api/athletes/admin').catch(() => []))
 const { data: admins } = await useAsyncData('super-dashboard-admins', () => apiFetch('/api/admins').catch(() => []))
 const { data: competitions } = await useAsyncData('super-dashboard-competitions', () => apiFetch('/api/competitions').catch(() => []))
 
-const athletesCount = computed(() => Array.isArray(athletes.value) ? athletes.value.length : 0)
+const athletesCount = computed(() => {
+  const list = athletes.value
+  if (!Array.isArray(list)) {
+    return 0
+  }
+  return list.filter(a => a.is_active !== false).length
+})
 const adminsCount = computed(() => Array.isArray(admins.value) ? admins.value.length : 0)
 const competitionsCount = computed(() => Array.isArray(competitions.value) ? competitions.value.length : 0)
 
@@ -26,6 +32,22 @@ const quickLinks = [
     to: '/superadmin/administratorzy',
     color: 'text-red-500',
     bg: 'bg-red-500/10'
+  },
+  {
+    title: 'Panel Admina',
+    description: 'Przejdź do panelu administratora',
+    icon: 'i-lucide-settings',
+    to: '/admin',
+    color: 'text-neutral-500',
+    bg: 'bg-neutral-500/10'
+  },
+  {
+    title: 'Panel Trenera',
+    description: 'Przejdź do panelu trenera',
+    icon: 'i-lucide-user-check',
+    to: '/trainer',
+    color: 'text-emerald-500',
+    bg: 'bg-emerald-500/10'
   },
   {
     title: 'Baza Zawodników',
@@ -42,6 +64,22 @@ const quickLinks = [
     to: '/kalendarz',
     color: 'text-purple-500',
     bg: 'bg-purple-500/10'
+  },
+  {
+    title: 'Starty zawodników',
+    description: 'Pełna lista startów — edycja i usuwanie wpisów',
+    icon: 'i-lucide-list-checks',
+    to: '/trainer/wyniki',
+    color: 'text-teal-500',
+    bg: 'bg-teal-500/10'
+  },
+  {
+    title: 'Moje konto',
+    description: 'E-mail, avatar i hasło',
+    icon: 'i-lucide-user-cog',
+    to: '/profil',
+    color: 'text-neutral-500',
+    bg: 'bg-neutral-500/10'
   },
   {
     title: 'Aktualności (Blog)',

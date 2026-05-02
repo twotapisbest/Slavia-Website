@@ -44,3 +44,7 @@ export function urlAdminPlayer (id: string) {
 export function urlSuperadminAdmin (id: string) {
   return `${apiRoutes.superadmin.admins}/${id}`
 }
+
+export function urlAdminAccount (id: string) {
+  return `${apiRoutes.superadmin.admins}/${id}/account`
+}

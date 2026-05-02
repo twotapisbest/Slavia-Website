@@ -16,8 +16,15 @@ export function useAuth () {
   const apiBase = computed(() => (config.public.apiBase as string).replace(/\/$/, ''))
 
   const isLoggedIn = computed(() => !!token.value)
-  const isAdmin = computed(() => user.value?.role === 'Admin' || user.value?.role === 'SuperAdmin')
   const isSuperAdmin = computed(() => user.value?.role === 'SuperAdmin')
+  const isTrainerAdmin = computed(() => user.value?.role === 'TrainerAdmin')
+  const isTrainer = computed(
+    () =>
+      user.value?.role === 'Trainer'
+      || user.value?.role === 'TrainerAdmin'
+      || user.value?.role === 'SuperAdmin'
+  )
+  const isAdmin = computed(() => user.value?.role === 'Admin' || isTrainerAdmin.value || isSuperAdmin.value)
 
   async function fetchMe (): Promise<AuthUser | null> {
     if (!token.value) {
@@ -36,6 +43,8 @@ export function useAuth () {
       return null
     }
   }
+
+  const isAthlete = computed(() => user.value?.role === 'Athlete')
 
   async function login (username: string, password: string) {
     const res = await $fetch<LoginResponse>(`${apiBase.value}${apiRoutes.auth.login}`, {
@@ -75,7 +84,10 @@ export function useAuth () {
     apiBase,
     isLoggedIn,
     isAdmin,
+    isTrainer,
+    isTrainerAdmin,
     isSuperAdmin,
+    isAthlete,
     login,
     logout,
     fetchMe,

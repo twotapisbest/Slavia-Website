@@ -1,18 +1,21 @@
 <script setup lang="ts">
-import { 
-  format, 
-  startOfMonth, 
-  endOfMonth, 
-  startOfWeek, 
-  endOfWeek, 
-  eachDayOfInterval, 
-  isSameMonth, 
-  addMonths, 
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  isSameMonth,
+  addMonths,
   subMonths,
   isToday,
-  getDay
+  getDay,
+  isValid
 } from 'date-fns'
 import { pl } from 'date-fns/locale'
+import type { Athlete } from '~/types/models'
+import { getApiErrorMessage } from '~/composables/useApi'
 
 useSeoMeta({
   title: 'Kalendarz — Slavia Ruda Śląska',
@@ -25,25 +28,93 @@ useSeoMeta({
 const auth = useAuth()
 const apiFetch = useApi()
 const toast = useToast()
+const config = useRuntimeConfig()
+
+function publicBase () {
+  return String(config.public.apiBase || '').replace(/\/$/, '')
+}
 
 // Import zewnętrznych zawodów
 const { competitions: externalCompetitions, loading: externalLoading, fetchAll: fetchExternalCompetitions } = useExternalCompetitions()
 
-const isAdmin = computed(() => auth.isAdmin.value || auth.isSuperAdmin.value)
-const { data: competitions, refresh, pending } = await useAsyncData('competitions', () => apiFetch('/api/competitions').catch(() => []))
+const canManageEvents = computed(() => auth.isAdmin.value || auth.isTrainer.value || auth.isSuperAdmin.value)
 
-// Stan kalendarza
-const currentDate = ref(new Date())
-const monthStart = computed(() => startOfMonth(currentDate.value))
-const monthEnd = computed(() => endOfMonth(monthStart.value))
+// Bez SSR: na hostingu Node często nie ma dostępu do API / złego apiBase — strona się wywalała u gości.
+const { data: competitions, refresh, pending: competitionsPending } = await useAsyncData(
+  'competitions-public',
+  () => $fetch<unknown[]>(`${publicBase()}/api/competitions`).catch(() => []),
+  { default: () => [], server: false, lazy: true }
+)
+
+const athletesPickList = ref<Array<{ id: string, full_name: string }>>([])
+const participantIds = ref<string[]>([])
+
+async function loadAthletesPickList () {
+  try {
+    if (!auth.token.value) {
+      athletesPickList.value = []
+      return
+    }
+    const rows = await apiFetch<Athlete[]>('/api/athletes/admin').catch(() => null)
+    const list = Array.isArray(rows) ? rows : []
+    athletesPickList.value = list
+      .filter(a => a.is_active !== false)
+      .map(a => ({ id: a.id, full_name: a.full_name }))
+  } catch {
+    athletesPickList.value = []
+  }
+}
+
+// Stan kalendarza — przechowujemy ms **pierwszego dnia miesiąca** (number),
+// żeby uniknąć psucia `Date` przy serializacji payloadu Nuxt (SSR → hydration).
+function monthFirstMsFromDate (d: Date | number | string) {
+  const dt = d instanceof Date ? d : new Date(d)
+  if (!isValid(dt)) {
+    const now = new Date()
+    return new Date(now.getFullYear(), now.getMonth(), 1).getTime()
+  }
+  const t = new Date(dt.getFullYear(), dt.getMonth(), 1).getTime()
+  return Number.isFinite(t) ? t : Date.now()
+}
+
+const monthFirstMs = ref(monthFirstMsFromDate(new Date()))
+
+onMounted(() => {
+  fetchExternalCompetitions()
+  refresh()
+  if (!Number.isFinite(monthFirstMs.value)) {
+    monthFirstMs.value = monthFirstMsFromDate(new Date())
+  }
+  if (auth.token.value) {
+    auth.fetchMe()
+  }
+})
+
+const currentDate = computed(() => new Date(monthFirstMs.value))
+
+const monthStart = computed(() => new Date(monthFirstMs.value))
+const monthEnd = computed(() => endOfMonth(new Date(monthFirstMs.value)))
 const calendarStart = computed(() => startOfWeek(monthStart.value, { weekStartsOn: 1 }))
 const calendarEnd = computed(() => endOfWeek(monthEnd.value, { weekStartsOn: 1 }))
 
 const days = computed(() => {
-  return eachDayOfInterval({
-    start: calendarStart.value,
-    end: calendarEnd.value
-  })
+  const start = calendarStart.value
+  const end = calendarEnd.value
+  if (!isValid(start) || !isValid(end)) {
+    const t = monthFirstMsFromDate(new Date())
+    const m0 = new Date(t)
+    return eachDayOfInterval({
+      start: startOfWeek(m0, { weekStartsOn: 1 }),
+      end: endOfWeek(endOfMonth(m0), { weekStartsOn: 1 })
+    })
+  }
+  if (start.getTime() > end.getTime()) {
+    return eachDayOfInterval({
+      start: startOfWeek(startOfMonth(start), { weekStartsOn: 1 }),
+      end: endOfWeek(endOfMonth(start), { weekStartsOn: 1 })
+    })
+  }
+  return eachDayOfInterval({ start, end })
 })
 
 const weekDays = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz']
@@ -52,8 +123,10 @@ const weekDays = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz']
 const getTrainingsForDay = (date: Date) => {
   const day = getDay(date) // 0: Ndz, 1: Pon, ..., 5: Pt
   if ([1, 3, 5].includes(day)) {
+    const ds = format(date, 'yyyy-MM-dd')
     return [{
-      id: `training-${format(date, 'yyyy-MM-dd')}`,
+      id: `training-${ds}`,
+      date: ds,
       title: 'Trening',
       time: '15:00 - 18:00',
       type: 'training'
@@ -66,14 +139,14 @@ const getEventsForDay = (date: Date) => {
   const dateStr = format(date, 'yyyy-MM-dd')
   
   // Lokalne zawody z bazy danych
-  const comps = (competitions.value || []).filter((e: any) => e.date.startsWith(dateStr)).map((e: any) => ({
+  const comps = (competitions.value || []).filter((e: any) => typeof e?.date === 'string' && e.date.startsWith(dateStr)).map((e: any) => ({
     ...e,
     type: 'competition'
   }))
   
   // Zewnętrzne zawody z PZPC/SLPC
   const external = externalCompetitions.value
-    .filter((e: any) => e.date.startsWith(dateStr))
+    .filter((e: any) => typeof e?.date === 'string' && e.date.startsWith(dateStr))
     .map((e: any) => ({
       ...e,
       type: 'external'
@@ -82,8 +155,18 @@ const getEventsForDay = (date: Date) => {
   return [...getTrainingsForDay(date), ...comps, ...external]
 }
 
+/** Kontekst otwartego wpisu (banner w modalu — external/training vs gość). */
+const bannerEvent = ref<any>(null)
+
 // Zarządzanie wydarzeniami
 const isModalOpen = ref(false)
+
+watch(isModalOpen, (open) => {
+  if (!open) {
+    bannerEvent.value = null
+  }
+})
+
 const isSubmitting = ref(false)
 const editingId = ref<string | null>(null)
 const formState = reactive({
@@ -91,42 +174,54 @@ const formState = reactive({
   date: '',
   location: '',
   description: '',
-  category: 'club_event'
+  category: 'club_event',
+  status: 'scheduled'
 })
+const readOnlyEvent = ref(false)
 
 const categories = [
   { value: 'championship', label: '🏆 Mistrzostwa', desc: 'ogólnopol. / śląskie' },
   { value: 'league', label: '🥈 Liga', desc: 'zawody ligowe' },
   { value: 'club_event', label: '🌿 Wydarzenie klubowe', desc: 'obóz, zgrupowanie' },
+  { value: 'training', label: '💪 Trening', desc: 'planowany trening lub zgrupowanie' },
 ]
 
-function getEventClasses(event: any) {
-  if (event.type === 'training')
-    return 'bg-blue-500/10 border-blue-500/30 text-blue-400'
-  const cat = event.category || 'club_event'
-  if (cat === 'championship') return 'bg-red-500/15 border-red-500/40 text-red-400 font-bold'
-  if (cat === 'league') return 'bg-amber-500/15 border-amber-500/40 text-amber-400 font-bold'
-  return 'bg-teal-500/15 border-teal-500/40 text-teal-400 font-bold'
-}
+const { getEventClasses, getEventIcon } = useCalendarEventChips()
 
-function getEventIcon(event: any) {
-  if (event.type === 'training') return 'i-lucide-dumbbell'
-  const cat = event.category || 'club_event'
-  if (cat === 'championship') return 'i-lucide-trophy'
-  if (cat === 'league') return 'i-lucide-medal'
-  return 'i-lucide-star'
-}
+async function openModal (date?: Date, event?: any) {
+  if (auth.token.value) {
+    await auth.fetchMe()
+  }
 
-function openModal(date?: Date, event?: any) {
-  if (!isAdmin.value) return
+  // Tworzenie nowego zdarzenia - tylko dla uprawniony
+  if (!event && !canManageEvents.value) return
 
-  if (event && event.type === 'competition') {
-    editingId.value = event.id
+  bannerEvent.value = event ?? null
+
+  participantIds.value = []
+  readOnlyEvent.value = false
+  if (event) {
     formState.title = event.title
-    formState.date = event.date.substring(0, 10)
-    formState.location = event.location
+    formState.date = event.date ? event.date.substring(0, 10) : (date ? format(date, 'yyyy-MM-dd') : '')
+    formState.location = event.location || ''
     formState.description = event.description || ''
-    formState.category = event.category || 'club_event'
+    formState.category = event.category || (event.type === 'training' ? 'training' : 'club_event')
+    formState.status = event.status || 'scheduled'
+    if (event.type === 'external') {
+      editingId.value = null
+      readOnlyEvent.value = true
+    } else if (event.type === 'training') {
+      editingId.value = `training-${event.date}`
+      readOnlyEvent.value = true
+    } else {
+      editingId.value = event.id
+      readOnlyEvent.value = !canManageEvents.value
+      if (canManageEvents.value && event.id) {
+        await loadAthletesPickList()
+        const parts = await apiFetch<Array<{ athlete_id: string }>>(`/api/competitions/${event.id}/participants`).catch(() => [])
+        participantIds.value = parts.map(p => p.athlete_id)
+      }
+    }
   } else {
     editingId.value = null
     formState.title = ''
@@ -134,12 +229,18 @@ function openModal(date?: Date, event?: any) {
     formState.location = ''
     formState.description = ''
     formState.category = 'club_event'
+    formState.status = 'scheduled'
+    readOnlyEvent.value = false
+    participantIds.value = []
+    if (canManageEvents.value) {
+      await loadAthletesPickList()
+    }
   }
   isModalOpen.value = true
 }
 
 async function saveEvent() {
-  if (!isAdmin.value) {
+  if (!canManageEvents.value) {
     toast.add({ title: 'Brak uprawnień', color: 'error' })
     return
   }
@@ -150,12 +251,28 @@ async function saveEvent() {
   }
   isSubmitting.value = true
   try {
+    let competitionId = editingId.value as string | null
     if (editingId.value) {
       await apiFetch(`/api/competitions/${editingId.value}`, { method: 'PATCH', body: formState })
       toast.add({ title: 'Zaktualizowano', color: 'success' })
     } else {
-      await apiFetch('/api/competitions', { method: 'POST', body: formState })
+      const created = await apiFetch<{ id: string }>('/api/competitions', { method: 'POST', body: formState })
+      competitionId = created?.id ?? null
       toast.add({ title: 'Dodano wydarzenie', color: 'success' })
+    }
+    if (competitionId && !String(competitionId).startsWith('training-')) {
+      try {
+        await apiFetch(`/api/competitions/${competitionId}/participants`, {
+          method: 'PUT',
+          body: { athlete_ids: participantIds.value }
+        })
+      } catch (pe) {
+        toast.add({
+          title: 'Wydarzenie zapisane — problem z przypisaniami',
+          description: getApiErrorMessage(pe),
+          color: 'warning'
+        })
+      }
     }
     isModalOpen.value = false
     await refresh()
@@ -167,8 +284,13 @@ async function saveEvent() {
 }
 
 async function deleteEvent(id: string) {
-  if (!isAdmin.value) {
+  if (!canManageEvents.value) {
     toast.add({ title: 'Brak uprawnień', color: 'error' })
+    return
+  }
+
+  if (id.startsWith('training-')) {
+    toast.add({ title: 'Treningi klubowe są generowane automatycznie (Pn, Śr, Pt).', color: 'neutral' })
     return
   }
 
@@ -182,12 +304,18 @@ async function deleteEvent(id: string) {
   }
 }
 
-const nextMonth = () => currentDate.value = addMonths(currentDate.value, 1)
-const prevMonth = () => currentDate.value = subMonths(currentDate.value, 1)
-const goToToday = () => currentDate.value = new Date()
+const nextMonth = () => {
+  monthFirstMs.value = monthFirstMsFromDate(addMonths(new Date(monthFirstMs.value), 1))
+}
+const prevMonth = () => {
+  monthFirstMs.value = monthFirstMsFromDate(subMonths(new Date(monthFirstMs.value), 1))
+}
+const goToToday = () => {
+  monthFirstMs.value = monthFirstMsFromDate(new Date())
+}
 
 function handleDayClick(day: Date) {
-  if (!isAdmin.value || !isSameMonth(day, monthStart.value)) return
+  if (!canManageEvents.value || !isSameMonth(day, monthStart.value)) return
   openModal(day)
 }
 </script>
@@ -212,7 +340,7 @@ function handleDayClick(day: Date) {
 
       <div class="flex items-center gap-2">
         <UButton 
-          v-if="isAdmin" 
+          v-if="canManageEvents" 
           icon="i-lucide-refresh-ccw" 
           size="lg" 
           color="neutral" 
@@ -222,10 +350,18 @@ function handleDayClick(day: Date) {
         >
           Importuj z PZPC
         </UButton>
-        <UButton v-if="isAdmin" icon="i-lucide-plus" size="lg" @click="openModal()">
-          Dodaj Zawody
+        <UButton v-if="canManageEvents" icon="i-lucide-plus" size="lg" @click="openModal()">
+          Dodaj wydarzenie
         </UButton>
       </div>
+    </div>
+
+    <div
+      v-if="competitionsPending"
+      class="mb-4 flex items-center gap-2 rounded-xl border border-dashed border-default bg-muted/20 px-4 py-3 text-sm text-muted"
+    >
+      <UIcon name="i-lucide-loader-2" class="size-4 shrink-0 animate-spin" />
+      Ładowanie wydarzeń z serwera… (treningi i import PZPC są już widoczne)
     </div>
 
     <!-- Calendar Grid -->
@@ -257,7 +393,7 @@ function handleDayClick(day: Date) {
               {{ format(day, 'd') }}
             </span>
             <UButton 
-              v-if="isAdmin && isSameMonth(day, monthStart)" 
+              v-if="canManageEvents && isSameMonth(day, monthStart)" 
               icon="i-lucide-plus" 
               variant="ghost" 
               size="xs" 
@@ -272,13 +408,16 @@ function handleDayClick(day: Date) {
               :key="event.id"
               class="text-[10px] p-1.5 rounded-lg border flex flex-col leading-tight cursor-pointer transition-all hover:brightness-110"
               :class="getEventClasses(event)"
-              @click.stop="event.type === 'competition' ? openModal(undefined, event) : openModal(day)"
+              @click.stop="openModal(undefined, event)"
             >
               <div class="flex items-center justify-between gap-1">
                 <span class="truncate">{{ event.title }}</span>
                 <UIcon :name="getEventIcon(event)" class="size-2.5 shrink-0 opacity-80" />
               </div>
               <span class="opacity-60">{{ event.time || event.location }}</span>
+              <span v-if="event.status && event.status !== 'scheduled'" class="text-[10px] uppercase tracking-[0.15em] font-semibold mt-1">
+                {{ event.status === 'cancelled' ? 'Odwołane' : event.status === 'moved' ? 'Przesunięte' : '' }}
+              </span>
             </div>
           </div>
         </div>
@@ -318,9 +457,26 @@ function handleDayClick(day: Date) {
     </div>
 
     <!-- Modal -->
-    <UModal v-model:open="isModalOpen" :title="editingId ? 'Edytuj wydarzenie' : 'Dodaj wydarzenie'">
+    <UModal
+      v-model:open="isModalOpen"
+      :title="readOnlyEvent ? 'Szczegóły wydarzenia' : (editingId ? 'Edytuj wydarzenie' : 'Dodaj wydarzenie')"
+      :ui="{ overlay: 'z-[190]', content: 'z-[200] max-h-[90vh] overflow-y-auto' }"
+    >
       <template #content>
         <div class="p-6 space-y-4">
+          <div v-if="readOnlyEvent" class="rounded-xl border border-amber-400/40 bg-amber-500/10 p-3 text-sm text-amber-900 dark:text-amber-100">
+            <template v-if="bannerEvent?.type === 'external'">
+              <span v-if="canManageEvents">Import z kalendarza PZPC/SLPC — podgląd tylko do odczytu. Wydarzenia klubu nadal możesz dodawać i edytować przez wpisy z bazy.</span>
+              <span v-else>Podgląd importowanych zawodów (PZPC/SLPC). Wydarzenia z bazy klubu mogą dodawać i edytować trener lub administrator — zaloguj się na takie konto.</span>
+            </template>
+            <template v-else-if="bannerEvent?.type === 'training'">
+              <span v-if="canManageEvents">Stałe godziny treningów w grafiku (Pn, Śr, Pt). Te pozycje nie są edytowalne tutaj — dodawaj i zmieniaj osobne wydarzenia z bazy klubu.</span>
+              <span v-else>To stały wpis treningowy z grafiku — podgląd bez edycji. Wydarzenia klubu dodaje trener lub administrator po zalogowaniu.</span>
+            </template>
+            <template v-else>
+              Podgląd tylko do odczytu. Zaloguj się jako trener lub administrator, aby dodawać i edytować wydarzenia z bazy klubu.
+            </template>
+          </div>
           <UFormField label="Kategoria" required>
             <div class="grid grid-cols-3 gap-2">
               <button
@@ -333,7 +489,8 @@ function handleDayClick(day: Date) {
                     : cat.value === 'league' ? 'bg-amber-500/20 border-amber-500 text-amber-400'
                     : 'bg-teal-500/20 border-teal-500 text-teal-400'
                   : 'border-default bg-muted/10 text-muted hover:bg-muted/30'"
-                @click="formState.category = cat.value"
+                @click="!readOnlyEvent && (formState.category = cat.value)"
+                :disabled="readOnlyEvent"
               >
                 {{ cat.label }}
               </button>
@@ -341,24 +498,63 @@ function handleDayClick(day: Date) {
           </UFormField>
 
           <UFormField label="Nazwa" required>
-            <UInput v-model="formState.title" placeholder="Mistrzostwa Polski..." class="w-full" />
+            <UInput v-model="formState.title" placeholder="Mistrzostwa Polski..." class="w-full" :disabled="readOnlyEvent" />
           </UFormField>
           <div class="grid grid-cols-2 gap-4">
             <UFormField label="Data" required>
-              <UInput v-model="formState.date" type="date" class="w-full" />
+              <UInput v-model="formState.date" type="date" class="w-full" :disabled="readOnlyEvent" />
             </UFormField>
             <UFormField label="Lokalizacja" required>
-              <UInput v-model="formState.location" placeholder="Ruda Śląska" class="w-full" />
+              <UInput v-model="formState.location" placeholder="Ruda Śląska" class="w-full" :disabled="readOnlyEvent" />
             </UFormField>
           </div>
+          <UFormField label="Status">
+            <select
+              v-model="formState.status"
+              class="slavia-select w-full"
+              :disabled="readOnlyEvent"
+            >
+              <option value="scheduled">Zaplanowane</option>
+              <option value="cancelled">Odwołane</option>
+              <option value="moved">Przesunięte</option>
+            </select>
+          </UFormField>
+          <div v-if="canManageEvents && !readOnlyEvent && athletesPickList.length" class="rounded-xl border border-default p-3 space-y-2">
+            <p class="text-xs font-bold text-muted uppercase tracking-wide">
+              Przypisani zawodnicy (startują razem)
+            </p>
+            <div class="max-h-40 overflow-y-auto space-y-2">
+              <label
+                v-for="a in athletesPickList"
+                :key="a.id"
+                class="flex items-center gap-2 text-sm cursor-pointer"
+              >
+                <input
+                  v-model="participantIds"
+                  type="checkbox"
+                  :value="a.id"
+                  class="rounded border-default"
+                >
+                <span>{{ a.full_name }}</span>
+              </label>
+            </div>
+          </div>
           <UFormField label="Opis">
-            <UTextarea v-model="formState.description" placeholder="Szczegóły..." :rows="3" class="w-full" />
+            <UTextarea v-model="formState.description" placeholder="Szczegóły..." :rows="3" class="w-full" :disabled="readOnlyEvent" />
           </UFormField>
           <div class="flex justify-end gap-3 mt-6">
-            <UButton v-if="editingId" color="error" variant="ghost" icon="i-lucide-trash-2" @click="editingId && deleteEvent(editingId)">Usuń</UButton>
+            <UButton
+              v-if="editingId && canManageEvents && !readOnlyEvent && typeof editingId === 'string' && !editingId.startsWith('training-')"
+              color="error"
+              variant="ghost"
+              icon="i-lucide-trash-2"
+              @click="editingId && deleteEvent(editingId)"
+            >
+              Usuń
+            </UButton>
             <div class="flex-1"></div>
             <UButton color="neutral" variant="soft" @click="isModalOpen = false">Anuluj</UButton>
-            <UButton :loading="isSubmitting" @click="saveEvent">Zapisz</UButton>
+            <UButton :loading="isSubmitting" :disabled="readOnlyEvent" @click="saveEvent">Zapisz</UButton>
           </div>
         </div>
       </template>

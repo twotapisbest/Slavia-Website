@@ -8,6 +8,20 @@ useSeoMeta({
 
 const updates = [
   {
+    version: 'v1.6.0',
+    date: '2 Maj 2026',
+    title: 'Kalendarz, dziennik treningów i porządki w repo',
+    features: [
+      'Kalendarz klubu: po zalogowaniu odświeżana jest sesja przy otwarciu modala — SuperAdmin/trener nie widzą już mylącego trybu „tylko gość” dla wydarzeń z bazy.',
+      'Kalendarz klubu: osobne komunikaty w podglądzie tylko do odczytu dla importu PZPC/SLPC i stałych treningów (Pn/Śr/Pt) zamiast jednego tekstu o logowaniu.',
+      'Mój kalendarz zawodnika: ta sama kolorystyka i legenda co na głównym kalendarzu; wspólny composable stylów chipów (`useCalendarEventChips`).',
+      'Dziennik treningów: zawodnik może dodawać własne wpisy; edycja i usuwanie wyłącznie wpisów, które sam utworzył (backend + ukryte przyciski przy wpisach kadry).',
+      'Backend: uproszczona kontrola dostępu do dziennika dla roli Athlete (jedna ścieżka weryfikacji profilu).',
+      'Repozytorium: usunięto lokalne pliki z hasłami i skrypty testowe z credentialami; rozszerzono `.gitignore`.'
+    ],
+    type: 'feature'
+  },
+  {
     version: 'v1.5.0',
     date: '1 Maj 2026',
     title: 'UX, SEO i porządki kodu',

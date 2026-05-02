@@ -5,6 +5,22 @@ export default defineNuxtConfig({
     '@nuxt/ui'
   ],
 
+  app: {
+    pageTransition: { name: 'page', mode: 'out-in' }
+  },
+
+  /** Kalendarz: wyłącz SSR — unika 500 przy hydracji dat i braku API po stronie Node. */
+  routeRules: {
+    '/kalendarz': { ssr: false }
+  },
+
+  icon: {
+    serverBundle: 'local',
+    clientBundle: {
+      scan: true
+    },
+    fetchTimeout: 8000
+  },
   runtimeConfig: {
     public: {
       /**
