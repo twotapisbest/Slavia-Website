@@ -1,7 +1,26 @@
 import { apiRoutes } from '~/config/api'
-import type { AuthUser, LoginResponse } from '~/types/models'
+import type { AuthUser, LoginResponse, UserRole } from '~/types/models'
 
 const USER_STATE_KEY = 'slavia-auth-user'
+
+const ROLE_LABELS: Record<UserRole, string> = {
+  SuperAdmin: 'Superadmin',
+  Admin: 'Administrator',
+  Trainer: 'Trener',
+  Athlete: 'Zawodnik'
+}
+
+const ROLE_ORDER: UserRole[] = ['SuperAdmin', 'Admin', 'Trainer', 'Athlete']
+
+/** Domyślna strona po logowaniu (bez `redirect` z query) — pierwsza pasująca rola wg hierarchii. */
+export function pickPostLoginPath(roleList: UserRole[]): string {
+  const r = new Set(roleList)
+  if (r.has('SuperAdmin')) return '/superadmin'
+  if (r.has('Admin')) return '/admin'
+  if (r.has('Trainer')) return '/trainer'
+  if (r.has('Athlete')) return '/athlete'
+  return '/'
+}
 
 export function useAuth() {
   const config = useRuntimeConfig()
@@ -16,15 +35,36 @@ export function useAuth() {
   const apiBase = computed(() => (config.public.apiBase as string).replace(/\/$/, ''))
 
   const isLoggedIn = computed(() => !!token.value)
-  const isSuperAdmin = computed(() => user.value?.role === 'SuperAdmin')
-  const isTrainerAdmin = computed(() => user.value?.role === 'TrainerAdmin')
-  const isTrainer = computed(
-    () =>
-      user.value?.role === 'Trainer'
-      || user.value?.role === 'TrainerAdmin'
-      || user.value?.role === 'SuperAdmin'
+
+  const roles = computed(() => user.value?.roles ?? [])
+
+  const isSuperAdmin = computed(() => roles.value.includes('SuperAdmin'))
+
+  /** Kadra jak `RequireTrainerOrHigher` — m.in. kalendarz klubu i synchronizacja. */
+  const isTrainer = computed(() =>
+    roles.value.some(role =>
+      ['Trainer', 'Admin', 'SuperAdmin'].includes(role)
+    )
   )
-  const isAdmin = computed(() => user.value?.role === 'Admin' || isTrainerAdmin.value || isSuperAdmin.value)
+
+  const isAdmin = computed(() =>
+    roles.value.some(role => ['Admin', 'SuperAdmin'].includes(role))
+  )
+
+  /** Konto ma przypisaną rolę zawodnika (bez konfliktu z kadrowymi flagami). */
+  const isAthlete = computed(() => roles.value.includes('Athlete'))
+
+  /** Wejście na ścieżki `/athlete/*` — zawodnik lub SuperAdmin (pełny dostęp). */
+  const canAccessAthletePortal = computed(
+    () => roles.value.includes('Athlete') || roles.value.includes('SuperAdmin')
+  )
+
+  /** Krótki opis wszystkich ról konta (np. „Superadmin · Trener · Zawodnik”). */
+  const rolesDisplayShort = computed(() => {
+    const uniq = [...new Set(roles.value)] as UserRole[]
+    uniq.sort((a, b) => ROLE_ORDER.indexOf(a) - ROLE_ORDER.indexOf(b))
+    return uniq.map(r => ROLE_LABELS[r]).join(' · ')
+  })
 
   async function fetchMe(): Promise<AuthUser | null> {
     if (!token.value) {
@@ -44,8 +84,6 @@ export function useAuth() {
     }
   }
 
-  const isAthlete = computed(() => user.value?.role === 'Athlete')
-
   async function login(username: string, password: string) {
     const res = await $fetch<LoginResponse>(`${apiBase.value}${apiRoutes.auth.login}`, {
       method: 'POST',
@@ -53,12 +91,10 @@ export function useAuth() {
     })
     token.value = res.token
 
-    // Po zalogowaniu pobieramy dane usera /me (albo ustawiamy tymczasowe jesli login zwraca info)
-    // Backend LoginResponse zwraca role i user_id, wiec mozemy ustawić wstępny stan
     user.value = {
       id: res.user_id,
       username,
-      role: res.role
+      roles: res.roles
     }
     await fetchMe()
     return user.value
@@ -83,12 +119,14 @@ export function useAuth() {
     token,
     user,
     apiBase,
+    roles,
     isLoggedIn,
     isAdmin,
     isTrainer,
-    isTrainerAdmin,
     isSuperAdmin,
     isAthlete,
+    canAccessAthletePortal,
+    rolesDisplayShort,
     login,
     logout,
     fetchMe,

@@ -13,7 +13,7 @@ const auth = useAuth()
 const apiFetch = useApi()
 const toast = useToast()
 const pwaFeatureOn = useExperimentalFlag('pwa_service_worker')
-const { supported: pwaSupported, canPrompt, promptInstall, installed } = usePwaInstall()
+const { supported: pwaSupported, canPrompt, promptInstall, installed, loopbackWithoutDev } = usePwaInstall()
 const { preset, presets, setPreset, colorMode } = useSlaviaAppearance()
 
 async function installPwaFromProfile() {
@@ -24,12 +24,21 @@ async function installPwaFromProfile() {
     toast.add({ title: 'Aplikacja jest już zainstalowana', color: 'info' })
     return
   }
+  if (loopbackWithoutDev.value) {
+    toast.add({
+      title: 'Instalacja PWA na localhost',
+      description:
+        'Przy zbudowanej aplikacji na localhost nie włączamy service workera. Uruchom projekt przez `nuxt dev` albo testuj pod wdrożonym HTTPS.',
+      color: 'warning'
+    })
+    return
+  }
   if (!canPrompt.value) {
     toast.add({
-      title: 'Instalacja niedostępna',
-      description: pwaSupported
-        ? 'Na desktopie działa m.in. Chrome i Edge po spełnieniu kryteriów PWA; poczekaj na gotowość promptu przeglądarki.'
-        : 'Ta przeglądarka nie obsługuje instalacji z poziomu strony (np. Firefox lub Safari).',
+      title: 'Instalacja z przycisku niedostępna',
+      description: pwaSupported.value
+        ? 'Chrome i Edge często potrzebują chwili po wejściu — sprawdź też menu ⋮ → „Zainstaluj aplikację” / „Zainstaluj Slavia”. Na iPhonie: Udostępnij → Dodaj do ekranu głównego.'
+        : 'Używasz adresu bez HTTPS (np. IP komputera w Wi‑Fi) — wtedy PWA się nie instaluje. Na telefonie w tej samej sieci użyj adresu komputera przez HTTPS lub tunelu (np. ngrok).',
       color: 'warning'
     })
     return
@@ -178,7 +187,7 @@ async function save() {
       aria-hidden="true"
     />
 
-    <UContainer class="animate-page-in relative max-w-5xl py-8 pb-14 md:py-12 md:pb-20 lg:py-16">
+    <UContainer class="animate-page-in relative max-w-5xl px-3 py-6 pb-12 sm:px-6 sm:py-8 sm:pb-14 md:py-12 md:pb-20 lg:py-16">
       <!-- Nagłówek -->
       <header class="relative mb-10 md:mb-12">
         <div
@@ -211,7 +220,7 @@ async function save() {
                   size="md"
                   class="font-semibold uppercase"
                 >
-                  {{ auth.user.value?.role }}
+                  {{ auth.rolesDisplayShort }}
                 </UBadge>
               </div>
             </div>
@@ -293,16 +302,24 @@ async function save() {
                   variant="soft"
                   block
                   size="lg"
-                  class="justify-center font-semibold"
+                  class="touch-manipulation justify-center font-semibold"
+                  :disabled="loopbackWithoutDev"
                   @click="installPwaFromProfile"
                 >
                   {{ installed ? 'Aplikacja zainstalowana' : 'Zainstaluj aplikację' }}
                 </UButton>
                 <p
-                  v-if="!canPrompt"
-                  class="text-xs text-muted"
+                  v-if="loopbackWithoutDev"
+                  class="text-xs leading-relaxed text-muted"
                 >
-                  Instalacja PWA jest dostępna w przeglądarce wspierającej instalację i po załadowaniu strony.
+                  Na localhost PWA działa tylko przy <span class="font-mono text-[11px]">nuxt dev</span>. Zbudowany podgląd na 127.0.0.1 nie rejestruje instalacji — użyj HTTPS wdrożenia lub tunelu.
+                </p>
+                <p
+                  v-else-if="!canPrompt"
+                  class="text-xs leading-relaxed text-muted"
+                >
+                  <span v-if="pwaSupported">Gdy instalacja z przycisku nie wyskakuje: menu przeglądarki ⋮ → „Zainstaluj aplikację” albo poczekaj kilka sekund po wejściu.</span>
+                  <span v-else>Wpisuj adres przez HTTPS lub <span class="font-mono text-[11px]">localhost</span> w dev — HTTP na samym IP w LAN często blokuje PWA w Chrome/Android.</span>
                 </p>
               </template>
               <p
@@ -335,9 +352,10 @@ async function save() {
             </div>
             <div class="space-y-6 p-5 md:p-8">
               <UFormField label="Tryb jasny / ciemny">
-                <div class="flex flex-wrap gap-2">
+                <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                   <UButton
                     size="lg"
+                    class="min-h-11 w-full touch-manipulation sm:w-auto"
                     :variant="colorMode.preference === 'light' ? 'solid' : 'outline'"
                     color="neutral"
                     icon="i-lucide-sun"
@@ -347,6 +365,7 @@ async function save() {
                   </UButton>
                   <UButton
                     size="lg"
+                    class="min-h-11 w-full touch-manipulation sm:w-auto"
                     :variant="colorMode.preference === 'dark' ? 'solid' : 'outline'"
                     color="neutral"
                     icon="i-lucide-moon"
@@ -357,12 +376,12 @@ async function save() {
                 </div>
               </UFormField>
               <UFormField label="Motyw kolorystyczny">
-                <div class="grid gap-3 sm:grid-cols-2">
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <button
                     v-for="p in presets"
                     :key="p.id"
                     type="button"
-                    class="rounded-2xl border px-4 py-3 text-left transition-colors ring-1"
+                    class="min-h-[3.25rem] touch-manipulation rounded-2xl border px-4 py-3.5 text-left transition-colors ring-1 sm:min-h-0 sm:py-3"
                     :class="
                       preset === p.id
                         ? 'border-primary/60 bg-primary/10 ring-primary/35'

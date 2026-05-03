@@ -2,14 +2,14 @@
  * Kształt JSON z zewnętrznego backendu — dopasuj pola do odpowiedzi z Rust.
  * Ścieżki HTTP: `app/config/api.ts` + `NUXT_PUBLIC_API_BASE_URL`.
  */
-export type UserRole = 'Athlete' | 'Trainer' | 'TrainerAdmin' | 'Admin' | 'SuperAdmin'
+export type UserRole = 'Athlete' | 'Trainer' | 'Admin' | 'SuperAdmin'
 
 export interface AuthUser {
   id: string
   username: string
   email?: string | null
   avatar_url?: string | null
-  role: UserRole
+  roles: UserRole[]
   /** Preset kolorystyczny zapisany na koncie (`slavia`, `iron`, …). */
   ui_theme_preset?: string | null
   /** Jasny / ciemny / system — zsynchronizowany z backendem. */
@@ -18,7 +18,7 @@ export interface AuthUser {
 
 export interface LoginResponse {
   token: string
-  role: UserRole
+  roles: UserRole[]
   user_id: string
 }
 
@@ -40,6 +40,12 @@ export interface Athlete {
 
 /** Alias for Athlete used in management components */
 export type Player = Athlete
+
+/** Wpis z `/api/competitions/recurring-training-cancellations` — wyjątek od domyślnego treningu Pn/Śr/Pt. */
+export interface RecurringTrainingSession {
+  session_date: string
+  status: string
+}
 
 export interface Competition {
   id: string
@@ -106,10 +112,11 @@ export interface AdminAccount extends AuthUser {
   created_at?: string
 }
 
-/** Rozdzielenie kont: kadra z panelem admin vs trenerzy i zawodnicy. */
+/** Konta z `/api/admins/grouped` — admini (panel administracyjny), trenerzy, zawodnicy (bez nakładania list). */
 export interface GroupedAdminAccounts {
-  staff_admins: AdminAccount[]
-  club_members: AdminAccount[]
+  admins: AdminAccount[]
+  trainers: AdminAccount[]
+  athletes: AdminAccount[]
 }
 
 export interface PlayerPayload {
@@ -126,4 +133,6 @@ export interface PlayerPayload {
 export interface CreateAdminPayload {
   username: string
   password: string
+  /** Domyślnie backend ustawia `['Admin']`. */
+  roles?: UserRole[]
 }

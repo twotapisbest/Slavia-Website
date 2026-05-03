@@ -1,4 +1,4 @@
-/** Panel trenera — trener, trener-admin, admin i superadmin. Admin-trener ma scalony panel pod `/admin`. */
+/** Panel trenera — trener, admin i superadmin (admin może mieć też osobną rolę Trener). */
 export default defineNuxtRouteMiddleware(async (to) => {
   const auth = useAuth()
   await auth.ensureSession()
@@ -6,20 +6,12 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return navigateTo({ path: '/logowanie', query: { redirect: to.fullPath } })
   }
 
-  const role = auth.user.value.role
-  if (role === 'TrainerAdmin') {
-    const path = (to.path.endsWith('/') ? to.path.slice(0, -1) : to.path) || '/'
-    if (path === '/trainer') {
-      return navigateTo('/admin')
-    }
-  }
+  const roles = auth.user.value.roles ?? []
 
-  const allowed = (
-    role === 'Trainer'
-    || role === 'TrainerAdmin'
-    || role === 'Admin'
-    || role === 'SuperAdmin'
-  )
+  const allowed =
+    roles.includes('Trainer')
+    || roles.includes('Admin')
+    || roles.includes('SuperAdmin')
 
   if (!allowed) {
     return navigateTo('/')

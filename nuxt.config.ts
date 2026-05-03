@@ -11,6 +11,14 @@ export default defineNuxtConfig({
 
   pwa: {
     registerType: 'autoUpdate',
+    /**
+     * PWA w przeglądarce tylko przy serwerze developerskim — na zbudowanym preview localhost bez dev nie udaje instalacji.
+     */
+    devOptions: {
+      enabled: process.env.NODE_ENV === 'development',
+      suppressWarnings: true,
+      type: 'module'
+    },
     includeAssets: ['favicon.ico', 'logo.png'],
     manifest: {
       name: 'CKS Slavia Ruda Śląska',

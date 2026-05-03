@@ -15,7 +15,7 @@ import {
 } from 'date-fns'
 import { pl } from 'date-fns/locale'
 import { apiRoutes } from '~/config/api'
-import type { Athlete, Competition, CalendarEvent } from '~/types/models'
+import type { Athlete, Competition, CalendarEvent, RecurringTrainingSession } from '~/types/models'
 import { getApiErrorMessage } from '~/composables/useApi'
 
 useSeoMeta({
@@ -45,6 +45,28 @@ const { data: competitions, refresh, pending: competitionsPending } = await useA
   () => $fetch<Competition[]>(`${publicBase()}${apiRoutes.competitions.collection}`).catch(() => []),
   { default: () => [], server: false, lazy: true }
 )
+
+const { data: recurringClubTrainingSessions, refresh: refreshRecurringClubTrainingSessions } = await useAsyncData<
+  RecurringTrainingSession[]
+>(
+  'recurring-training-sessions',
+  () =>
+    $fetch<RecurringTrainingSession[]>(`${publicBase()}${apiRoutes.competitions.recurringTrainingCancellations}`).catch(
+      () => []
+    ),
+  { default: () => [], server: false, lazy: true }
+)
+
+/** yyyy-MM-dd → status z bazy (`scheduled` = brak wiersza). */
+const recurringTrainingStatusByDate = computed(() => {
+  const m = new Map<string, string>()
+  for (const row of recurringClubTrainingSessions.value ?? []) {
+    if (row.session_date) {
+      m.set(row.session_date.substring(0, 10), row.status || 'cancelled')
+    }
+  }
+  return m
+})
 
 const athletesPickList = ref<Array<{ id: string, full_name: string }>>([])
 const participantIds = ref<string[]>([])
@@ -81,6 +103,7 @@ const monthFirstMs = ref(monthFirstMsFromDate(new Date()))
 
 onMounted(() => {
   refresh()
+  refreshRecurringClubTrainingSessions()
   if (!Number.isFinite(monthFirstMs.value)) {
     monthFirstMs.value = monthFirstMsFromDate(new Date())
   }
@@ -118,17 +141,42 @@ const days = computed(() => {
 
 const weekDays = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz']
 
-// Treningi: Poniedziałki, Środy, Piątki 15:00 - 18:00
+const recurringClubTrainingOverridesCount = computed(() => (recurringClubTrainingSessions.value ?? []).length)
+
+async function restoreAllRecurringTrainingsInDb() {
+  if (!canManageEvents.value) return
+  if (!confirm('Przywrócić wszystkie odwołane treningi Pn / Śr / Pt w kalendarzu (zapis w bazie)?')) return
+  try {
+    await apiFetch(apiRoutes.competitions.recurringTrainingCancellations, { method: 'DELETE' })
+    await refreshRecurringClubTrainingSessions()
+    toast.add({
+      title: 'Przywrócono siatkę treningów',
+      description: 'Wpisy Pn / Śr / Pt znów są widoczne dla wszystkich.',
+      color: 'success'
+    })
+  } catch (err) {
+    toast.add({
+      title: 'Nie udało się przywrócić',
+      description: getApiErrorMessage(err),
+      color: 'error'
+    })
+  }
+}
+
+// Treningi: Pn / Śr / Pt — status z bazy (zsynchronizowany z kalendarzem zawodnika).
 const getTrainingsForDay = (date: Date) => {
   const day = getDay(date) // 0: Ndz, 1: Pon, ..., 5: Pt
   if ([1, 3, 5].includes(day)) {
     const ds = format(date, 'yyyy-MM-dd')
+    const status = recurringTrainingStatusByDate.value.get(ds) ?? 'scheduled'
     return [{
       id: `training-${ds}`,
       date: ds,
       title: 'Trening',
       time: '15:00 - 18:00',
-      type: 'training'
+      type: 'training',
+      category: 'training',
+      status
     }]
   }
   return []
@@ -163,6 +211,7 @@ async function syncExternalCalendars() {
       { method: 'POST' }
     )
     await refresh()
+    await refreshRecurringClubTrainingSessions()
     toast.add({
       title: 'Zsynchronizowano kalendarze',
       description: `PZPC: ${res.pzpc_imported}, PC.pl: ${res.pc_imported}, merge: ${res.upserts}. `
@@ -194,6 +243,11 @@ watch(isModalOpen, (open) => {
 
 const isSubmitting = ref(false)
 const editingId = ref<string | null>(null)
+
+const isEditingClubRecurringTraining = computed(
+  () => typeof editingId.value === 'string' && editingId.value.startsWith('training-')
+)
+
 const formState = reactive({
   title: '',
   date: '',
@@ -241,8 +295,8 @@ async function openModal(date?: Date, event?: CalendarEvent) {
         participantIds.value = parts.map(p => p.athlete_id)
       }
     } else if (event.type === 'training') {
-      editingId.value = `training-${event.date}`
-      readOnlyEvent.value = true
+      editingId.value = event.id?.startsWith('training-') ? event.id : `training-${event.date.substring(0, 10)}`
+      readOnlyEvent.value = !canManageEvents.value
     } else {
       editingId.value = event.id
       readOnlyEvent.value = !canManageEvents.value
@@ -272,6 +326,39 @@ async function openModal(date?: Date, event?: CalendarEvent) {
 async function saveEvent() {
   if (!canManageEvents.value) {
     toast.add({ title: 'Brak uprawnień', color: 'error' })
+    return
+  }
+
+  if (String(editingId.value ?? '').startsWith('training-')) {
+    const datePart = String(editingId.value).replace(/^training-/, '')
+    isSubmitting.value = true
+    try {
+      if (formState.status === 'scheduled') {
+        await apiFetch(apiRoutes.competitions.recurringTrainingCancellationOne(datePart), {
+          method: 'DELETE'
+        }).catch(() => {})
+      } else {
+        await apiFetch(apiRoutes.competitions.recurringTrainingCancellations, {
+          method: 'POST',
+          body: { session_date: datePart, status: formState.status }
+        })
+      }
+      toast.add({
+        title: 'Zapisano status treningu',
+        description: 'Ta sama informacja jest widoczna u zawodników w „Mój kalendarz”.',
+        color: 'success'
+      })
+      isModalOpen.value = false
+      await refreshRecurringClubTrainingSessions()
+    } catch (err) {
+      toast.add({
+        title: 'Nie udało się zapisać',
+        description: getApiErrorMessage(err),
+        color: 'error'
+      })
+    } finally {
+      isSubmitting.value = false
+    }
     return
   }
 
@@ -334,7 +421,28 @@ async function deleteEvent(id: string) {
   }
 
   if (id.startsWith('training-')) {
-    toast.add({ title: 'Treningi klubowe są generowane automatycznie (Pn, Śr, Pt).', color: 'neutral' })
+    const datePart = id.replace(/^training-/, '')
+    if (!confirm('Odwołać ten powtarzalny trening (Pn / Śr / Pt) w kalendarzu? Zapis w bazie — widoczne dla wszystkich użytkowników.')) {
+      return
+    }
+    try {
+      await apiFetch(apiRoutes.competitions.recurringTrainingCancellations, {
+        method: 'POST',
+        body: { session_date: datePart, status: 'cancelled' }
+      })
+      await refreshRecurringClubTrainingSessions()
+      toast.add({
+        title: 'Zapisano odwołanie treningu',
+        color: 'success'
+      })
+      isModalOpen.value = false
+    } catch (err) {
+      toast.add({
+        title: 'Nie udało się zapisać',
+        description: getApiErrorMessage(err),
+        color: 'error'
+      })
+    }
     return
   }
 
@@ -368,6 +476,15 @@ const prevMonth = () => {
 const goToToday = () => {
   monthFirstMs.value = monthFirstMsFromDate(new Date())
 }
+
+/** Usuń w bazie lub ukryj automatyczny wpis treningowy — bez usuwania importów zewnętrznych. */
+const canShowCalendarDeleteButton = computed(() => {
+  if (!editingId.value || !canManageEvents.value) return false
+  if (bannerEvent.value?.external_source) return false
+  const id = String(editingId.value)
+  if (id.startsWith('training-')) return true
+  return !readOnlyEvent.value
+})
 
 function handleDayClick(day: Date) {
   if (!canManageEvents.value || !isSameMonth(day, monthStart.value)) return
@@ -431,6 +548,17 @@ function handleDayClick(day: Date) {
           @click="openModal()"
         >
           Dodaj wydarzenie
+        </UButton>
+        <UButton
+          v-if="canManageEvents && recurringClubTrainingOverridesCount > 0"
+          icon="i-lucide-rotate-ccw"
+          size="lg"
+          color="neutral"
+          variant="outline"
+          class="min-h-11 w-full justify-center sm:w-auto"
+          @click="restoreAllRecurringTrainingsInDb"
+        >
+          Przywróć treningi (Pn/Śr/Pt)
         </UButton>
       </div>
       <p
@@ -516,7 +644,13 @@ function handleDayClick(day: Date) {
                 v-if="event.status && event.status !== 'scheduled'"
                 class="text-[10px] uppercase tracking-[0.15em] font-semibold mt-1"
               >
-                {{ event.status === 'cancelled' ? 'Odwołane' : event.status === 'moved' ? 'Przesunięte' : '' }}
+                {{
+                  event.status === 'cancelled'
+                    ? 'Odwołane'
+                    : event.status === 'moved'
+                      ? 'Przesunięte'
+                      : event.status
+                }}
               </span>
             </div>
           </div>
@@ -600,7 +734,7 @@ function handleDayClick(day: Date) {
               <span v-else>Importer z krajowych kalendarzy — szczegóły tylko do odczytu. Przypisania widzą zawodnicy po zalogowaniu.</span>
             </template>
             <template v-else-if="bannerEvent?.type === 'training'">
-              <span v-if="canManageEvents">Stałe godziny treningów w grafiku (Pn, Śr, Pt). Te pozycje nie są edytowalne tutaj — dodawaj i zmieniaj osobne wydarzenia z bazy klubu.</span>
+              <span v-if="canManageEvents">Stałe treningi (Pn, Śr, Pt). Zmiana <strong>statusu</strong> (np. odwołane, przesunięte) i przycisk „Usuń z kalendarza” zapisują się w bazie — <strong>ten sam widok mają zawodnicy</strong> w „Mój kalendarz”. Pełna siatka: przycisk przywrócenia u góry.</span>
               <span v-else>To stały wpis treningowy z grafiku — podgląd bez edycji. Wydarzenia klubu dodaje trener lub administrator po zalogowaniu.</span>
             </template>
             <template v-else>
@@ -622,8 +756,8 @@ function handleDayClick(day: Date) {
                     : cat.value === 'league' ? 'bg-amber-500/20 border-amber-500 text-amber-400'
                       : 'bg-teal-500/20 border-teal-500 text-teal-400'
                   : 'border-default bg-muted/10 text-muted hover:bg-muted/30'"
-                :disabled="readOnlyEvent || !!bannerEvent?.external_source"
-                @click="!readOnlyEvent && !bannerEvent?.external_source && (formState.category = cat.value)"
+                :disabled="readOnlyEvent || !!bannerEvent?.external_source || isEditingClubRecurringTraining"
+                @click="!readOnlyEvent && !bannerEvent?.external_source && !isEditingClubRecurringTraining && (formState.category = cat.value)"
               >
                 {{ cat.label }}
               </button>
@@ -639,7 +773,7 @@ function handleDayClick(day: Date) {
               placeholder="Mistrzostwa Polski..."
               size="lg"
               class="w-full"
-              :disabled="readOnlyEvent || !!bannerEvent?.external_source"
+              :disabled="readOnlyEvent || !!bannerEvent?.external_source || isEditingClubRecurringTraining"
             />
           </UFormField>
           <div class="grid grid-cols-2 gap-4">
@@ -652,7 +786,7 @@ function handleDayClick(day: Date) {
                 type="date"
                 size="lg"
                 class="w-full"
-                :disabled="readOnlyEvent || !!bannerEvent?.external_source"
+                :disabled="readOnlyEvent || !!bannerEvent?.external_source || isEditingClubRecurringTraining"
               />
             </UFormField>
             <UFormField
@@ -664,7 +798,7 @@ function handleDayClick(day: Date) {
                 placeholder="Ruda Śląska"
                 size="lg"
                 class="w-full"
-                :disabled="readOnlyEvent || !!bannerEvent?.external_source"
+                :disabled="readOnlyEvent || !!bannerEvent?.external_source || isEditingClubRecurringTraining"
               />
             </UFormField>
           </div>
@@ -714,7 +848,7 @@ function handleDayClick(day: Date) {
               placeholder="Szczegóły..."
               :rows="4"
               class="w-full"
-              :disabled="readOnlyEvent || !!bannerEvent?.external_source"
+              :disabled="readOnlyEvent || !!bannerEvent?.external_source || isEditingClubRecurringTraining"
             />
           </UFormField>
           <div
@@ -733,14 +867,14 @@ function handleDayClick(day: Date) {
           <div class="mt-6 flex flex-col gap-3 border-t border-default/60 pt-6 sm:flex-row sm:items-center sm:justify-between">
             <div class="min-h-[2.5rem] shrink-0">
               <UButton
-                v-if="editingId && canManageEvents && !readOnlyEvent && typeof editingId === 'string' && !editingId.startsWith('training-') && !bannerEvent?.external_source"
+                v-if="canShowCalendarDeleteButton"
                 color="error"
                 variant="ghost"
                 size="lg"
                 icon="i-lucide-trash-2"
                 @click="editingId && deleteEvent(editingId)"
               >
-                Usuń
+                {{ typeof editingId === 'string' && editingId.startsWith('training-') ? 'Usuń z kalendarza' : 'Usuń' }}
               </UButton>
             </div>
             <div class="slavia-form-actions w-full sm:w-auto">

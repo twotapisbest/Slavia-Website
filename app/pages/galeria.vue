@@ -1,0 +1,292 @@
+<script setup lang="ts">
+import { getApiErrorMessage } from '~/composables/useApi'
+
+interface GalleryPhoto {
+  id: string
+  image_url: string
+  caption?: string | null
+  sort_order: number
+  published: boolean
+  author_id: string
+  created_at: string
+}
+
+useSeoMeta({
+  title: 'Galeria zdjęć — Slavia Ruda Śląska',
+  description: 'Zdjęcia z treningów, zawodów i życia klubu CKS Slavia.',
+  robots: 'index, follow'
+})
+
+const auth = useAuth()
+const apiFetch = useApi()
+const toast = useToast()
+
+const isAdmin = computed(() => auth.isAdmin.value || auth.isSuperAdmin.value)
+
+async function fetchPhotos(): Promise<GalleryPhoto[]> {
+  if (isAdmin.value && auth.token.value) {
+    try {
+      return await apiFetch<GalleryPhoto[]>('/api/gallery/manage')
+    } catch {
+      return await apiFetch<GalleryPhoto[]>('/api/gallery').catch(() => [])
+    }
+  }
+  return await apiFetch<GalleryPhoto[]>('/api/gallery').catch(() => [])
+}
+
+const { data: photos, refresh, pending } = await useAsyncData('club-gallery', fetchPhotos, {
+  watch: [() => isAdmin.value, () => auth.token.value],
+  default: () => [] as GalleryPhoto[]
+})
+
+const modalOpen = ref(false)
+const editingId = ref<string | null>(null)
+const draft = reactive({
+  image_url: '',
+  caption: '',
+  sort_order: 0,
+  published: true
+})
+
+function openCreate() {
+  editingId.value = null
+  draft.image_url = ''
+  draft.caption = ''
+  draft.sort_order = 0
+  draft.published = true
+  modalOpen.value = true
+}
+
+function openEdit(p: GalleryPhoto) {
+  editingId.value = p.id
+  draft.image_url = p.image_url
+  draft.caption = p.caption || ''
+  draft.sort_order = Number(p.sort_order) || 0
+  draft.published = p.published !== false
+  modalOpen.value = true
+}
+
+async function save() {
+  if (!isAdmin.value) return
+  const image_url = draft.image_url.trim()
+  if (!image_url) {
+    toast.add({ title: 'Podaj adres zdjęcia (URL)', color: 'warning' })
+    return
+  }
+  try {
+    const cap = draft.caption.trim()
+    if (editingId.value) {
+      await apiFetch(`/api/gallery/${editingId.value}`, {
+        method: 'PATCH',
+        body: {
+          image_url,
+          caption: cap || null,
+          sort_order: draft.sort_order,
+          published: draft.published
+        }
+      })
+      toast.add({ title: 'Zapisano', color: 'success' })
+    } else {
+      await apiFetch('/api/gallery', {
+        method: 'POST',
+        body: {
+          image_url,
+          caption: cap || undefined,
+          sort_order: draft.sort_order,
+          published: draft.published
+        }
+      })
+      toast.add({ title: 'Dodano zdjęcie', color: 'success' })
+    }
+    modalOpen.value = false
+    await refresh()
+  } catch (e) {
+    toast.add({
+      title: 'Błąd zapisu',
+      description: getApiErrorMessage(e),
+      color: 'error'
+    })
+  }
+}
+
+async function remove(id: string) {
+  if (!isAdmin.value) return
+  if (!confirm('Usunąć to zdjęcie z galerii?')) return
+  try {
+    await apiFetch(`/api/gallery/${id}`, { method: 'DELETE' })
+    toast.add({ title: 'Usunięto', color: 'success' })
+    await refresh()
+  } catch (e) {
+    toast.add({
+      title: 'Błąd',
+      description: getApiErrorMessage(e),
+      color: 'error'
+    })
+  }
+}
+
+const sortedPhotos = computed(() => {
+  const list = [...(photos.value || [])]
+  return list.sort((a, b) => {
+    if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order
+    return String(b.created_at).localeCompare(String(a.created_at))
+  })
+})
+</script>
+
+<template>
+  <UContainer class="animate-page-in py-8 sm:py-12 lg:py-14">
+    <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div class="min-w-0">
+        <h1 class="text-2xl font-bold tracking-tight text-highlighted sm:text-3xl lg:text-4xl">
+          Galeria zdjęć
+        </h1>
+        <p class="mt-2 text-sm text-muted sm:text-base lg:leading-relaxed">
+          Klub w obiektywie — podgląd dla wszystkich; zdjęcia dodaje administrator (np. po wgraniu na CDN).
+        </p>
+      </div>
+      <UButton
+        v-if="isAdmin"
+        icon="i-lucide-image-plus"
+        color="primary"
+        class="min-h-11 w-full shrink-0 justify-center md:w-auto"
+        @click="openCreate"
+      >
+        Dodaj zdjęcie
+      </UButton>
+    </div>
+
+    <div
+      v-if="pending"
+      class="flex justify-center py-14"
+    >
+      <UIcon
+        name="i-lucide-loader-2"
+        class="size-8 animate-spin text-primary"
+      />
+    </div>
+
+    <div
+      v-else-if="!sortedPhotos.length"
+      class="rounded-2xl border border-dashed border-default bg-muted/10 px-6 py-14 text-center text-muted"
+    >
+      Galeria jest pusta.
+    </div>
+
+    <div
+      v-else
+      class="columns-1 gap-4 sm:columns-2 lg:columns-3"
+    >
+      <figure
+        v-for="p in sortedPhotos"
+        :key="p.id"
+        class="mb-4 break-inside-avoid overflow-hidden rounded-2xl border border-default bg-card shadow-sm"
+      >
+        <div class="relative">
+          <img
+            :src="p.image_url"
+            :alt="p.caption || 'Zdjęcie klubu'"
+            class="w-full object-cover"
+            loading="lazy"
+          >
+          <UBadge
+            v-if="isAdmin && !p.published"
+            class="absolute left-2 top-2"
+            color="warning"
+            size="xs"
+          >
+            Szkic
+          </UBadge>
+        </div>
+        <figcaption
+          v-if="p.caption || isAdmin"
+          class="flex flex-col gap-2 p-3"
+        >
+          <p
+            v-if="p.caption"
+            class="text-sm text-muted"
+          >
+            {{ p.caption }}
+          </p>
+          <div
+            v-if="isAdmin"
+            class="flex flex-wrap gap-2"
+          >
+            <UButton
+              size="xs"
+              variant="soft"
+              icon="i-lucide-pencil"
+              @click="openEdit(p)"
+            >
+              Edytuj
+            </UButton>
+            <UButton
+              size="xs"
+              variant="ghost"
+              color="error"
+              icon="i-lucide-trash-2"
+              @click="remove(p.id)"
+            >
+              Usuń
+            </UButton>
+          </div>
+        </figcaption>
+      </figure>
+    </div>
+
+    <UModal
+      v-model:open="modalOpen"
+      :title="editingId ? 'Edytuj zdjęcie' : 'Nowe zdjęcie'"
+      :ui="{ content: 'max-h-[90vh] overflow-y-auto' }"
+    >
+      <template #content>
+        <div class="flex flex-col gap-4 p-4 sm:p-6">
+          <UFormField
+            label="URL obrazu"
+            description="Wklej link z Cloudinary lub innego hostingu (jak przy okładce aktualności)."
+            required
+          >
+            <UInput
+              v-model="draft.image_url"
+              type="url"
+              size="lg"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField label="Podpis (opcjonalnie)">
+            <UInput
+              v-model="draft.caption"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField label="Kolejność wyświetlania">
+            <UInput
+              v-model.number="draft.sort_order"
+              type="number"
+              class="w-full max-w-48"
+            />
+          </UFormField>
+          <label class="flex cursor-pointer items-center gap-3 text-sm text-highlighted">
+            <USwitch v-model="draft.published" />
+            Opublikowane
+          </label>
+          <div class="flex flex-wrap justify-end gap-2 border-t border-default pt-4">
+            <UButton
+              variant="ghost"
+              color="neutral"
+              @click="modalOpen = false"
+            >
+              Anuluj
+            </UButton>
+            <UButton
+              color="primary"
+              @click="save"
+            >
+              Zapisz
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+  </UContainer>
+</template>

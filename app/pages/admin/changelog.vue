@@ -80,7 +80,7 @@ const updates = [
     title: 'Nawigacja, wyniki kadry i panel trenera',
     features: [
       'Nagłówek: linki bez logowania pod nagłówkiem na urządzeniach mobilnych (belka z przewijaniem); na desktopie grupa publicznych skrótów w środkowej kolumnie `UHeader` — mniej ściskania i ucinania etykiet.',
-      'Nawigacja konta: spójne nazwy (m.in. Mój kalendarz, Panel admina / trenera / SuperAdmin, Panel admin i trener dla TrainerAdmin).',
+      'Nawigacja konta: spójne nazwy (m.in. Mój kalendarz, Panel admina / trenera / SuperAdmin); admin i trener to osobne role naraz.',
       'Panel trenera i panel admina: sekcja „Wyniki do zatwierdzenia” zawsze na stronie — działa kotwica z karty „Zgłoszenia wyników”; komunikat przy pustej liście; poprawiona ikona nagłówka sekcji; toasty przy błędzie lub sukcesie zatwierdzenia; skrót do listy startów.',
       'Strona `/trainer/wyniki`: przycisk „Dodaj start (zatwierdzony)” — kadra zapisuje wpis od razu jako zatwierdzony (zgodnie z API); lepszy fallback listy zawodników; polskie opisy statusów w tabeli i w edycji.'
     ],
@@ -95,8 +95,8 @@ const updates = [
       'Frontend: odświeżanie przy otwarciu panelu oraz okresowe w tle; opcjonalne skróty po kliknięciu (kalendarz, dziennik, wyniki, panele admin/superadmin).',
       'Backend: tabela powiadomień per użytkownik, GET /api/notifications oraz DELETE /api/notifications/:id (po sukcesie odpowiedź 204 No Content).',
       'Zawodnik: m.in. zatwierdzenie wyniku, przypisanie / cofnięcie zapisu na zawody, notatka trenera w dzienniku.',
-      'Kadra treningowa (Trener / TrainerAdmin / Admin / SuperAdmin): m.in. wpis zawodnika w dzienniku, zmiany w kalendarzu zawodów, lista zapisów, synchronizacja zewnętrzna, nowy wynik do zatwierdzenia.',
-      'Administratorzy (Admin / TrainerAdmin / SuperAdmin): powiadomienia o zmianach administracyjnych (konta, zawodnicy, blog).',
+      'Kadra treningowa (Trener / Admin / SuperAdmin): m.in. wpis zawodnika w dzienniku, zmiany w kalendarzu zawodów, lista zapisów, synchronizacja zewnętrzna, nowy wynik do zatwierdzenia.',
+      'Administratorzy (Admin / SuperAdmin): powiadomienia o zmianach administracyjnych (konta, zawodnicy, blog).',
       'SuperAdmin: dodatkowo osobne wpisy „kadrowe” przy wybranych zdarzeniach zawodnika (podgląd bez treści „osobistej” jak u samego zawodnika).'
     ],
     type: 'feature'

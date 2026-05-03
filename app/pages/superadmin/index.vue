@@ -14,9 +14,10 @@ const { data: athletes } = await useAsyncData('super-dashboard-athletes', () => 
 const { data: adminsGrouped } = await useAsyncData(
   'super-dashboard-admins-grouped',
   () =>
-    apiFetch<{ staff_admins: unknown[], club_members: unknown[] }>('/api/admins/grouped').catch(() => ({
-      staff_admins: [],
-      club_members: []
+    apiFetch<{ admins: unknown[], trainers: unknown[], athletes: unknown[] }>('/api/admins/grouped').catch(() => ({
+      admins: [],
+      trainers: [],
+      athletes: []
     }))
 )
 const { data: competitions } = await useAsyncData('super-dashboard-competitions', () => apiFetch('/api/competitions').catch(() => []))
@@ -29,14 +30,14 @@ const athletesCount = computed(() => {
   return list.filter(a => a.is_active !== false).length
 })
 const adminsCount = computed(() =>
-  Array.isArray(adminsGrouped.value?.staff_admins) ? adminsGrouped.value.staff_admins.length : 0
+  Array.isArray(adminsGrouped.value?.admins) ? adminsGrouped.value.admins.length : 0
 )
 const competitionsCount = computed(() => Array.isArray(competitions.value) ? competitions.value.length : 0)
 
 const quickLinks = [
   {
-    title: 'Zarządzanie Adminami',
-    description: 'Dodawaj i usuwaj konta administratorów',
+    title: 'Zarządzanie kontami',
+    description: 'Administratorzy, trenerzy i zawodnicy — role, konta i uprawnienia (superadmin)',
     icon: 'i-lucide-shield-alert',
     to: '/superadmin/administratorzy',
     color: 'text-red-500',
@@ -131,10 +132,10 @@ const quickLinks = [
     bg: 'bg-neutral-500/10'
   },
   {
-    title: 'Aktualności (Blog)',
-    description: 'Zarządzaj wpisami na blogu',
+    title: 'Aktualności',
+    description: 'Wpisy informacyjne i relacje',
     icon: 'i-lucide-newspaper',
-    to: '/blog',
+    to: '/aktualnosci',
     color: 'text-orange-500',
     bg: 'bg-orange-500/10'
   }

@@ -6,7 +6,6 @@ definePageMeta({ middleware: 'admin' })
 const route = useRoute()
 const apiFetch = useApi()
 
-/** Musi być reaktywne — ten sam plik `[slug].vue` przy zmianie parametru bez pełnego unmount. */
 const postId = computed(() => parseBlogPostId(String(route.params.slug ?? '').trim()))
 
 interface BlogPost {
@@ -27,13 +26,12 @@ async function fetchPostForEdit(): Promise<BlogPost> {
   try {
     return await apiFetch<BlogPost>(`/api/posts/manage/${enc}`)
   } catch {
-    /* Szkic jest tylko pod /manage; dla opublikowanych przy problemie z uprawnieniami/tokenem spróbuj API publicznego. */
     return await apiFetch<BlogPost>(`/api/posts/${enc}`)
   }
 }
 
 const { data: post, error } = await useAsyncData(
-  'blog-edit-post',
+  'aktualnosci-edit-post',
   fetchPostForEdit,
   { watch: [postId] }
 )
@@ -47,7 +45,7 @@ watch(
   title => {
     if (title) {
       useSeoMeta({
-        title: `Edycja: ${title} — Blog`,
+        title: `Edycja: ${title} — Aktualności`,
         robots: 'noindex, nofollow'
       })
     }
@@ -73,8 +71,8 @@ async function goPost() {
   await navigateTo(blogPostPath(slugify(p.title) || 'wpis', p.id))
 }
 
-function goBlog() {
-  navigateTo('/blog')
+function goList() {
+  navigateTo('/aktualnosci')
 }
 
 async function onFormSuccess(e: { published: boolean; postId: string; title: string }) {
@@ -82,7 +80,7 @@ async function onFormSuccess(e: { published: boolean; postId: string; title: str
   if (e.published) {
     await navigateTo(blogPostPath(slug, e.postId))
   } else {
-    await navigateTo('/blog')
+    await navigateTo('/aktualnosci')
   }
 }
 </script>
@@ -118,7 +116,7 @@ async function onFormSuccess(e: { published: boolean; postId: string; title: str
             variant="soft"
             color="neutral"
             icon="i-lucide-arrow-left"
-            @click="goBlog"
+            @click="goList"
           >
             Lista wpisów
           </UButton>
@@ -135,7 +133,7 @@ async function onFormSuccess(e: { published: boolean; postId: string; title: str
           :initial-published="post.published"
           editor-min-height="min(78vh, 640px)"
           @success="onFormSuccess"
-          @cancel="goBlog"
+          @cancel="goList"
         />
         <template #fallback>
           <div class="rounded-xl border border-default p-10 text-center text-muted">

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { pickPostLoginPath } from '~/composables/useAuth'
+
 const auth = useAuth()
 const route = useRoute()
 const toast = useToast()
@@ -22,14 +24,8 @@ async function submit() {
 
     if (redirect) {
       await navigateTo(redirect)
-    } else if (user.role === 'SuperAdmin') {
-      await navigateTo('/superadmin')
-    } else if (user.role === 'Admin' || user.role === 'TrainerAdmin') {
-      await navigateTo('/admin')
-    } else if (user.role === 'Trainer') {
-      await navigateTo('/trainer')
     } else {
-      await navigateTo('/athlete')
+      await navigateTo(pickPostLoginPath(user?.roles ?? []))
     }
   } catch (e) {
     toast.add({

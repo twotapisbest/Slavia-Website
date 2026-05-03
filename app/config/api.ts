@@ -42,6 +42,21 @@ export const apiRoutes = {
     list: '/api/posts',
     one: (id: string) => `/api/posts/${encodeURIComponent(id)}`
   },
+  announcements: {
+    collection: '/api/announcements',
+    manage: '/api/announcements/manage',
+    one: (id: string) => `/api/announcements/${encodeURIComponent(id)}`
+  },
+  gallery: {
+    collection: '/api/gallery',
+    manage: '/api/gallery/manage',
+    one: (id: string) => `/api/gallery/${encodeURIComponent(id)}`
+  },
+  contact: {
+    submit: '/api/contact',
+    manage: '/api/contact/manage',
+    manageOne: (id: string) => `/api/contact/manage/${encodeURIComponent(id)}`
+  },
   upload: '/api/upload',
   notifications: {
     collection: '/api/notifications',
@@ -50,11 +65,16 @@ export const apiRoutes = {
   competitions: {
     collection: '/api/competitions',
     syncExternal: '/api/competitions/sync-external',
+    recurringTrainingCancellations: '/api/competitions/recurring-training-cancellations',
+    recurringTrainingCancellationOne: (sessionDate: string) =>
+      `/api/competitions/recurring-training-cancellations/${encodeURIComponent(sessionDate)}`,
     one: (id: string) => `/api/competitions/${encodeURIComponent(id)}`,
     participants: (id: string) => `/api/competitions/${encodeURIComponent(id)}/participants`
   },
   results: {
     collection: '/api/results',
+    /** Publiczna tablica (JOIN zawodnik + zawody), bez mutacji. */
+    publicBoard: '/api/results/public-board',
     pending: '/api/results/pending',
     all: '/api/results/all',
     athlete: (id: string) => `/api/results/athlete/${encodeURIComponent(id)}`,
@@ -62,6 +82,12 @@ export const apiRoutes = {
       `/api/results/athlete/${encodeURIComponent(id)}/submissions`,
     one: (id: string) => `/api/results/${encodeURIComponent(id)}`,
     approve: (id: string) => `/api/results/${encodeURIComponent(id)}/approve`
+  },
+  /** Zgłoszenia wyników (Pending) — osobna przestrzeń od zwykłych tras `results`. */
+  submissions: {
+    pending: '/api/submissions/pending',
+    approve: (id: string) => `/api/submissions/${encodeURIComponent(id)}/approve`,
+    one: (id: string) => `/api/submissions/${encodeURIComponent(id)}`
   }
 } as const
 

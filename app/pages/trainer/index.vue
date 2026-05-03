@@ -57,10 +57,12 @@ const quickLinks = computed(() => {
   const admin = auth.isAdmin.value
   const links = [
     {
-      title: 'Lista zawodników',
-      description: admin ? 'Pełna edycja bazy zawodników' : 'Podgląd publicznej listy aktywnych zawodników',
+      title: admin ? 'Zawodnicy (panel admina)' : 'Baza zawodników',
+      description: admin
+        ? 'Pełna edycja z możliwością tworzenia kont logowania'
+        : 'Edycja profili i zawodów — konto dla zawodnika tworzy administrator po Twojej prośbie',
       icon: 'i-lucide-users',
-      to: admin ? '/admin/zawodnicy' : '/zawodnicy',
+      to: admin ? '/admin/zawodnicy' : '/trainer/zawodnicy',
       color: 'text-blue-500',
       bg: 'bg-blue-500/10'
     },
@@ -105,10 +107,10 @@ const quickLinks = computed(() => {
       bg: 'bg-orange-500/10'
     },
     {
-      title: 'Blog klubu',
+      title: 'Aktualności klubu',
       description: 'Aktualności, ogłoszenia i wpisy na stronie',
       icon: 'i-lucide-newspaper',
-      to: '/blog',
+      to: '/aktualnosci',
       color: 'text-amber-600',
       bg: 'bg-amber-500/10'
     },

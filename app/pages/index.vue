@@ -1,5 +1,5 @@
 <template>
-  <div class="animate-page-in relative">
+  <div class="animate-page-in relative min-w-0 overflow-x-clip">
     <div
       class="pointer-events-none absolute -left-20 top-24 size-[280px] rounded-full bg-primary/8 blur-3xl dark:bg-primary/15"
       aria-hidden="true"

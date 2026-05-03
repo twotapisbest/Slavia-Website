@@ -1,11 +1,11 @@
-/** Kalendarz osobisty — wyłącznie rola Athlete. */
+/** Kalendarz osobisty — zawodnik lub SuperAdmin (pełny dostęp). */
 export default defineNuxtRouteMiddleware(async (to) => {
   const auth = useAuth()
   await auth.ensureSession()
   if (!auth.user.value) {
     return navigateTo({ path: '/logowanie', query: { redirect: to.fullPath } })
   }
-  if (auth.user.value.role !== 'Athlete') {
+  if (!auth.canAccessAthletePortal.value) {
     return navigateTo('/kalendarz')
   }
 })

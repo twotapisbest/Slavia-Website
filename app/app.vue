@@ -87,6 +87,8 @@ async function logout() {
 
 <template>
   <UApp>
+    <!-- Manifest PWA; na localhost instalacja/SW tylko przy `nuxt dev` — zob. plugin `slavia-experimental-bootstrap` i `usePwaInstall`. -->
+    <VitePwaManifest />
     <!-- Splash: pełna nieprzezroczysta warstwa; bez fade-out całego overlay (wtedy „przeświecał” tekst strony). -->
     <div
       v-if="isAppLoading"
@@ -128,31 +130,13 @@ async function logout() {
       </Transition>
     </div>
 
+    <!-- Bez overflow-x na tym wrapperze: html/body już mają clip — podwójny clip ucinał obramowania / końcówki belki nawigacji (np. „Aktualności”). -->
     <div
-      class="transition-opacity duration-300 ease-out"
+      class="transition-opacity duration-300 ease-out min-w-0"
       :class="isAppLoading ? 'opacity-0 pointer-events-none select-none' : 'opacity-100'"
     >
-      <!-- Na mobile bez border-b na całym UHeader: linia pod belką z 4 linkami „cięła” pierwszą linię treści; odstęp daje belka (SiteNav public-mobile). Od lg zostaje klasyczna linia pod nagłówkiem. -->
-      <UHeader
-        :toggle="false"
-        class="border-default backdrop-blur-md bg-background/80 sticky top-0 z-50 lg:border-b"
-      >
-        <template #left>
-          <div class="flex min-w-0 items-center gap-2 sm:gap-4 lg:gap-6 xl:gap-8">
-            <ClubBrand />
-            <ClubSiteNav mode="drawer" />
-          </div>
-        </template>
-
-        <template #default>
-          <ClubSiteNav mode="links" />
-        </template>
-
-        <template #bottom>
-          <ClubSiteNav mode="public-mobile" />
-        </template>
-
-        <template #right>
+      <ClubSiteHeader>
+        <template #actions>
           <div class="flex shrink-0 items-center gap-1.5 sm:gap-3">
             <template v-if="auth.isLoggedIn.value">
               <ClubNotificationBell v-if="clubNotificationBellOn" />
@@ -167,17 +151,17 @@ async function logout() {
                   class="ring-1 ring-primary/30"
                 />
               </NuxtLink>
-              <div class="hidden items-center gap-4 sm:flex lg:gap-5">
+              <div class="hidden items-center gap-3 sm:flex sm:gap-4">
                 <NuxtLink
                   :to="dashboardLink"
-                  class="group flex items-center gap-2 rounded-full bg-primary/5 px-4 py-1.5 transition-all hover:bg-primary/10 ring-1 ring-primary/20 lg:px-5"
+                  class="group flex max-w-[11rem] items-center gap-2 rounded-full bg-primary/8 px-3 py-1.5 transition-all hover:bg-primary/14 ring-1 ring-primary/22 lg:max-w-[14rem] lg:px-4"
                 >
                   <UAvatar
                     :alt="auth.user.value?.username"
                     size="xs"
-                    class="ring-1 ring-primary/20"
+                    class="ring-1 ring-primary/20 shrink-0"
                   />
-                  <span class="text-sm font-semibold text-highlighted group-hover:text-primary">
+                  <span class="truncate text-sm font-semibold text-highlighted group-hover:text-primary">
                     {{ auth.user.value?.username }}
                   </span>
                 </NuxtLink>
@@ -186,29 +170,36 @@ async function logout() {
                   variant="ghost"
                   size="sm"
                   icon="i-lucide-log-out"
-                  class="text-muted hover:text-error"
+                  class="text-muted hover:text-error shrink-0"
                   @click="logout"
                 />
               </div>
             </template>
-            <div
-              v-else
-              class="hidden sm:block"
-            >
+            <template v-else>
+              <UButton
+                to="/logowanie"
+                icon="i-lucide-log-in"
+                color="neutral"
+                variant="ghost"
+                size="lg"
+                square
+                class="rounded-xl sm:hidden"
+                aria-label="Zaloguj się"
+              />
               <UButton
                 to="/logowanie"
                 icon="i-lucide-log-in"
                 size="sm"
                 variant="solid"
-                class="font-bold"
+                class="hidden font-bold sm:inline-flex"
               >
                 Zaloguj się
               </UButton>
-            </div>
+            </template>
             <UColorModeButton />
           </div>
         </template>
-      </UHeader>
+      </ClubSiteHeader>
 
       <UMain class="slavia-safe-x">
         <NuxtPage />

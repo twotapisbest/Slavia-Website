@@ -17,7 +17,7 @@ useSeoMeta({
         Konta kadry
       </h1>
       <p class="mt-2 max-w-2xl text-muted">
-        Dwie tabele: kadra administracyjna oraz trenerzy i zawodnicy. Możesz edytować login, e-mail i hasło (wg uprawnień). Zmianę ról wykonuje superadministrator.
+        Lista kont z backendu (pogrupowana): kadra, trenerzy, zawodnicy. Jako administrator bez roli superadministratora nie widzisz ani nie edytujesz żadnego konta, które ma rolę SuperAdmin — ich zarządzanie jest wyłącznie po zalogowaniu jako SuperAdmin. Reszcie użytkowników możesz zmieniać login, e-mail i hasło; zmianę zestawu ról wykonuje superadministrator.
       </p>
     </div>
 

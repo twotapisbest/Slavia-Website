@@ -14,7 +14,8 @@ import {
   getDay
 } from 'date-fns'
 import { pl } from 'date-fns/locale'
-import type { MyCalendarEntry } from '~/types/models'
+import { apiRoutes } from '~/config/api'
+import type { MyCalendarEntry, RecurringTrainingSession } from '~/types/models'
 
 definePageMeta({ middleware: 'athlete-calendar' })
 
@@ -24,6 +25,31 @@ useSeoMeta({
 })
 
 const apiFetch = useApi()
+const runtimeConfig = useRuntimeConfig()
+
+function publicCalendarApiBase() {
+  return String(runtimeConfig.public.apiBase || '').replace(/\/$/, '')
+}
+
+const { data: clubTrainingOverrides } = await useAsyncData(
+  'athlete-recurring-training-sessions',
+  () =>
+    $fetch<RecurringTrainingSession[]>(
+      `${publicCalendarApiBase()}${apiRoutes.competitions.recurringTrainingCancellations}`
+    ).catch(() => []),
+  { default: () => [], server: false }
+)
+
+const clubTrainingStatusByDate = computed(() => {
+  const m = new Map<string, string>()
+  for (const row of clubTrainingOverrides.value ?? []) {
+    const d = row.session_date?.substring(0, 10)
+    if (d) {
+      m.set(d, row.status || 'cancelled')
+    }
+  }
+  return m
+})
 
 const { data: myData } = await useAsyncData(
   'athlete-my-calendar',
@@ -64,15 +90,18 @@ function getTrainingsForDay(date: Date) {
   const day = getDay(date)
   if ([1, 3, 5].includes(day)) {
     const ds = format(date, 'yyyy-MM-dd')
+    const status = clubTrainingStatusByDate.value.get(ds) ?? 'scheduled'
     return [{
       id: `training-${ds}`,
       type: 'training' as const,
       category: 'training' as const,
-      status: 'scheduled' as const,
+      status,
       title: 'Trening',
       time: '15:00 - 18:00',
       location: '',
-      modalHint: 'Trening — wszyscy zawodnicy klubu',
+      modalHint: status === 'scheduled'
+        ? 'Trening klubowy — wszyscy zawodnicy (grafik jak w kalendarzu klubu).'
+        : 'Trening klubowy — trener zaktualizował status w kalendarzu klubu (widzisz to samo co na stronie Kalendarz).',
       participantsLine: ''
     }]
   }
@@ -135,8 +164,8 @@ const goToToday = () => {
         Mój kalendarz
       </h1>
       <p class="mt-2 max-w-xl text-muted text-sm">
-        Treningi klubowe (Pn, Śr, Pt) widoczne dla wszystkich.
-        Poniżej tylko zawody i wydarzenia, do których trener lub administrator Cię przypisał — zobaczysz też kto jeszcze startuje.
+        Treningi klubowe (Pn, Śr, Pt) — status (np. odwołanie) jest ten sam co w kalendarzu klubu.
+        Niżej zawody i wydarzenia, do których trener lub administrator Cię przypisał — zobaczysz też kto jeszcze startuje.
       </p>
       <div class="mt-4">
         <UButton
@@ -224,7 +253,13 @@ const goToToday = () => {
                 v-if="ev.status && ev.status !== 'scheduled'"
                 class="text-[10px] uppercase tracking-[0.15em] font-semibold mt-1"
               >
-                {{ ev.status === 'cancelled' ? 'Odwołane' : ev.status === 'moved' ? 'Przesunięte' : '' }}
+                {{
+                  ev.status === 'cancelled'
+                    ? 'Odwołane'
+                    : ev.status === 'moved'
+                      ? 'Przesunięte'
+                      : ev.status
+                }}
               </span>
             </button>
           </div>

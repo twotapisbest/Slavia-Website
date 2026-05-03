@@ -7,6 +7,7 @@ import { parseBlogPostId } from '~/utils/slug'
 
 const route = useRoute()
 const apiFetch = useApi()
+const auth = useAuth()
 
 const rawSlug = String(route.params.slug || '')
 const postId = parseBlogPostId(rawSlug)
@@ -18,9 +19,12 @@ interface BlogPost {
   image_url?: string
 }
 
-const { data: post, error } = await useAsyncData(`post-${postId}`, () =>
-  apiFetch<BlogPost>(`/api/posts/${encodeURIComponent(String(postId))}`)
-)
+const isAdmin = computed(() => auth.isAdmin.value || auth.isSuperAdmin.value)
+
+const { data: post, error } = await useAsyncData(`aktualnosci-post-${postId}`, () => {
+  const endpoint = isAdmin.value ? `/api/posts/manage/${encodeURIComponent(String(postId))}` : `/api/posts/${encodeURIComponent(String(postId))}`
+  return apiFetch<BlogPost>(endpoint)
+})
 
 if (error.value || !post.value) {
   throw createError({ statusCode: 404, statusMessage: 'Post not found', fatal: true })
@@ -53,7 +57,7 @@ function formatDate(dateStr: string) {
   >
     <UContainer class="max-w-3xl px-2 sm:px-0">
       <NuxtLink
-        to="/blog"
+        to="/aktualnosci"
         class="mb-8 inline-flex items-center text-sm font-medium text-muted transition-colors hover:text-primary"
       >
         <UIcon
@@ -94,7 +98,6 @@ function formatDate(dateStr: string) {
         </div>
       </div>
 
-      <!-- Treść po DOMPurify — nadal vue/no-v-html (narzędzie nie widzi sanityzacji). -->
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div v-if="isProbablyRichHtml(post.content)" class="slavia-rich-content prose prose-lg prose-neutral max-w-none leading-relaxed dark:prose-invert" v-html="sanitizedPostContent" />
       <div

@@ -30,17 +30,31 @@ export const SLAVIA_THEME_PRESETS = [
     id: 'ruby',
     label: 'Ruby podium',
     description: 'Ciepłe tło i rubinowy akcent — „ostatnie podejście”.'
+  },
+  {
+    id: 'neon',
+    label: 'Neon gym',
+    description: 'Jaskrawe neony i energia siłowni — widoczna zmiana.'
   }
 ] as const
 
 export type SlaviaThemePreset = (typeof SLAVIA_THEME_PRESETS)[number]['id']
 
+/** Klucze localStorage lustra motywu (per konto) — panel developera, diagnostyka. */
+export function slaviaAppearanceStorageKeys(uid: string | number) {
+  const u = String(uid)
+  return {
+    preset: `slavia-appearance-preset-${u}`,
+    mode: `slavia-appearance-mode-${u}`
+  } as const
+}
+
 function presetKey(uid: string | number) {
-  return `slavia-appearance-preset-${uid}`
+  return slaviaAppearanceStorageKeys(uid).preset
 }
 
 function modeKey(uid: string | number) {
-  return `slavia-appearance-mode-${uid}`
+  return slaviaAppearanceStorageKeys(uid).mode
 }
 
 function isValidPreset(id: string | null | undefined): id is SlaviaThemePreset {

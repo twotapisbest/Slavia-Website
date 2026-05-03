@@ -4,12 +4,12 @@ import { blogEditPath, blogPostPath, slugify } from '~/utils/slug'
 definePageMeta({ middleware: 'admin' })
 
 useSeoMeta({
-  title: 'Nowy wpis na blogu — Slavia',
+  title: 'Nowy wpis — Aktualności Slavia',
   robots: 'noindex, nofollow'
 })
 
-function goBlog() {
-  navigateTo('/blog')
+function goList() {
+  navigateTo('/aktualnosci')
 }
 
 async function onFormSuccess(e: { published: boolean; postId: string; title: string }) {
@@ -28,7 +28,7 @@ async function onFormSuccess(e: { published: boolean; postId: string; title: str
       <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
           <p class="text-xs font-bold uppercase tracking-wider text-primary">
-            Blog klubu
+            Aktualności klubu
           </p>
           <h1 class="mt-2 text-2xl font-bold tracking-tight text-highlighted sm:text-3xl">
             Nowy wpis
@@ -41,7 +41,7 @@ async function onFormSuccess(e: { published: boolean; postId: string; title: str
           variant="soft"
           color="neutral"
           icon="i-lucide-arrow-left"
-          @click="goBlog"
+          @click="goList"
         >
           Wróć do listy
         </UButton>
@@ -52,7 +52,7 @@ async function onFormSuccess(e: { published: boolean; postId: string; title: str
           mode="create"
           editor-min-height="min(78vh, 640px)"
           @success="onFormSuccess"
-          @cancel="goBlog"
+          @cancel="goList"
         />
         <template #fallback>
           <div class="rounded-xl border border-default p-10 text-center text-muted">

@@ -11,9 +11,14 @@ useSeoMeta({
 
 const auth = useAuth()
 const apiFetch = useApi()
-const isSuperAdmin = computed(() => auth.user.value?.role === 'SuperAdmin')
-/** Sam admin (bez trenera w roli) — w panelu bez narzędzi trenera. */
-const isPureAdmin = computed(() => auth.user.value?.role === 'Admin')
+const isSuperAdmin = computed(() => auth.isSuperAdmin.value)
+/** Sam administrator (bez osobnej roli trenera i bez SuperAdmin). */
+const isPureAdmin = computed(() => {
+  const r = auth.user.value?.roles ?? []
+  return r.includes('Admin')
+    && !r.includes('Trainer')
+    && !r.includes('SuperAdmin')
+})
 
 // Pobieranie podstawowych statystyk
 const { data: athletes } = await useAsyncData(
@@ -91,12 +96,30 @@ const quickLinksAll = [
     trainerOnly: false
   },
   {
-    title: 'Blog',
-    description: 'Publikuj nowości z życia klubu',
+    title: 'Aktualności',
+    description: 'Wpisy informacyjne i relacje (jak wcześniej „blog”)',
     icon: 'i-lucide-newspaper',
-    to: '/blog',
+    to: '/aktualnosci',
     color: 'text-orange-500',
     bg: 'bg-orange-500/10',
+    trainerOnly: false
+  },
+  {
+    title: 'Strony klubu',
+    description: 'Ogłoszenia, galeria, wiadomości z formularza kontaktowego',
+    icon: 'i-lucide-layout-grid',
+    to: '/ogloszenia',
+    color: 'text-violet-500',
+    bg: 'bg-violet-500/10',
+    trainerOnly: false
+  },
+  {
+    title: 'Wiadomości (kontakt)',
+    description: 'Skrzynka z publicznego formularza',
+    icon: 'i-lucide-mail',
+    to: '/admin/kontakt-wiadomosci',
+    color: 'text-sky-500',
+    bg: 'bg-sky-500/10',
     trainerOnly: false
   },
   {

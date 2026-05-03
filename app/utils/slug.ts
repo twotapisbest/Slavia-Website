@@ -14,16 +14,16 @@ export function slugify(text: string, maxLen = 72) {
     .slice(0, maxLen)
 }
 
-/** Ścieżka wpisu bloga: czytelny slug na początku, UUID po `--`. */
+/** Ścieżka wpisu aktualności: czytelny slug na początku, UUID po `--`. */
 export function blogPostPath(slugPart: string, id: string) {
   const s = slugPart.trim() || 'wpis'
-  return `/blog/${s}--${id}`
+  return `/aktualnosci/${s}--${id}`
 }
 
 /** Edycja wpisu — ten sam segment co w URL szczegółów. */
 export function blogEditPath(slugPart: string, id: string) {
   const s = slugPart.trim() || 'wpis'
-  return `/blog/redaguj/${s}--${id}`
+  return `/aktualnosci/redaguj/${s}--${id}`
 }
 
 /** Profil zawodnika: `imię-nazwisko--uuid` (bez UUID na początku adresu). */

@@ -1,6 +1,7 @@
 import { registerSW } from 'virtual:pwa-register'
 import { EXPERIMENTAL_FEATURES, EXPERIMENTAL_FEATURES_STORAGE_KEY } from '~/data/experimentalFeaturesCatalog'
 import { computeExperimentalEnabled, parseExperimentalKillSwitch } from '~/utils/experimentalEffective'
+import { isPwaLoopbackHost } from '~/utils/pwaOrigin'
 
 /**
  * 1) Hydracja nadpisań flag z localStorage (muszi być przed logiką zależną od stanu).
@@ -42,7 +43,21 @@ export default defineNuxtPlugin({
       defaultEnabled: pwaDef?.defaultEnabled ?? true
     })
 
-    if (!pwaOn) {
+    if (kill.has('pwa_service_worker')) {
+      return
+    }
+
+    /** Na localhost poza `nuxt dev` nie rejestruj SW — spójnie z `usePwaInstall` (brak „fałszywej” instalacji z preview). */
+    if (isPwaLoopbackHost() && !import.meta.dev) {
+      return
+    }
+
+    /**
+     * Na localhost + `nuxt dev` zawsze rejestruj SW (o ile moduł PWA ma devOptions), żeby instalacja PWA i cache działały
+     * nawet gdy ktoś wyłączył eksperyment `pwa_service_worker` w devTools — poza pętlą zwrotnej nadal obowiązuje `pwaOn`.
+     */
+    const loopbackDev = import.meta.dev && isPwaLoopbackHost()
+    if (!loopbackDev && !pwaOn) {
       return
     }
 

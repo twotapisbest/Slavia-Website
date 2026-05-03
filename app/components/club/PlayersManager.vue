@@ -4,6 +4,13 @@ import type { Competition, Player } from '~/types/models'
 
 const api = useApi()
 const toast = useToast()
+const auth = useAuth()
+
+/** Tworzenie konta `users` bezpośrednio — tylko Admin / SuperAdmin (spójnie z backendem). */
+const canManageAthleteLogin = computed(() => auth.isAdmin.value)
+
+/** Usuwanie rekordu zawodnika — tylko administratorzy (backend: RequireAdminOrSuperAdmin). */
+const canDeleteAthlete = computed(() => auth.isAdmin.value)
 
 const players = ref<Player[]>([])
 const loading = ref(true)
@@ -198,8 +205,18 @@ async function savePlayer() {
     toast.add({ title: 'Uzupełnij nazwisko i imię', color: 'warning' })
     return
   }
+  if (form.create_account && !canManageAthleteLogin.value && !form.username.trim()) {
+    toast.add({
+      title: 'Podaj proponowany login',
+      description: 'Trener nie tworzy konta — wpisz login, który ma ustawić administrator po powiadomieniu.',
+      color: 'warning'
+    })
+    return
+  }
   saving.value = true
   const wasEditing = !!editingId.value
+  const willRequestAccountFromAdmin =
+    !canManageAthleteLogin.value && form.create_account && !!form.username.trim()
   try {
     const body: Record<string, unknown> = {
       full_name: form.full_name.trim(),
@@ -220,11 +237,25 @@ async function savePlayer() {
     if (editingId.value) {
       await api(urlAdminPlayer(editingId.value), { method: 'PATCH', body })
       athleteId = editingId.value
-      toast.add({ title: 'Zapisano zmiany', color: 'success', icon: 'i-lucide-check' })
+      toast.add({
+        title: 'Zapisano zmiany',
+        description: willRequestAccountFromAdmin
+          ? 'Administratorzy otrzymali prośbę o utworzenie konta logowania.'
+          : undefined,
+        color: 'success',
+        icon: 'i-lucide-check'
+      })
     } else {
       const created = await api<Player>(apiRoutes.admin.players, { method: 'POST', body })
       athleteId = created.id
-      toast.add({ title: 'Dodano zawodnika', color: 'success', icon: 'i-lucide-check' })
+      toast.add({
+        title: 'Dodano zawodnika',
+        description: willRequestAccountFromAdmin
+          ? 'Administratorzy otrzymali prośbę o utworzenie konta logowania.'
+          : undefined,
+        color: 'success',
+        icon: 'i-lucide-check'
+      })
     }
 
     if (wasEditing) {
@@ -424,6 +455,7 @@ onMounted(() => {
                     @click="openEdit(p)"
                   />
                   <UButton
+                    v-if="canDeleteAthlete"
                     icon="i-lucide-trash-2"
                     size="xs"
                     color="error"
@@ -625,10 +657,15 @@ onMounted(() => {
                   <div class="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-default/60 bg-muted/20 px-4 py-3 dark:bg-muted/10">
                     <div>
                       <p class="text-sm font-bold text-highlighted">
-                        Utwórz konto logowania
+                        {{ canManageAthleteLogin ? 'Utwórz konto logowania' : 'Prośba o konto u administratora' }}
                       </p>
                       <p class="text-xs text-muted">
-                        Zawodnik zaloguje się do panelu i edytuje swój profil.
+                        <template v-if="canManageAthleteLogin">
+                          Zawodnik zaloguje się do panelu i edytuje swój profil.
+                        </template>
+                        <template v-else>
+                          Jako trener nie tworzysz konta — zaznacz i podaj proponowany login; administrator lub superadministrator dostanie powiadomienie i utworzy dostęp.
+                        </template>
                       </p>
                     </div>
                     <USwitch v-model="form.create_account" />
@@ -648,7 +685,10 @@ onMounted(() => {
                         class="w-full"
                       />
                     </UFormField>
-                    <UFormField label="Hasło (opcjonalnie)">
+                    <UFormField
+                      v-if="canManageAthleteLogin"
+                      label="Hasło (opcjonalnie)"
+                    >
                       <UInput
                         v-model="form.password"
                         type="password"

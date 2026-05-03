@@ -21,10 +21,23 @@ export const DEV_TOOL_LINK_GROUPS: DevToolLinkGroup[] = [
       { to: '/', label: 'Start', description: 'Strona główna klubu', icon: 'i-lucide-home' },
       { to: '/zawodnicy', label: 'Zawodnicy', description: 'Lista i profile (`imię-nazwisko--uuid`)', icon: 'i-lucide-users' },
       { to: '/ranking', label: 'Ranking', description: 'Ranking klubowy', icon: 'i-lucide-trophy' },
-      { to: '/blog', label: 'Blog', description: 'Aktualności i wpisy', icon: 'i-lucide-newspaper' },
+      { to: '/ogloszenia', label: 'Ogłoszenia', description: 'Tablica komunikatów', icon: 'i-lucide-megaphone' },
+      { to: '/aktualnosci', label: 'Aktualności', description: 'Wpisy i relacje (dawniej „blog”)', icon: 'i-lucide-newspaper' },
+      { to: '/galeria', label: 'Galeria', description: 'Zdjęcia klubu', icon: 'i-lucide-images' },
+      { to: '/wyniki-zawodow', label: 'Wyniki zawodów', description: 'Publiczna lista zatwierdzonych startów', icon: 'i-lucide-medal' },
+      { to: '/kontakt', label: 'Kontakt', description: 'Formularz do administracji', icon: 'i-lucide-mail' },
+      { to: '/blog', label: 'Legacy /blog', description: 'Przekierowanie → /aktualnosci', icon: 'i-lucide-undo-2' },
       { to: '/kalendarz', label: 'Kalendarz', description: 'Wydarzenia i zawody', icon: 'i-lucide-calendar' },
       { to: '/kalkulator-sinclair', label: 'Kalkulator Sinclair', description: 'Przelicznik punktów', icon: 'i-lucide-calculator' },
       { to: '/logowanie', label: 'Logowanie', description: 'Formularz sesji', icon: 'i-lucide-log-in' }
+    ]
+  },
+  {
+    title: 'Aktualności (CMS wpisy)',
+    description: 'Wpisy HTML — edycja wymaga roli Admin/SuperAdmin (`/aktualnosci/*`).',
+    links: [
+      { to: '/aktualnosci', label: 'Lista wpisów', description: 'Karty i slugi `--uuid`', icon: 'i-lucide-newspaper' },
+      { to: '/aktualnosci/nowy', label: 'Nowy wpis', description: 'Formularz dodawania (middleware admin)', icon: 'i-lucide-file-plus-2' }
     ]
   },
   {
@@ -42,6 +55,7 @@ export const DEV_TOOL_LINK_GROUPS: DevToolLinkGroup[] = [
     description: 'Narzędzia kadry — trener, admin z dostępem trenera, superadmin.',
     links: [
       { to: '/trainer', label: 'Dashboard trenera', description: 'Podsumowanie i skróty', icon: 'i-lucide-layout-dashboard' },
+      { to: '/trainer/zawodnicy', label: 'Zawodnicy (trener)', description: 'CRUD profili — konto logowania przez admina lub prośba', icon: 'i-lucide-users' },
       { to: '/trainer/wyniki', label: 'Wszystkie starty', description: 'Lista i edycja wyników', icon: 'i-lucide-list-checks' },
       { to: '/trainer/dziennik', label: 'Dzienniki (lista)', description: 'Wybór zawodnika (`…/imię--uuid`)', icon: 'i-lucide-book-open' },
       { to: '/trainer/analiza-sztangi', label: 'Analiza sztangi', description: 'Wersja kadry', icon: 'i-lucide-scan-line' }
@@ -54,7 +68,8 @@ export const DEV_TOOL_LINK_GROUPS: DevToolLinkGroup[] = [
       { to: '/admin', label: 'Dashboard admina', description: 'Statystyki i oczekujące wyniki', icon: 'i-lucide-shield' },
       { to: '/admin/zawodnicy', label: 'Zawodnicy (CMS)', description: 'Edycja bazy zawodników', icon: 'i-lucide-users-round' },
       { to: '/admin/konta', label: 'Konta kadry', description: 'Hasła i dostępy administracyjne', icon: 'i-lucide-key-round' },
-      { to: '/admin/changelog', label: 'Changelog', description: 'Historia zmian w systemie', icon: 'i-lucide-file-text' }
+      { to: '/admin/changelog', label: 'Changelog', description: 'Historia zmian w systemie', icon: 'i-lucide-file-text' },
+      { to: '/admin/kontakt-wiadomosci', label: 'Wiadomości kontaktowe', description: 'Skrzynka z formularza publicznego', icon: 'i-lucide-inbox' }
     ]
   },
   {
@@ -62,9 +77,9 @@ export const DEV_TOOL_LINK_GROUPS: DevToolLinkGroup[] = [
     description: 'Pełna kontrola systemu i narzędzia developerskie.',
     links: [
       { to: '/superadmin', label: 'Dashboard', description: 'Statystyki i skróty', icon: 'i-lucide-crown' },
-      { to: '/superadmin/administratorzy', label: 'Administratorzy', description: 'Konta administracyjne', icon: 'i-lucide-shield-alert' },
+      { to: '/superadmin/administratorzy', label: 'Zarządzanie kontami', description: 'Lista kont i role — wybór motywu także w `/profil`', icon: 'i-lucide-shield-alert' },
       { to: '/superadmin/zawodnicy', label: 'Baza (super)', description: 'Zawodnicy — widok superadmina', icon: 'i-lucide-database' },
-      { to: '/superadmin/developer', label: 'Developer tools', description: 'Ta strona — testy i diagnostyka', icon: 'i-lucide-terminal' }
+      { to: '/superadmin/developer', label: 'Developer tools', description: 'Motyw (diag.), smoke API, funkcje eksperymentalne', icon: 'i-lucide-terminal' }
     ]
   },
   {

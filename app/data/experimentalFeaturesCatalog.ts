@@ -1,6 +1,9 @@
 /**
  * Rejestr funkcji eksperymentalnych — przełączniki na `/superadmin/developer`.
  *
+ * Diagnostyka motywów (presety `data-slavia-preset`, tryb jasny/ciemny, JSON do schowka)
+ * jest na tej samej stronie w sekcji „Motyw i wygląd” — nie wymaga osobnej flagi.
+ *
  * Przy dodawaniu nowej funkcji w fazie rozwoju:
  * 1. Dodaj wpis tutaj (`id` stabilny, snake_case).
  * 2. Używaj `useExperimentalFlag(id)` lub `enabledMap` w UI / pluginach.

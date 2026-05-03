@@ -7,7 +7,11 @@ const auth = useAuth()
 const apiFetch = useApi()
 const toast = useToast()
 
-const isAthleteRole = computed(() => auth.user.value?.role === 'Athlete')
+/** Konto z przypisaną rolą „Zawodnik” (nie mylić z dostępem SuperAdmin do tej strefy). */
+const isAthleteRole = computed(() => auth.isAthlete.value)
+const isAthletePortalAsSuperAdminOnly = computed(
+  () => auth.isSuperAdmin.value && !auth.isAthlete.value
+)
 
 type AthleteBundle = { athlete: Athlete | null, results: CompetitionResult[], calendarEntries: MyCalendarEntry[] }
 
@@ -15,7 +19,8 @@ const { data: bundle, refresh: refreshAthletePage } = await useAsyncData(
   'athlete-page-bundle',
   async () => {
     await auth.ensureSession()
-    if (auth.user.value?.role !== 'Athlete') {
+    const roles = auth.user.value?.roles ?? []
+    if (!roles.includes('Athlete') && !roles.includes('SuperAdmin')) {
       return { athlete: null, results: [], calendarEntries: [] } satisfies AthleteBundle
     }
     const a = await apiFetch<Athlete | null>(`/api/athletes/me`).catch(() => null)
@@ -227,8 +232,8 @@ const athleteDashboardTiles = [
     iconBg: 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400'
   },
   {
-    to: '/blog',
-    title: 'Blog klubu',
+    to: '/aktualnosci',
+    title: 'Aktualności klubu',
     desc: 'Aktualności i komunikaty',
     icon: 'i-lucide-newspaper',
     ring: 'ring-amber-500/25 hover:ring-amber-500/45',
@@ -248,14 +253,18 @@ const assignedCompetitionStartsCount = computed(() => {
   return ids.size
 })
 
-const pageHeading = computed(() =>
-  isAthleteRole.value ? 'Panel Zawodnika' : 'Profil konta'
-)
-const pageLead = computed(() =>
-  isAthleteRole.value
+const pageHeading = computed(() => {
+  if (isAthletePortalAsSuperAdminOnly.value) return 'Strefa zawodnika'
+  return isAthleteRole.value ? 'Panel Zawodnika' : 'Profil konta'
+})
+const pageLead = computed(() => {
+  if (isAthletePortalAsSuperAdminOnly.value) {
+    return 'Superadmin ma dostęp do całej aplikacji — tutaj widzisz widok jak dla konta z rolą zawodnika (jeśli masz powiązany profil zawodnika w bazie).'
+  }
+  return isAthleteRole.value
     ? 'To jest Twój osobisty panel. Tutaj możesz śledzić swoje postępy, wyniki z zawodów oraz zarządzać swoim profilem.'
     : 'Ustawienia konta (e-mail, hasło, zdjęcie). Funkcje zawodnicze są dostępne tylko dla kont z rolą zawodnika.'
-)
+})
 </script>
 
 <template>
@@ -287,12 +296,12 @@ const pageLead = computed(() =>
                 {{ pageHeading }}
               </span>
               <UBadge
-                v-if="auth.user.value?.role"
+                v-if="auth.rolesDisplayShort"
                 color="neutral"
                 variant="subtle"
                 size="sm"
               >
-                {{ auth.user.value.role }}
+                {{ auth.rolesDisplayShort }}
               </UBadge>
             </div>
             <h1 class="mt-3 text-3xl font-black tracking-tight text-highlighted sm:text-4xl">
@@ -306,7 +315,7 @@ const pageLead = computed(() =>
 
         <!-- Skrócone PB w hero (tylko przy pełnym profilu) -->
         <div
-          v-if="isAthleteRole && athlete"
+          v-if="auth.canAccessAthletePortal && athlete"
           class="flex shrink-0 flex-wrap gap-2 lg:flex-col lg:items-stretch xl:flex-row"
         >
           <div
@@ -338,7 +347,7 @@ const pageLead = computed(() =>
 
     <!-- Szybkie kafle (bento) -->
     <div
-      v-if="isAthleteRole && athlete"
+      v-if="auth.canAccessAthletePortal && athlete"
       class="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
     >
       <NuxtLink
@@ -374,7 +383,7 @@ const pageLead = computed(() =>
 
     <!-- Licznik startów + karty rekordów -->
     <div
-      v-if="isAthleteRole && athlete"
+      v-if="auth.canAccessAthletePortal && athlete"
       class="mb-10 grid gap-6 xl:grid-cols-12 xl:items-stretch"
     >
       <UCard
@@ -443,7 +452,7 @@ const pageLead = computed(() =>
     </div>
 
     <div
-      v-else-if="isAthleteRole && !athlete"
+      v-else-if="auth.canAccessAthletePortal && !athlete"
       class="mb-10"
     >
       <UAlert
@@ -564,7 +573,7 @@ const pageLead = computed(() =>
     </section>
 
     <section
-      v-if="isAthleteRole && athlete"
+      v-if="auth.canAccessAthletePortal && athlete"
     >
       <h2 class="mb-5 flex items-center gap-3">
         <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/12 text-amber-600 ring-1 ring-amber-500/20 dark:text-amber-400">
@@ -645,7 +654,7 @@ const pageLead = computed(() =>
       <!-- Prawa kolumna: historia + skróty klubu -->
       <div class="space-y-10 xl:col-span-5">
       <!-- Ostatnie wyniki -->
-      <section v-if="isAthleteRole">
+      <section v-if="auth.canAccessAthletePortal">
         <h2 class="mb-5 flex items-center gap-3">
           <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-yellow-500/15 text-yellow-600 ring-1 ring-yellow-500/25 dark:text-yellow-400">
             <UIcon
