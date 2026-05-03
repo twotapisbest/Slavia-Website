@@ -70,12 +70,70 @@
   }
 }
 
+@keyframes slavia-barbell-shimmer {
+  0% {
+    opacity: 0.35;
+    transform: translateX(-8%) scaleX(0.92);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translateX(4%) scaleX(1);
+  }
+  100% {
+    opacity: 0.35;
+    transform: translateX(8%) scaleX(0.92);
+  }
+}
+
+@keyframes slavia-plate-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 0.95;
+  }
+}
+
 .animate-page-in {
   animation: page-rise 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+.slavia-deco-barbell {
+  position: relative;
+  overflow: hidden;
+}
+
+.slavia-deco-barbell::after {
+  content: '';
+  position: absolute;
+  inset: auto -20% 0 -20%;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--ui-primary, #00c16a) 55%, transparent),
+    transparent
+  );
+  animation: slavia-barbell-shimmer 4.2s ease-in-out infinite;
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.slavia-deco-plate {
+  animation: slavia-plate-pulse 2.8s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-page-in {
+    animation: none !important;
+  }
+
+  .slavia-deco-barbell::after,
+  .slavia-deco-plate {
     animation: none !important;
   }
 
@@ -85,40 +143,311 @@
   }
 }
 
+/** Debug (panel developera): symulacja „prefer reduced motion”. */
+html.slavia-dev-force-reduced-motion *,
+html.slavia-dev-force-reduced-motion *::before,
+html.slavia-dev-force-reduced-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
 html.light,
 html:not(.dark) {
   color-scheme: light;
+  /**
+   * Tokeny Nuxt UI na jasnym tle — stonowany kontrast, bez „płowego” szarości;
+   * presety nadpisują wybrane wartości niżej.
+   */
+  --ui-bg: #f8fafc;
+  --ui-bg-muted: #f1f5f9;
+  --ui-bg-elevated: #eef2f7;
+  --ui-bg-accented: #e5eaf3;
+  --ui-border: #e2e8f0;
+  --ui-border-muted: #eceff4;
+  --ui-border-accented: #cbd5e1;
+  --ui-text-dimmed: #94a3b8;
+  --ui-text-muted: #64748b;
+  --ui-text-toned: #475569;
+  --ui-text: #334155;
+  --ui-text-highlighted: #0f172a;
 }
 
+html:not(.dark) .shadow-md {
+  box-shadow:
+    0 4px 26px -10px rgb(15 23 42 / 0.09),
+    0 2px 12px -8px rgb(15 23 42 / 0.055);
+}
+
+html:not(.dark) .text-highlighted {
+  color: var(--ui-text-highlighted);
+}
+
+/** Preset „Slavia” na jasnym — delikatny akcent primary na obramowaniach i tłach wtórnych */
+html[data-slavia-preset='slavia']:not(.dark),
+html.light[data-slavia-preset='slavia'] {
+  --ui-border: color-mix(in oklab, var(--ui-primary, #00a155) 14%, #e2e8f0);
+  --ui-bg-muted: color-mix(in oklab, var(--ui-primary, #00a155) 5%, #f1f5f9);
+  --ui-bg-elevated: color-mix(in oklab, var(--ui-primary, #00a155) 4%, #eef2f7);
+}
+
+/**
+ * Jasny motyw — „Slavia” (domyślny): papierowa baza, subtelny „szklany” gradient z klubową zielenią.
+ */
 html.light body,
 html:not(.dark) body {
   background-image:
-    radial-gradient(ellipse 95% 65% at 50% -18%, rgba(0, 161, 85, 0.085), transparent 52%),
-    linear-gradient(168deg, #dfe4ec 0%, #d3dae6 38%, #c9d0dd 100%);
-  background-color: #cfd6e4;
+    radial-gradient(ellipse 110% 70% at 50% -22%, color-mix(in oklab, var(--ui-primary, #00a155) 14%, transparent), transparent 58%),
+    radial-gradient(ellipse 80% 50% at 100% 12%, rgba(148, 163, 184, 0.22), transparent 55%),
+    linear-gradient(172deg, #f6f7fb 0%, #eef1f8 42%, #e6eaf3 100%);
+  background-color: #e8ecf5;
   background-attachment: fixed;
 }
 
-html.light .border-default {
-  border-color: color-mix(in oklab, var(--ui-border, #c5cdd9) 88%, #64748b);
+html.light .border-default,
+html:not(.dark) .border-default {
+  border-color: color-mix(in oklab, var(--ui-border, #d4dbe8) 92%, #64748b);
 }
 
 html.light .bg-muted\/10,
-html.light .bg-muted\/20 {
-  background-color: color-mix(in oklab, var(--ui-bg-muted, #cbd5e4) 72%, #94a3b8);
+html.light .bg-muted\/20,
+html:not(.dark) .bg-muted\/10,
+html:not(.dark) .bg-muted\/20 {
+  background-color: color-mix(in oklab, var(--ui-bg-muted, #e2e8f0) 78%, #cbd5e4);
 }
 
-html.light .text-muted {
-  color: color-mix(in oklab, var(--ui-text-muted, #475569) 92%, #334155);
+html.light .text-muted,
+html:not(.dark) .text-muted {
+  color: color-mix(in oklab, var(--ui-text-muted, #475569) 94%, #334155);
 }
 
-/** Delikatnie stonowany „canvas” kart — mniej bieli niż domyślny motyw */
-html.light .bg-background {
-  background-color: color-mix(in oklab, #eef1f7 88%, #cbd5e4);
+html.light .bg-background,
+html:not(.dark) .bg-background {
+  background-color: color-mix(in oklab, #fafbff 92%, #e2e8f0);
 }
 
-html.light .bg-card {
-  background-color: color-mix(in oklab, #f4f6fb 75%, #e2e8f0);
+html.light .bg-card,
+html:not(.dark) .bg-card {
+  background-color: color-mix(in oklab, #ffffff 88%, #eef2f9);
+}
+
+/** Motyw „iron” — jasny */
+html[data-slavia-preset='iron']:not(.dark) body,
+html.light[data-slavia-preset='iron'] body {
+  background-image:
+    radial-gradient(ellipse 90% 55% at 10% -10%, rgba(59, 130, 246, 0.09), transparent 52%),
+    linear-gradient(168deg, #eef2f7 0%, #e4e9f2 55%, #dce3ee 100%);
+  background-color: #dfe6f0;
+}
+
+html[data-slavia-preset='iron']:not(.dark) .bg-background,
+html.light[data-slavia-preset='iron'] .bg-background {
+  background-color: color-mix(in oklab, #f5f7fb 90%, #dbeafe);
+}
+
+html[data-slavia-preset='iron']:not(.dark),
+html.light[data-slavia-preset='iron'] {
+  --ui-bg: #f6f8fc;
+  --ui-bg-muted: #eef2f9;
+  --ui-bg-elevated: #e8edf6;
+  --ui-border: #dbe4f2;
+  --ui-text-muted: #5c6b82;
+  --ui-text-highlighted: #0c1528;
+}
+
+/** Motyw „arena” — jasny */
+html[data-slavia-preset='arena']:not(.dark) body,
+html.light[data-slavia-preset='arena'] body {
+  background-image:
+    radial-gradient(ellipse 95% 60% at 50% -18%, rgba(251, 191, 36, 0.12), transparent 55%),
+    linear-gradient(172deg, #fffaf3 0%, #f6efe6 45%, #eee6dc 100%);
+  background-color: #ede6dc;
+}
+
+html[data-slavia-preset='arena']:not(.dark) .bg-background,
+html.light[data-slavia-preset='arena'] .bg-background {
+  background-color: color-mix(in oklab, #fffdfb 92%, #fde68a);
+}
+
+html[data-slavia-preset='arena']:not(.dark),
+html.light[data-slavia-preset='arena'] {
+  --ui-bg: #fffaf5;
+  --ui-bg-muted: #f6efe8;
+  --ui-bg-elevated: #efe8df;
+  --ui-border: #e8ddd2;
+  --ui-text-muted: #6d5f54;
+  --ui-text-toned: #544840;
+  --ui-text: #3d342c;
+  --ui-text-highlighted: #1f1612;
+}
+
+/** Motyw „platform” — jasny */
+html[data-slavia-preset='platform']:not(.dark) body,
+html.light[data-slavia-preset='platform'] body {
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(15, 23, 42, 0.06), transparent 45%),
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  background-color: #eef2f7;
+}
+
+html[data-slavia-preset='platform']:not(.dark) .bg-background,
+html.light[data-slavia-preset='platform'] .bg-background {
+  background-color: #fcfdfe;
+}
+
+html[data-slavia-preset='platform']:not(.dark),
+html.light[data-slavia-preset='platform'] {
+  --ui-bg: #f9fafb;
+  --ui-bg-muted: #f1f5f9;
+  --ui-bg-elevated: #eceff3;
+  --ui-border: #e2e8f0;
+  --ui-text-muted: #5f6c7b;
+  --ui-text-highlighted: #0f172a;
+}
+
+/** Ciemne warianty presetów — subtelny „klimat” sali */
+html.dark[data-slavia-preset='iron'] body {
+  background-image:
+    radial-gradient(ellipse 90% 55% at 80% -15%, rgba(56, 189, 248, 0.08), transparent 50%),
+    linear-gradient(168deg, #0b1220 0%, #0f172a 100%);
+}
+
+html.dark[data-slavia-preset='arena'] body {
+  background-image:
+    radial-gradient(ellipse 85% 50% at 50% -16%, rgba(251, 191, 36, 0.07), transparent 48%),
+    linear-gradient(172deg, #120f0d 0%, #1c1410 100%);
+}
+
+html.dark[data-slavia-preset='platform'] body {
+  background-image:
+    radial-gradient(circle at 50% 120%, rgba(16, 185, 129, 0.06), transparent 42%),
+    linear-gradient(180deg, #09090b 0%, #18181b 100%);
+}
+
+/** Motyw „midnight” */
+html[data-slavia-preset='midnight']:not(.dark) body,
+html.light[data-slavia-preset='midnight'] body {
+  background-image:
+    radial-gradient(ellipse 100% 55% at 50% -18%, rgba(99, 102, 241, 0.14), transparent 52%),
+    linear-gradient(172deg, #f4f4ff 0%, #e8e9f7 48%, #dfe2f2 100%);
+  background-color: #e2e5f2;
+}
+
+html[data-slavia-preset='midnight']:not(.dark) .bg-background,
+html.light[data-slavia-preset='midnight'] .bg-background {
+  background-color: color-mix(in oklab, #fafbff 94%, #c7d2fe);
+}
+
+html[data-slavia-preset='midnight']:not(.dark),
+html.light[data-slavia-preset='midnight'] {
+  --ui-bg: #f6f7fc;
+  --ui-bg-muted: #ebeefe;
+  --ui-bg-elevated: #e4e8fb;
+  --ui-border: #d9dff5;
+  --ui-text-muted: #5c6280;
+  --ui-text-highlighted: #111827;
+}
+
+html.dark[data-slavia-preset='midnight'] body {
+  background-image:
+    radial-gradient(ellipse 85% 55% at 70% -18%, rgba(52, 211, 153, 0.09), transparent 50%),
+    linear-gradient(165deg, #020617 0%, #0f172a 55%, #172554 100%);
+}
+
+/** Motyw „ruby” */
+html[data-slavia-preset='ruby']:not(.dark) body,
+html.light[data-slavia-preset='ruby'] body {
+  background-image:
+    radial-gradient(ellipse 95% 58% at 50% -18%, rgba(239, 68, 68, 0.11), transparent 52%),
+    linear-gradient(172deg, #fff8f7 0%, #fdeeed 45%, #f7e6e4 100%);
+  background-color: #f3e8e6;
+}
+
+html[data-slavia-preset='ruby']:not(.dark) .bg-background,
+html.light[data-slavia-preset='ruby'] .bg-background {
+  background-color: color-mix(in oklab, #fffbfb 92%, #fecaca);
+}
+
+html[data-slavia-preset='ruby']:not(.dark),
+html.light[data-slavia-preset='ruby'] {
+  --ui-bg: #fff9f8;
+  --ui-bg-muted: #faeeec;
+  --ui-bg-elevated: #f3e6e4;
+  --ui-border: #ecd9d6;
+  --ui-text-muted: #6f5450;
+  --ui-text-toned: #523936;
+  --ui-text: #3d2926;
+  --ui-text-highlighted: #1c1010;
+}
+
+html.dark[data-slavia-preset='ruby'] body {
+  background-image:
+    radial-gradient(ellipse 88% 52% at 50% -14%, rgba(248, 113, 113, 0.08), transparent 48%),
+    linear-gradient(172deg, #1c0a0a 0%, #2a1212 100%);
+}
+
+/**
+ * Akcent „primary” (skala green z UI) — spójność przycisków i pierścieni w każdym presecie.
+ */
+html[data-slavia-preset='iron']:not(.dark) {
+  --color-green-400: #38bdf8;
+  --color-green-500: #0ea5e9;
+  --color-green-600: #0284c7;
+}
+
+html.dark[data-slavia-preset='iron'] {
+  --color-green-400: #67e8f9;
+  --color-green-500: #22d3ee;
+  --color-green-600: #06b6d4;
+}
+
+html[data-slavia-preset='arena']:not(.dark) {
+  --color-green-400: #34d399;
+  --color-green-500: #059669;
+  --color-green-600: #047857;
+}
+
+html.dark[data-slavia-preset='arena'] {
+  --color-green-400: #fcd34d;
+  --color-green-500: #fbbf24;
+  --color-green-600: #d97706;
+}
+
+html[data-slavia-preset='platform']:not(.dark) {
+  --color-green-400: #34d399;
+  --color-green-500: #10b981;
+  --color-green-600: #059669;
+}
+
+html.dark[data-slavia-preset='platform'] {
+  --color-green-400: #6ee7b7;
+  --color-green-500: #34d399;
+  --color-green-600: #10b981;
+}
+
+html[data-slavia-preset='midnight']:not(.dark) {
+  --color-green-400: #4ade80;
+  --color-green-500: #22c55e;
+  --color-green-600: #16a34a;
+}
+
+html.dark[data-slavia-preset='midnight'] {
+  --color-green-400: #6ee7b7;
+  --color-green-500: #34d399;
+  --color-green-600: #10b981;
+}
+
+html[data-slavia-preset='ruby']:not(.dark) {
+  --color-green-400: #fb7185;
+  --color-green-500: #f43f5e;
+  --color-green-600: #e11d48;
+}
+
+html.dark[data-slavia-preset='ruby'] {
+  --color-green-400: #fca5a5;
+  --color-green-500: #f87171;
+  --color-green-600: #ef4444;
 }
 
 /**
@@ -244,5 +573,133 @@ html.dark .slavia-select option,
 
   .slavia-form-panel__icon {
     @apply flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/25;
+  }
+
+  .slavia-rich-editor-prose .ProseMirror {
+    min-height: inherit;
+  }
+
+  .slavia-rich-editor-prose .ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+    width: 100%;
+    @apply text-muted;
+  }
+
+  .slavia-rich-editor-prose .ProseMirror h2 {
+    @apply mt-4 mb-2 text-xl font-bold text-highlighted;
+  }
+
+  .slavia-rich-editor-prose .ProseMirror h3 {
+    @apply mt-3 mb-1.5 text-lg font-semibold text-highlighted;
+  }
+
+  .slavia-rich-editor-prose .ProseMirror blockquote {
+    @apply border-l-4 border-primary/45 pl-4 italic text-muted;
+  }
+
+  .slavia-rich-editor-prose .ProseMirror hr {
+    @apply my-6 border-default/60;
+  }
+
+  /**
+   * Treść z TipTap (blog / dziennik): kolory, marker i text-align przychodzą jako inline `style`.
+   * `prose` + wcześniejsze reguły z `@apply text-highlighted` na h2/h3 mogły „zjadać” efekt — dlatego
+   * domyślny kolor nagłówków/linków stosujemy tylko gdy autor nie ustawił własnego koloru w HTML.
+   */
+  .slavia-rich-content {
+    @apply text-muted;
+  }
+
+  .slavia-rich-content :where(h2) {
+    @apply mt-6 text-xl font-bold first:mt-0;
+  }
+
+  .slavia-rich-content :where(h2):not([style*='color']) {
+    @apply text-highlighted;
+  }
+
+  .slavia-rich-content :where(h3) {
+    @apply mt-4 text-lg font-semibold;
+  }
+
+  .slavia-rich-content :where(h3):not([style*='color']) {
+    @apply text-highlighted;
+  }
+
+  .slavia-rich-content :where(h4) {
+    @apply mt-3 text-base font-semibold;
+  }
+
+  .slavia-rich-content :where(h4):not([style*='color']) {
+    @apply text-highlighted;
+  }
+
+  .slavia-rich-content :where(p) {
+    @apply mb-3 leading-relaxed last:mb-0;
+  }
+
+  .slavia-rich-content :where(ul, ol) {
+    @apply mb-3;
+  }
+
+  /* TipTap dodaje klasy `list-disc` / `list-decimal` — nie nadpisuj wtedy paddingu ani stylu listy */
+  .slavia-rich-content :where(ul:not([class*='list-'])) {
+    @apply list-disc pl-6;
+  }
+
+  .slavia-rich-content :where(ol:not([class*='list-'])) {
+    @apply list-decimal pl-6;
+  }
+
+  .slavia-rich-content :where(li) {
+    @apply mb-1;
+  }
+
+  .slavia-rich-content :where(li > ul, li > ol) {
+    @apply mt-1 mb-0;
+  }
+
+  .slavia-rich-content :where(a) {
+    @apply font-medium underline underline-offset-2;
+  }
+
+  .slavia-rich-content :where(a):not([style*='color']) {
+    @apply text-primary;
+  }
+
+  .slavia-rich-content :where(blockquote) {
+    @apply mb-3 border-l-4 border-primary/40 pl-4 italic;
+  }
+
+  .slavia-rich-content :where(blockquote):not([style*='color']) {
+    @apply text-muted;
+  }
+
+  .slavia-rich-content :where(hr) {
+    @apply my-6 border-default/60;
+  }
+
+  .slavia-rich-content :where(pre) {
+    @apply mb-3 overflow-x-auto rounded-lg bg-muted/40 p-3 font-mono text-sm leading-relaxed text-highlighted;
+  }
+
+  .slavia-rich-content :where(code) {
+    @apply rounded-md bg-muted/40 px-1.5 py-0.5 font-mono text-sm text-highlighted;
+  }
+
+  .slavia-rich-content pre code {
+    @apply rounded-none bg-transparent p-0 text-inherit;
+  }
+
+  .slavia-rich-content mark {
+    @apply rounded px-0.5 decoration-clone;
+    box-decoration-break: clone;
+  }
+
+  .slavia-rich-content :where(u) {
+    text-underline-offset: 2px;
   }
 }

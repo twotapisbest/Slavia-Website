@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { Athlete, TrainingLogEntry } from '~/types/models'
 import { getApiErrorMessage } from '~/composables/useApi'
+import { isProbablyRichHtml } from '~/utils/html'
+import { sanitizeRichHtml } from '~/utils/sanitizeHtml'
 
 definePageMeta({ middleware: 'athlete-dziennik' })
 
@@ -38,99 +40,6 @@ const { data: bundle, pending, refresh } = await useAsyncData(
 const meAthlete = computed(() => bundle.value?.athlete ?? null)
 const entries = computed(() => bundle.value?.entries ?? [])
 const athleteId = computed(() => meAthlete.value?.id ?? '')
-
-const newForm = reactive({
-  session_date: new Date().toISOString().slice(0, 10),
-  title: '',
-  notes: ''
-})
-const adding = ref(false)
-
-async function addEntry() {
-  const aid = athleteId.value
-  if (!aid) {
-    return
-  }
-  const notes = newForm.notes.trim()
-  if (!notes) {
-    toast.add({ title: 'Uzupełnij treść wpisu', color: 'warning' })
-    return
-  }
-  adding.value = true
-  try {
-    await apiFetch(`/api/athletes/${aid}/training-log`, {
-      method: 'POST',
-      body: {
-        session_date: newForm.session_date,
-        title: newForm.title.trim() || undefined,
-        notes
-      }
-    })
-    toast.add({ title: 'Dodano wpis', color: 'success' })
-    newForm.notes = ''
-    newForm.title = ''
-    await refresh()
-  } catch (e) {
-    toast.add({
-      title: 'Nie udało się dodać wpisu',
-      description: getApiErrorMessage(e),
-      color: 'error'
-    })
-  } finally {
-    adding.value = false
-  }
-}
-
-const editOpen = ref(false)
-const editEntry = ref<TrainingLogEntry | null>(null)
-const editForm = reactive({
-  session_date: '',
-  title: '',
-  notes: ''
-})
-const savingEdit = ref(false)
-
-function openEdit(e: TrainingLogEntry) {
-  editEntry.value = e
-  editForm.session_date = e.session_date.slice(0, 10)
-  editForm.title = e.title || ''
-  editForm.notes = e.notes
-  editOpen.value = true
-}
-
-async function saveEdit() {
-  const aid = athleteId.value
-  if (!editEntry.value || !aid) {
-    return
-  }
-  const notes = editForm.notes.trim()
-  if (!notes) {
-    toast.add({ title: 'Treść nie może być pusta', color: 'warning' })
-    return
-  }
-  savingEdit.value = true
-  try {
-    await apiFetch(`/api/athletes/${aid}/training-log/${editEntry.value.id}`, {
-      method: 'PATCH',
-      body: {
-        session_date: editForm.session_date,
-        title: editForm.title.trim(),
-        notes
-      }
-    })
-    toast.add({ title: 'Zapisano', color: 'success' })
-    editOpen.value = false
-    await refresh()
-  } catch (e) {
-    toast.add({
-      title: 'Błąd zapisu',
-      description: getApiErrorMessage(e),
-      color: 'error'
-    })
-  } finally {
-    savingEdit.value = false
-  }
-}
 
 async function removeEntry(e: TrainingLogEntry) {
   const aid = athleteId.value
@@ -191,6 +100,13 @@ async function removeEntry(e: TrainingLogEntry) {
     <template v-else>
       <div class="mb-6 flex flex-wrap gap-2">
         <UButton
+          to="/athlete/dziennik/redaguj"
+          color="primary"
+          icon="i-lucide-maximize-2"
+        >
+          Nowy wpis — pełny ekran
+        </UButton>
+        <UButton
           icon="i-lucide-refresh-ccw"
           variant="soft"
           :loading="pending"
@@ -208,66 +124,6 @@ async function removeEntry(e: TrainingLogEntry) {
         </UButton>
       </div>
 
-      <div class="slavia-form-panel mb-10 shadow-md">
-        <div class="slavia-form-panel__header">
-          <div class="slavia-form-panel__title">
-            <span class="slavia-form-panel__icon">
-              <UIcon
-                name="i-lucide-plus"
-                class="size-4"
-              />
-            </span>
-            Nowy wpis
-          </div>
-          <p class="slavia-form-panel__desc">
-            Krótko zapisz jednostkę — trener może dopisać uwagi od siebie.
-          </p>
-        </div>
-        <div class="slavia-form-panel__body">
-          <div class="grid gap-5 sm:grid-cols-2">
-            <UFormField
-              label="Data jednostki"
-              required
-            >
-              <UInput
-                v-model="newForm.session_date"
-                type="date"
-                size="lg"
-                class="w-full"
-              />
-            </UFormField>
-            <UFormField label="Temat (opcjonalnie)">
-              <UInput
-                v-model="newForm.title"
-                placeholder="np. Przysiad / technika"
-                size="lg"
-                class="w-full"
-              />
-            </UFormField>
-          </div>
-          <UFormField
-            label="Treść / obciążenia / uwagi"
-            required
-          >
-            <UTextarea
-              v-model="newForm.notes"
-              :rows="5"
-              autoresize
-              placeholder="Opisz przebieg treningu…"
-              class="w-full"
-            />
-          </UFormField>
-          <UButton
-            size="lg"
-            :loading="adding"
-            icon="i-lucide-plus"
-            @click="addEntry"
-          >
-            Dodaj wpis
-          </UButton>
-        </div>
-      </div>
-
       <h2 class="mb-4 text-xl font-bold text-highlighted">
         Historia wpisów
       </h2>
@@ -276,7 +132,14 @@ async function removeEntry(e: TrainingLogEntry) {
         v-if="entries.length === 0"
         class="rounded-xl border border-dashed border-default py-14 text-center text-muted"
       >
-        Nie ma jeszcze wpisów — dodaj pierwszą jednostkę powyżej lub poczekaj na notatkę od trenera.
+        Nie ma jeszcze wpisów —
+        <NuxtLink
+          to="/athlete/dziennik/redaguj"
+          class="font-medium text-primary underline underline-offset-2"
+        >
+          dodaj pierwszą jednostkę
+        </NuxtLink>
+        lub poczekaj na notatkę od trenera.
       </div>
 
       <div
@@ -302,7 +165,12 @@ async function removeEntry(e: TrainingLogEntry) {
                   class="font-semibold text-highlighted"
                 >{{ e.title }}</span>
               </div>
-              <p class="text-sm text-highlighted whitespace-pre-wrap leading-relaxed">
+            <!-- eslint-disable-next-line vue/no-v-html — treść po DOMPurify -->
+            <div v-if="isProbablyRichHtml(e.notes)" class="slavia-rich-content text-sm leading-relaxed text-highlighted" v-html="sanitizeRichHtml(e.notes)" />
+              <p
+                v-else
+                class="text-sm text-highlighted whitespace-pre-wrap leading-relaxed"
+              >
                 {{ e.notes }}
               </p>
               <p class="text-[11px] text-muted pt-1 border-t border-default/60">
@@ -318,7 +186,7 @@ async function removeEntry(e: TrainingLogEntry) {
                 size="xs"
                 variant="soft"
                 icon="i-lucide-pencil"
-                @click="openEdit(e)"
+                :to="{ path: '/athlete/dziennik/redaguj', query: { wpis: e.id } }"
               >
                 Edytuj
               </UButton>
@@ -337,73 +205,5 @@ async function removeEntry(e: TrainingLogEntry) {
       </div>
     </template>
 
-    <UModal
-      v-model:open="editOpen"
-      title="Edytuj wpis"
-      :ui="{ overlay: 'z-[190]', content: 'z-[200]' }"
-    >
-      <template #content>
-        <div class="slavia-form-modal">
-          <div class="slavia-form-panel">
-            <div class="slavia-form-panel__header">
-              <div class="slavia-form-panel__title">
-                <span class="slavia-form-panel__icon">
-                  <UIcon
-                    name="i-lucide-book-open"
-                    class="size-4"
-                  />
-                </span>
-                Wpis w dzienniku
-              </div>
-            </div>
-            <div class="slavia-form-panel__body">
-              <UFormField label="Data">
-                <UInput
-                  v-model="editForm.session_date"
-                  type="date"
-                  size="lg"
-                  class="w-full"
-                />
-              </UFormField>
-              <UFormField label="Temat">
-                <UInput
-                  v-model="editForm.title"
-                  size="lg"
-                  class="w-full"
-                />
-              </UFormField>
-              <UFormField
-                label="Treść"
-                required
-              >
-                <UTextarea
-                  v-model="editForm.notes"
-                  :rows="6"
-                  autoresize
-                  class="w-full"
-                />
-              </UFormField>
-            </div>
-          </div>
-          <div class="slavia-form-actions border-t border-default/60 pt-4">
-            <UButton
-              color="neutral"
-              variant="outline"
-              size="lg"
-              @click="editOpen = false"
-            >
-              Anuluj
-            </UButton>
-            <UButton
-              size="lg"
-              :loading="savingEdit"
-              @click="saveEdit"
-            >
-              Zapisz
-            </UButton>
-          </div>
-        </div>
-      </template>
-    </UModal>
   </UContainer>
 </template>

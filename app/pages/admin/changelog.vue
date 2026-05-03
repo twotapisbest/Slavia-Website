@@ -8,6 +8,47 @@ useSeoMeta({
 
 const updates = [
   {
+    version: 'v2.1.1',
+    date: '3 Maj 2026',
+    title: 'Flagi eksperymentalne z kill switchem deployu i pełnym panelem Dev Tools',
+    features: [
+      'Katalog funkcji eksperymentalnych rozszerzony o PWA (service worker), analizę toru sztangi (TensorFlow) oraz dzwonek powiadomień — każda ma przełącznik na `/superadmin/developer`.',
+      'Zmienna środowiskowa `NUXT_PUBLIC_EXPERIMENTAL_KILL_SWITCH` (lista id rozdzielonych przecinkami) trwale wyłącza wybrane funkcje na buildzie — ratunek na produkcji bez liczenia na localStorage użytkowników.',
+      'Plugin startowy: najpierw hydracja nadpisań z localStorage, potem warunkowa rejestracja Vite PWA — spójna kolejność z flagami.',
+      'Profil: przycisk instalacji PWA widoczny tylko przy włączonej fladze `pwa_service_worker`; strony analizy sztangi pokazują komunikat, gdy wyłączono `barbell_pose_analysis`.',
+      'Panel developera: ostrzeżenie przy aktywnym kill switchu, badge „deploy OFF”, zablokowane przełączniki dla wymuszonych wyłączeń.',
+      'Developer tools — rozszerzone testy funkcjonalności: smoke czterech endpointów API do logów lokalnych, round-trip localStorage i sessionStorage, podsumowanie dostępności IDB/cache/share/geo/vibrate, preferencje wyświetlania i stan dokumentu, geometria ekranu, przełączanie pełnego ekranu, krótka wibracja, duplikat karty, pobranie pliku testowego z Blob.'
+    ],
+    type: 'feature'
+  },
+  {
+    version: 'v2.1.0',
+    date: '3 Maj 2026',
+    title: 'Edytor bogaty (TipTap), analiza toru sztangi, presety kolorystyczne i rozbudowane Dev Tools',
+    features: [
+      'Blog i dzienniki: edycja treści HTML przez TipTap (pogrubienia, listy, cytaty) z zachowaniem spójnego stylu wyświetlania.',
+      'URL wpisów bloga: ścieżki `slug--uuid` przyjazne SEO i udostępnianiu; lista bloga generuje poprawne odnośniki.',
+      'Analiza toru sztangi: strony `/trainer/analiza-sztangi` i `/athlete/analiza-sztangi` z modelem pose (TensorFlow.js) i heurystykami toru na canvasie.',
+      'Wygląd: sześć presetów kolorystycznych (profil) z dopasowanymi tokenami Nuxt UI na jasnym motywie — spójne obramowania, tła kart i tekst.',
+      'Superadmin — Developer tools: mapa tras aplikacji, dokumentacja zewnętrzna, ping API, czyszczenie Cache Storage, zrzuty JSON środowiska, licznik wyników oczekujących.',
+      'Panele: uzupełnione skróty (m.in. changelog, blog, analiza sztangi, dzienniki) na dashboardach admin / trener / superadmin oraz u zawodnika.'
+    ],
+    type: 'feature'
+  },
+  {
+    version: 'v2.0.0',
+    date: '3 Maj 2026',
+    title: 'Nowa wersja 2.0 — PWA, slugowane URL i narzędzia developera',
+    features: [
+      'Aktualizacje bloga i zawodników: przyjazne URL-e w formacie `id-slug` zamiast samych identyfikatorów.',
+      'Poprawione wyświetlanie zdjęć wpisów na stronie szczegółowej posta oraz og:image dla SEO.',
+      'Dodano instalację PWA w profilu użytkownika i testowy ekran deweloperski dla SuperAdmina.',
+      'Wprowadzono testowe powiadomienia systemowe oraz komunikaty o zgodzie na powiadomienia.',
+      'Page changelog dostępny wewnątrz panelu administracyjnego zamiast zewnętrznego pliku Markdown.'
+    ],
+    type: 'feature'
+  },
+  {
     version: 'v1.10.0',
     date: '2 Maj 2026',
     title: 'Poprawki konfiguracji budowania i błędów TypeScript',

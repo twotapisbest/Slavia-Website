@@ -1,7 +1,15 @@
 <template>
-  <div>
+  <div class="animate-page-in relative">
+    <div
+      class="pointer-events-none absolute -left-20 top-24 size-[280px] rounded-full bg-primary/8 blur-3xl dark:bg-primary/15"
+      aria-hidden="true"
+    />
+    <div
+      class="pointer-events-none absolute -right-16 top-[42vh] size-[240px] rounded-full bg-muted blur-3xl opacity-70"
+      aria-hidden="true"
+    />
     <UPageHero
-      class="relative overflow-hidden"
+      class="relative overflow-hidden max-md:pb-4"
       :ui="{
         container: 'lg:gap-12 xl:gap-16',
         title: 'text-pretty max-w-3xl text-3xl leading-tight sm:text-4xl lg:text-5xl xl:text-6xl xl:max-w-4xl',

@@ -1,17 +1,33 @@
 <script setup lang="ts">
 const auth = useAuth()
+const appearance = useSlaviaAppearance()
+const clubNotificationBellOn = useExperimentalFlag('club_notification_bell')
 /** Krótki splash tylko przy pierwszym paint — długi overlay blokował interakcję i powodował „trzeba odświeżyć”. */
 const isAppLoading = ref(true)
 const config = useRuntimeConfig()
 
-onMounted(() => {
-  if (auth.token.value) {
-    auth.fetchMe()
+onMounted(async () => {
+  if (import.meta.client && auth.token.value) {
+    await auth.fetchMe()
   }
+  appearance.hydrate()
   requestAnimationFrame(() => {
     isAppLoading.value = false
   })
 })
+
+watch(
+  () => auth.token.value,
+  async (t) => {
+    if (!import.meta.client) {
+      return
+    }
+    if (t) {
+      await auth.fetchMe()
+    }
+    appearance.hydrate()
+  }
+)
 
 watch(isAppLoading, (loading) => {
   if (!import.meta.client) return
@@ -139,7 +155,7 @@ async function logout() {
         <template #right>
           <div class="flex shrink-0 items-center gap-1.5 sm:gap-3">
             <template v-if="auth.isLoggedIn.value">
-              <ClubNotificationBell />
+              <ClubNotificationBell v-if="clubNotificationBellOn" />
               <NuxtLink
                 :to="dashboardLink"
                 class="flex h-10 w-10 items-center justify-center rounded-full ring-1 ring-primary/25 transition-colors hover:bg-primary/10 sm:hidden"

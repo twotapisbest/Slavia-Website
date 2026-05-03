@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Athlete } from '~/types/models'
+import { trainerDiaryAthletePath } from '~/utils/slug'
 
 definePageMeta({ middleware: 'trainer' })
 
@@ -73,7 +74,7 @@ const filtered = computed(() => {
       <NuxtLink
         v-for="a in filtered"
         :key="a.id"
-        :to="`/trainer/dziennik/${a.id}`"
+        :to="trainerDiaryAthletePath(a.full_name, a.id)"
         class="group flex items-center justify-between gap-3 rounded-xl border border-default bg-card p-4 transition-all hover:border-primary/40 hover:shadow-md"
       >
         <div class="min-w-0">

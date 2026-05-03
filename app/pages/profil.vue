@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { getApiErrorMessage } from '~/composables/useApi'
+import { usePwaInstall } from '~/composables/usePwaInstall'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -11,6 +12,34 @@ useSeoMeta({
 const auth = useAuth()
 const apiFetch = useApi()
 const toast = useToast()
+const pwaFeatureOn = useExperimentalFlag('pwa_service_worker')
+const { supported: pwaSupported, canPrompt, promptInstall, installed } = usePwaInstall()
+const { preset, presets, setPreset, colorMode } = useSlaviaAppearance()
+
+async function installPwaFromProfile() {
+  if (!import.meta.client) {
+    return
+  }
+  if (installed.value) {
+    toast.add({ title: 'Aplikacja jest już zainstalowana', color: 'info' })
+    return
+  }
+  if (!canPrompt.value) {
+    toast.add({
+      title: 'Instalacja niedostępna',
+      description: pwaSupported
+        ? 'Na desktopie działa m.in. Chrome i Edge po spełnieniu kryteriów PWA; poczekaj na gotowość promptu przeglądarki.'
+        : 'Ta przeglądarka nie obsługuje instalacji z poziomu strony (np. Firefox lub Safari).',
+      color: 'warning'
+    })
+    return
+  }
+  const accepted = await promptInstall()
+  toast.add({
+    title: accepted ? 'Aplikacja zainstalowana' : 'Instalacja anulowana',
+    color: accepted ? 'success' : 'info'
+  })
+}
 
 const form = reactive({
   email: '',
@@ -258,12 +287,97 @@ async function save() {
               >
                 Wgraj z urządzenia
               </UButton>
+              <template v-if="pwaFeatureOn">
+                <UButton
+                  color="primary"
+                  variant="soft"
+                  block
+                  size="lg"
+                  class="justify-center font-semibold"
+                  @click="installPwaFromProfile"
+                >
+                  {{ installed ? 'Aplikacja zainstalowana' : 'Zainstaluj aplikację' }}
+                </UButton>
+                <p
+                  v-if="!canPrompt"
+                  class="text-xs text-muted"
+                >
+                  Instalacja PWA jest dostępna w przeglądarce wspierającej instalację i po załadowaniu strony.
+                </p>
+              </template>
+              <p
+                v-else
+                class="text-xs leading-relaxed text-muted"
+              >
+                Instalacja PWA i service worker są wyłączone (flaga eksperymentalna lub ustawienie deployu).
+              </p>
             </div>
           </UCard>
         </aside>
 
         <!-- Formularze -->
         <div class="min-w-0 space-y-8 lg:col-span-7 xl:col-span-8">
+          <UCard class="border-default/70 shadow-md ring-1 ring-default/40">
+            <div class="border-b border-default/60 bg-muted/20 px-5 py-4 dark:bg-muted/10 md:px-6">
+              <h2 class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-highlighted">
+                <span class="flex size-8 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/25">
+                  <UIcon
+                    name="i-lucide-palette"
+                    class="size-4"
+                  />
+                </span>
+                Wygląd (tylko Twoje konto)
+              </h2>
+              <p class="mt-2 max-w-2xl text-[11px] leading-snug text-muted md:text-xs">
+                Jasny / ciemny i zestawy kolorystyczne zapisujemy w tej przeglądarce powiązane z Twoim kontem.
+                Goście widzą tylko przełącznik jasny–ciemny w nagłówku.
+              </p>
+            </div>
+            <div class="space-y-6 p-5 md:p-8">
+              <UFormField label="Tryb jasny / ciemny">
+                <div class="flex flex-wrap gap-2">
+                  <UButton
+                    size="lg"
+                    :variant="colorMode.preference === 'light' ? 'solid' : 'outline'"
+                    color="neutral"
+                    icon="i-lucide-sun"
+                    @click="colorMode.preference = 'light'"
+                  >
+                    Jasny
+                  </UButton>
+                  <UButton
+                    size="lg"
+                    :variant="colorMode.preference === 'dark' ? 'solid' : 'outline'"
+                    color="neutral"
+                    icon="i-lucide-moon"
+                    @click="colorMode.preference = 'dark'"
+                  >
+                    Ciemny
+                  </UButton>
+                </div>
+              </UFormField>
+              <UFormField label="Motyw kolorystyczny">
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <button
+                    v-for="p in presets"
+                    :key="p.id"
+                    type="button"
+                    class="rounded-2xl border px-4 py-3 text-left transition-colors ring-1"
+                    :class="
+                      preset === p.id
+                        ? 'border-primary/60 bg-primary/10 ring-primary/35'
+                        : 'border-default/70 bg-muted/10 ring-default/30 hover:border-primary/35'
+                    "
+                    @click="setPreset(p.id)"
+                  >
+                    <span class="block text-sm font-semibold text-highlighted">{{ p.label }}</span>
+                    <span class="mt-1 block text-xs leading-snug text-muted">{{ p.description }}</span>
+                  </button>
+                </div>
+              </UFormField>
+            </div>
+          </UCard>
+
           <UCard class="border-default/70 shadow-md ring-1 ring-default/40">
             <div class="border-b border-default/60 bg-muted/20 px-5 py-4 dark:bg-muted/10 md:px-6">
               <h2 class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-highlighted">

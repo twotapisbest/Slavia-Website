@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { format, parseISO } from 'date-fns'
 import { pl } from 'date-fns/locale'
+import { stripHtmlTags } from '~/utils/html'
+import { sanitizeRichHtml } from '~/utils/sanitizeHtml'
+import { blogEditPath, blogPostPath, slugify } from '~/utils/slug'
 
 useSeoMeta({
   title: 'Blog klubowy — Slavia Ruda Śląska',
@@ -22,89 +25,44 @@ interface BlogPost {
   content: string
   image_url?: string
   created_at: string
+  /** Obecne tylko przy liście `/manage`; przy `/api/posts` zawsze opublikowane. */
+  published?: boolean
 }
 
-const { data: posts, refresh, pending } = await useAsyncData('posts', () => apiFetch<BlogPost[]>('/api/posts'))
-
-const isModalOpen = ref(false)
-const isSubmitting = ref(false)
-const fileInputRef = ref<HTMLInputElement | null>(null)
-const formState = reactive({
-  title: '',
-  content: '',
-  image_url: ''
-})
-
-const uploadLoading = ref(false)
-
-function clickFileInput() {
-  fileInputRef.value?.click()
-}
-
-function openModal() {
-  if (!isAdmin.value) return
-
-  formState.title = ''
-  formState.content = ''
-  formState.image_url = ''
-  isModalOpen.value = true
-}
-
-async function onFileChange(e: Event) {
-  if (!isAdmin.value) {
-    toast.add({ title: 'Brak uprawnień', color: 'error' })
-    return
+async function fetchBlogPostsList(): Promise<BlogPost[]> {
+  const wantsManage = auth.isAdmin.value && !!auth.token.value
+  if (wantsManage) {
+    try {
+      return await apiFetch<BlogPost[]>('/api/posts/manage')
+    } catch {
+      /* Token wygasł / brak uprawnień po stronie API — nadal pokaż listę publiczną zamiast „pustki”. */
+      try {
+        return await apiFetch<BlogPost[]>('/api/posts')
+      } catch {
+        return []
+      }
+    }
   }
-
-  const input = e.target as HTMLInputElement
-  if (!input.files?.length) return
-  const file = input.files[0] as File | undefined
-  if (!file) return
-
-  const formData = new FormData()
-  formData.append('file', file)
-
-  uploadLoading.value = true
   try {
-    const res = await apiFetch<{ url: string }>('/api/upload', {
-      method: 'POST',
-      body: formData
-    })
-    formState.image_url = res.url
-    toast.add({ title: 'Zdjęcie przesłane', color: 'success' })
-  } catch (err) {
-    toast.add({ title: 'Błąd uploadu', description: String(err), color: 'error' })
-  } finally {
-    uploadLoading.value = false
+    return await apiFetch<BlogPost[]>('/api/posts')
+  } catch {
+    return []
   }
 }
 
-async function savePost() {
-  if (!isAdmin.value) {
-    toast.add({ title: 'Brak uprawnień', color: 'error' })
-    return
+const { data: posts, refresh, pending } = await useAsyncData(
+  'blog-posts-list',
+  fetchBlogPostsList,
+  {
+    watch: [
+      () => auth.isAdmin.value,
+      () => auth.token.value,
+      () => auth.user.value?.id,
+      () => auth.user.value?.role
+    ],
+    default: () => [] as BlogPost[]
   }
-
-  if (!formState.title || !formState.content) {
-    toast.add({ title: 'Wypełnij wszystkie pola', color: 'error' })
-    return
-  }
-
-  isSubmitting.value = true
-  try {
-    await apiFetch('/api/posts', {
-      method: 'POST',
-      body: formState
-    })
-    toast.add({ title: 'Wpis dodany', color: 'success' })
-    isModalOpen.value = false
-    await refresh()
-  } catch (_error) {
-    toast.add({ title: 'Wystąpił błąd', description: String(_error), color: 'error' })
-  } finally {
-    isSubmitting.value = false
-  }
-}
+)
 
 async function deletePost(id: string) {
   if (!isAdmin.value) {
@@ -132,10 +90,18 @@ function formatDate(dateStr: string) {
     return dateStr
   }
 }
+
+function postUrl(post: BlogPost) {
+  return blogPostPath(slugify(post.title) || 'wpis', post.id)
+}
+
+function editPostUrl(post: BlogPost) {
+  return blogEditPath(slugify(post.title) || 'wpis', post.id)
+}
 </script>
 
 <template>
-  <UContainer class="py-8 sm:py-12 lg:py-14">
+  <UContainer class="animate-page-in py-8 sm:py-12 lg:py-14">
     <div class="mb-8 flex flex-col gap-4 sm:mb-10 md:flex-row md:items-end md:justify-between">
       <div class="min-w-0">
         <h1 class="text-2xl font-bold tracking-tight text-highlighted sm:text-3xl lg:text-4xl">
@@ -147,10 +113,10 @@ function formatDate(dateStr: string) {
       </div>
       <UButton
         v-if="isAdmin"
+        to="/blog/nowy"
         icon="i-lucide-pen-tool"
         color="primary"
         class="min-h-11 w-full shrink-0 justify-center md:w-auto"
-        @click="openModal"
       >
         Dodaj wpis
       </UButton>
@@ -217,16 +183,26 @@ function formatDate(dateStr: string) {
             />
             {{ formatDate(post.created_at) }}
           </p>
-          <h3 class="text-xl font-bold text-highlighted mb-3 line-clamp-2">
-            {{ post.title }}
-          </h3>
+          <div class="mb-3 flex flex-wrap items-center gap-2">
+            <h3 class="text-xl font-bold text-highlighted line-clamp-2 flex-1 min-w-0">
+              {{ post.title }}
+            </h3>
+            <UBadge
+              v-if="isAdmin && post.published === false"
+              color="warning"
+              variant="subtle"
+              size="xs"
+            >
+              Szkic
+            </UBadge>
+          </div>
           <p class="text-muted text-sm line-clamp-3 mb-4">
-            {{ post.content }}
+            {{ stripHtmlTags(sanitizeRichHtml(post.content)) }}
           </p>
 
-          <div class="mt-auto flex flex-col gap-3 border-t border-default pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="mt-auto flex flex-col gap-3 border-t border-default pt-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <UButton
-              :to="`/blog/${post.id}`"
+              :to="postUrl(post)"
               variant="link"
               color="primary"
               trailing-icon="i-lucide-arrow-right"
@@ -235,116 +211,35 @@ function formatDate(dateStr: string) {
               Czytaj więcej
             </UButton>
 
-            <UButton
+            <div
               v-if="isAdmin"
-              size="sm"
-              color="error"
-              variant="ghost"
-              icon="i-lucide-trash-2"
-              class="min-h-10 self-start sm:self-auto"
-              @click="deletePost(post.id)"
+              class="flex flex-wrap gap-2"
             >
-              Usuń
-            </UButton>
+              <UButton
+                :to="editPostUrl(post)"
+                size="sm"
+                color="neutral"
+                variant="soft"
+                icon="i-lucide-pencil"
+                class="min-h-10"
+              >
+                Edytuj
+              </UButton>
+              <UButton
+                size="sm"
+                color="error"
+                variant="ghost"
+                icon="i-lucide-trash-2"
+                class="min-h-10"
+                @click="deletePost(post.id)"
+              >
+                Usuń
+              </UButton>
+            </div>
           </div>
         </div>
       </UCard>
     </div>
 
-    <!-- Modal do dodawania -->
-    <UModal
-      v-model:open="isModalOpen"
-      title="Nowy wpis"
-    >
-      <template #content>
-        <div class="slavia-form-modal">
-          <form
-            class="slavia-form-stack"
-            @submit.prevent="savePost"
-          >
-            <div class="slavia-form-panel">
-              <div class="slavia-form-panel__header">
-                <div class="slavia-form-panel__title">
-                  <span class="slavia-form-panel__icon">
-                    <UIcon
-                      name="i-lucide-file-text"
-                      class="size-4"
-                    />
-                  </span>
-                  Treść wpisu
-                </div>
-              </div>
-              <div class="slavia-form-panel__body">
-                <UFormField
-                  label="Tytuł"
-                  required
-                >
-                  <UInput
-                    v-model="formState.title"
-                    placeholder="Wpisz chwytliwy tytuł..."
-                    size="lg"
-                    class="w-full"
-                  />
-                </UFormField>
-                <UFormField label="Zdjęcie (URL lub upload)">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <UInput
-                      v-model="formState.image_url"
-                      placeholder="https://..."
-                      size="lg"
-                      class="min-w-0 flex-1"
-                    />
-                    <UButton
-                      icon="i-lucide-upload"
-                      color="neutral"
-                      variant="soft"
-                      size="lg"
-                      :loading="uploadLoading"
-                      @click="clickFileInput"
-                    />
-                    <input
-                      ref="fileInputRef"
-                      type="file"
-                      hidden
-                      accept="image/*"
-                      @change="onFileChange"
-                    >
-                  </div>
-                </UFormField>
-                <UFormField
-                  label="Treść"
-                  required
-                >
-                  <UTextarea
-                    v-model="formState.content"
-                    placeholder="O czym chcesz napisać?"
-                    :rows="8"
-                    class="w-full"
-                  />
-                </UFormField>
-              </div>
-            </div>
-            <div class="slavia-form-actions border-t border-default/60 pt-4">
-              <UButton
-                color="neutral"
-                variant="soft"
-                size="lg"
-                @click="isModalOpen = false"
-              >
-                Anuluj
-              </UButton>
-              <UButton
-                type="submit"
-                color="primary"
-                size="lg"
-                :loading="isSubmitting"
-              >
-                Opublikuj
-              </UButton>
-            </div>
-          </form>
-        </div>
-      </template>
-    </UModal>
   </UContainer>
 </template>

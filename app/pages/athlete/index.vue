@@ -173,11 +173,68 @@ useSeoMeta({
   robots: 'noindex, nofollow'
 })
 
+const welcomeName = computed(
+  () => athlete.value?.full_name?.trim() || auth.user.value?.username || 'Zawodniku'
+)
+
 const stats = computed(() => [
-  { label: 'Najlepszy Rwanie', value: athlete.value?.best_snatch_kg ? `${athlete.value.best_snatch_kg} kg` : '—' },
-  { label: 'Najlepszy Podrzut', value: athlete.value?.best_clean_jerk_kg ? `${athlete.value.best_clean_jerk_kg} kg` : '—' },
-  { label: 'Suma (Biathlon)', value: athlete.value?.total_kg ? `${athlete.value.total_kg} kg` : '—' }
+  {
+    label: 'Najlepsze rwanie',
+    shortLabel: 'Rwanie',
+    value: athlete.value?.best_snatch_kg ? `${athlete.value.best_snatch_kg}` : '—',
+    unit: athlete.value?.best_snatch_kg ? 'kg' : '',
+    icon: 'i-lucide-arrow-up'
+  },
+  {
+    label: 'Najlepszy podrzut',
+    shortLabel: 'Podrzut',
+    value: athlete.value?.best_clean_jerk_kg ? `${athlete.value.best_clean_jerk_kg}` : '—',
+    unit: athlete.value?.best_clean_jerk_kg ? 'kg' : '',
+    icon: 'i-lucide-arrow-down'
+  },
+  {
+    label: 'Suma (dwubój)',
+    shortLabel: 'Dwubój',
+    value: athlete.value?.total_kg ? `${athlete.value.total_kg}` : '—',
+    unit: athlete.value?.total_kg ? 'kg' : '',
+    icon: 'i-lucide-trophy'
+  }
 ])
+
+const athleteDashboardTiles = [
+  {
+    to: '/athlete/kalendarz',
+    title: 'Kalendarz startów',
+    desc: 'Przypisania zawodów od kadry',
+    icon: 'i-lucide-calendar-heart',
+    ring: 'ring-primary/25 hover:ring-primary/45',
+    iconBg: 'bg-primary/15 text-primary'
+  },
+  {
+    to: '/athlete/analiza-sztangi',
+    title: 'Tor sztangi',
+    desc: 'Analiza nagrania w przeglądarce',
+    icon: 'i-lucide-scan-line',
+    ring: 'ring-violet-500/20 hover:ring-violet-500/40',
+    iconBg: 'bg-violet-500/15 text-violet-600 dark:text-violet-400'
+  },
+  {
+    to: '/athlete/dziennik',
+    title: 'Dziennik treningów',
+    desc: 'Wpisy po jednostkach',
+    icon: 'i-lucide-book-marked',
+    ring: 'ring-cyan-500/25 hover:ring-cyan-500/45',
+    iconBg: 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400'
+  },
+  {
+    to: '/blog',
+    title: 'Blog klubu',
+    desc: 'Aktualności i komunikaty',
+    icon: 'i-lucide-newspaper',
+    ring: 'ring-amber-500/25 hover:ring-amber-500/45',
+    iconBg: 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
+  }
+] as const
 
 /** Wydarzenia z przypisań kadry — bez wpisów kategorii „trening” (stałe jednostki w klubie liczą się osobno w kalendarzu). */
 const assignedCompetitionStartsCount = computed(() => {
@@ -202,64 +259,145 @@ const pageLead = computed(() =>
 </script>
 
 <template>
-  <UContainer class="py-8 md:py-14 lg:py-16">
-    <div class="mb-10">
-      <div class="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-primary">
-        <UIcon
-          name="i-lucide-user"
-          class="size-4"
-        />
-        {{ pageHeading }}
-      </div>
-      <h1 class="mt-2 text-3xl font-bold tracking-tight text-highlighted">
-        Witaj, {{ auth.user.value?.username }}!
-      </h1>
-      <p class="mt-2 max-w-2xl text-muted">
-        {{ pageLead }}
-      </p>
-      <div
-        v-if="auth.isAthlete.value"
-        class="mt-6 flex flex-wrap items-stretch gap-3"
-      >
-        <UButton
-          to="/athlete/kalendarz"
-          icon="i-lucide-calendar-heart"
-          color="primary"
-          variant="soft"
-          class="min-h-11 w-full justify-center sm:w-auto"
+  <UContainer class="py-8 md:py-11 lg:py-14">
+    <!-- Hero dashboard -->
+    <div
+      class="relative mb-8 overflow-hidden rounded-[1.75rem] border border-primary/20 bg-linear-to-br from-primary/[0.14] via-card to-card shadow-sm ring-1 ring-primary/10 sm:rounded-3xl"
+    >
+      <div class="pointer-events-none absolute -right-24 -top-28 size-72 rounded-full bg-primary/25 blur-3xl" />
+      <div class="pointer-events-none absolute -bottom-20 -left-16 size-60 rounded-full bg-primary/10 blur-3xl" />
+      <div class="relative flex flex-col gap-8 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
+        <div class="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
+          <div class="relative shrink-0">
+            <div class="absolute -inset-1 rounded-full bg-linear-to-br from-primary/40 to-primary/5 opacity-80 blur-sm" />
+            <UAvatar
+              :src="auth.user.value?.avatar_url || undefined"
+              :alt="welcomeName"
+              size="xl"
+              class="relative size-24 ring-2 ring-background shadow-lg sm:size-28"
+            />
+          </div>
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
+                <UIcon
+                  name="i-lucide-dumbbell"
+                  class="size-3.5"
+                />
+                {{ pageHeading }}
+              </span>
+              <UBadge
+                v-if="auth.user.value?.role"
+                color="neutral"
+                variant="subtle"
+                size="sm"
+              >
+                {{ auth.user.value.role }}
+              </UBadge>
+            </div>
+            <h1 class="mt-3 text-3xl font-black tracking-tight text-highlighted sm:text-4xl">
+              Cześć, {{ welcomeName }}
+            </h1>
+            <p class="mt-2 max-w-xl text-sm leading-relaxed text-muted sm:text-base">
+              {{ pageLead }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Skrócone PB w hero (tylko przy pełnym profilu) -->
+        <div
+          v-if="isAthleteRole && athlete"
+          class="flex shrink-0 flex-wrap gap-2 lg:flex-col lg:items-stretch xl:flex-row"
         >
-          Mój kalendarz startów
-        </UButton>
+          <div
+            v-for="s in stats"
+            :key="s.shortLabel"
+            class="flex items-center gap-3 rounded-2xl border border-default/50 bg-background/80 px-4 py-3 shadow-sm backdrop-blur-sm sm:min-w-38"
+          >
+            <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
+              <UIcon
+                :name="s.icon"
+                class="size-5"
+              />
+            </div>
+            <div class="min-w-0">
+              <p class="text-[10px] font-bold uppercase tracking-wider text-muted">
+                {{ s.shortLabel }}
+              </p>
+              <p class="truncate text-lg font-black tabular-nums text-highlighted">
+                {{ s.value }}<span
+                  v-if="s.unit"
+                  class="ml-0.5 text-sm font-bold text-primary"
+                >{{ s.unit }}</span>
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Licznik przypisanych zawodów (bez treningów klubowych) -->
+    <!-- Szybkie kafle (bento) -->
     <div
       v-if="isAthleteRole && athlete"
-      class="mb-10"
+      class="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+    >
+      <NuxtLink
+        v-for="tile in athleteDashboardTiles"
+        :key="tile.to"
+        :to="tile.to"
+        class="group relative overflow-hidden rounded-2xl border border-default/60 bg-card p-5 shadow-sm ring-1 ring-transparent transition duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        :class="tile.ring"
+      >
+        <div class="flex items-start justify-between gap-3">
+          <div
+            class="flex size-11 shrink-0 items-center justify-center rounded-xl transition-colors"
+            :class="tile.iconBg"
+          >
+            <UIcon
+              :name="tile.icon"
+              class="size-5"
+            />
+          </div>
+          <UIcon
+            name="i-lucide-arrow-up-right"
+            class="size-5 shrink-0 text-muted opacity-0 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100"
+          />
+        </div>
+        <p class="mt-4 font-bold text-highlighted">
+          {{ tile.title }}
+        </p>
+        <p class="mt-1 text-xs leading-relaxed text-muted">
+          {{ tile.desc }}
+        </p>
+      </NuxtLink>
+    </div>
+
+    <!-- Licznik startów + karty rekordów -->
+    <div
+      v-if="isAthleteRole && athlete"
+      class="mb-10 grid gap-6 xl:grid-cols-12 xl:items-stretch"
     >
       <UCard
-        class="overflow-hidden border border-primary/25 bg-linear-to-br from-primary/10 via-card to-card"
+        class="overflow-hidden border-primary/25 bg-linear-to-br from-primary/11 via-card to-card xl:col-span-5"
         :ui="{ body: 'sm:p-6 p-5' }"
       >
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div class="flex items-start gap-4">
-            <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/20 text-primary shadow-inner">
+            <div class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary/20 text-primary shadow-inner ring-1 ring-primary/20">
               <UIcon
                 name="i-lucide-calendar-check-2"
                 class="size-7"
               />
             </div>
             <div class="min-w-0">
-              <p class="text-xs font-bold uppercase tracking-wider text-primary">
+              <p class="text-xs font-bold uppercase tracking-[0.18em] text-primary">
                 Przypisane starty
               </p>
-              <p class="mt-1 text-4xl font-black tabular-nums text-highlighted">
+              <p class="mt-1 text-5xl font-black tabular-nums tracking-tight text-highlighted">
                 {{ assignedCompetitionStartsCount }}
               </p>
-              <p class="mt-2 max-w-xl text-sm leading-relaxed text-muted">
-                Liczba zawodów i wydarzeń, do których przypisała Cię kadra w systemie.
-                Stałe treningi klubowe (pn./śr./pt.) nie wchodzą do tego licznika — są widoczne osobno w kalendarzu.
+              <p class="mt-3 max-w-md text-xs leading-relaxed text-muted sm:text-sm">
+                Zawody i wydarzenia przypisane przez kadrę. Stałe treningi klubowe są osobno w kalendarzu.
               </p>
             </div>
           </div>
@@ -267,36 +405,46 @@ const pageLead = computed(() =>
             to="/athlete/kalendarz"
             trailing-icon="i-lucide-arrow-right"
             color="primary"
-            class="shrink-0 self-start sm:self-center"
+            size="lg"
+            class="shrink-0 self-start lg:self-center"
           >
-            Pełny harmonogram
+            Harmonogram
           </UButton>
         </div>
       </UCard>
-    </div>
 
-    <!-- Statystyki zawodnika -->
-    <div
-      v-if="isAthleteRole && athlete"
-      class="mb-12 grid grid-cols-1 gap-6 sm:grid-cols-3"
-    >
-      <UCard
-        v-for="s in stats"
-        :key="s.label"
-        class="border border-default/50 bg-muted/10"
-      >
-        <p class="text-xs font-semibold uppercase tracking-wider text-muted">
-          {{ s.label }}
-        </p>
-        <p class="mt-2 text-3xl font-bold text-primary">
-          {{ s.value }}
-        </p>
-      </UCard>
+      <div class="grid gap-4 sm:grid-cols-3 xl:col-span-7">
+        <UCard
+          v-for="s in stats"
+          :key="s.label"
+          class="relative overflow-hidden border-default/50 bg-muted/5 transition hover:border-primary/20 hover:bg-muted/10"
+        >
+          <div class="flex items-start gap-3">
+            <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
+              <UIcon
+                :name="s.icon"
+                class="size-[1.15rem]"
+              />
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-[10px] font-bold uppercase tracking-wider text-muted">
+                {{ s.label }}
+              </p>
+              <p class="mt-1.5 text-2xl font-black tabular-nums text-highlighted sm:text-3xl">
+                {{ s.value }}<span
+                  v-if="s.unit"
+                  class="ml-1 text-base font-bold text-primary sm:text-lg"
+                >{{ s.unit }}</span>
+              </p>
+            </div>
+          </div>
+        </UCard>
+      </div>
     </div>
 
     <div
       v-else-if="isAthleteRole && !athlete"
-      class="mb-12"
+      class="mb-10"
     >
       <UAlert
         icon="i-lucide-info"
@@ -304,17 +452,23 @@ const pageLead = computed(() =>
         description="Twoje konto nie jest jeszcze powiązane z rekordem zawodnika. Skontaktuj się z administratorem, aby połączyć swoje konto z danymi startowymi."
         color="warning"
         variant="subtle"
+        class="rounded-2xl"
       />
     </div>
 
+    <div class="grid gap-10 xl:grid-cols-12 xl:gap-8">
+      <!-- Lewa kolumna: formularze -->
+      <div class="space-y-10 xl:col-span-7">
     <!-- Edycja profilu -->
-    <section class="mb-12">
-      <h2 class="mb-4 flex items-center gap-2 text-xl font-bold text-highlighted">
-        <UIcon
-          name="i-lucide-shield"
-          class="size-5 text-primary"
-        />
-        Ustawienia konta
+    <section>
+      <h2 class="mb-5 flex items-center gap-3">
+        <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/15">
+          <UIcon
+            name="i-lucide-shield"
+            class="size-[1.35rem]"
+          />
+        </span>
+        <span class="text-lg font-black tracking-tight text-highlighted sm:text-xl">Ustawienia konta</span>
       </h2>
       <div class="slavia-form-panel shadow-md">
         <div class="slavia-form-panel__header">
@@ -411,14 +565,15 @@ const pageLead = computed(() =>
 
     <section
       v-if="isAthleteRole && athlete"
-      class="mb-12"
     >
-      <h2 class="mb-4 flex items-center gap-2 text-xl font-bold text-highlighted">
-        <UIcon
-          name="i-lucide-flag"
-          class="size-5 text-primary"
-        />
-        Zgłoś wynik do weryfikacji
+      <h2 class="mb-5 flex items-center gap-3">
+        <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/12 text-amber-600 ring-1 ring-amber-500/20 dark:text-amber-400">
+          <UIcon
+            name="i-lucide-flag"
+            class="size-[1.35rem]"
+          />
+        </span>
+        <span class="text-lg font-black tracking-tight text-highlighted sm:text-xl">Zgłoś wynik do weryfikacji</span>
       </h2>
       <div class="slavia-form-panel shadow-md">
         <div class="slavia-form-panel__header">
@@ -485,23 +640,28 @@ const pageLead = computed(() =>
         </div>
       </div>
     </section>
+      </div>
 
-    <div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
+      <!-- Prawa kolumna: historia + skróty klubu -->
+      <div class="space-y-10 xl:col-span-5">
       <!-- Ostatnie wyniki -->
       <section v-if="isAthleteRole">
-        <h2 class="mb-4 flex items-center gap-2 text-xl font-bold text-highlighted">
-          <UIcon
-            name="i-lucide-trophy"
-            class="size-5 text-yellow-500"
-          />
-          Twoje ostatnie starty
+        <h2 class="mb-5 flex items-center gap-3">
+          <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-yellow-500/15 text-yellow-600 ring-1 ring-yellow-500/25 dark:text-yellow-400">
+            <UIcon
+              name="i-lucide-trophy"
+              class="size-[1.35rem]"
+            />
+          </span>
+          <span class="text-lg font-black tracking-tight text-highlighted sm:text-xl">Ostatnie zgłoszenia</span>
         </h2>
         <UCard
           v-if="results && results.length > 0"
+          class="overflow-hidden rounded-2xl ring-1 ring-default/40"
           :ui="{ body: 'p-0' }"
         >
           <table class="w-full text-sm">
-            <thead class="border-b border-default bg-muted/30">
+            <thead class="border-b border-default/80 bg-muted/40">
               <tr>
                 <th class="px-4 py-3 text-left font-semibold text-muted">
                   Data
@@ -541,50 +701,25 @@ const pageLead = computed(() =>
         </UCard>
         <div
           v-else
-          class="rounded-xl border border-dashed border-default p-10 text-center text-muted"
+          class="rounded-2xl border border-dashed border-default/70 bg-muted/20 px-6 py-12 text-center text-sm text-muted"
         >
-          Nie znaleziono jeszcze żadnych wyników z Twoich startów.
+          Nie masz jeszcze zgłoszonych wyników — po wysłaniu wpisu pojawią się tutaj ze statusem weryfikacji.
         </div>
       </section>
 
-      <!-- Szybkie akcje -->
+      <!-- Skróty publiczne (bez duplikatów kafli powyżej) -->
       <section>
-        <h2 class="mb-4 flex items-center gap-2 text-xl font-bold text-highlighted">
-          <UIcon
-            name="i-lucide-zap"
-            class="size-5 text-primary"
-          />
-          Szybkie działania
+        <h2 class="mb-5 flex items-center gap-3">
+          <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/15">
+            <UIcon
+              name="i-lucide-compass"
+              class="size-[1.35rem]"
+            />
+          </span>
+          <span class="text-lg font-black tracking-tight text-highlighted sm:text-xl">Klub i narzędzia</span>
         </h2>
-        <div class="grid gap-4">
-          <UCard
-            v-if="isAthleteRole"
-            class="hover:bg-muted/10 transition-colors"
-          >
-            <NuxtLink
-              to="/athlete/dziennik"
-              class="flex items-center justify-between group"
-            >
-              <div class="flex items-center gap-3">
-                <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-600">
-                  <UIcon
-                    name="i-lucide-book-marked"
-                    class="size-5"
-                  />
-                </div>
-                <div>
-                  <h3 class="font-medium group-hover:text-cyan-600 transition-colors">Dziennik treningów</h3>
-                  <p class="text-xs text-muted">Wpisy trenera po jednostkach</p>
-                </div>
-              </div>
-              <UIcon
-                name="i-lucide-chevron-right"
-                class="size-5 text-muted group-hover:text-cyan-600"
-              />
-            </NuxtLink>
-          </UCard>
-
-          <UCard class="hover:bg-muted/10 transition-colors">
+        <div class="grid gap-3 sm:grid-cols-2">
+          <UCard class="rounded-2xl transition-colors hover:bg-muted/15 sm:col-span-2">
             <NuxtLink
               to="/ranking"
               class="flex items-center justify-between group"
@@ -608,7 +743,7 @@ const pageLead = computed(() =>
             </NuxtLink>
           </UCard>
 
-          <UCard class="hover:bg-muted/10 transition-colors">
+          <UCard class="rounded-2xl transition-colors hover:bg-muted/15">
             <NuxtLink
               to="/kalkulator-sinclair"
               class="flex items-center justify-between group"
@@ -632,7 +767,7 @@ const pageLead = computed(() =>
             </NuxtLink>
           </UCard>
 
-          <UCard class="hover:bg-muted/10 transition-colors">
+          <UCard class="rounded-2xl transition-colors hover:bg-muted/15">
             <NuxtLink
               to="/kalendarz"
               class="flex items-center justify-between group"
@@ -657,6 +792,7 @@ const pageLead = computed(() =>
           </UCard>
         </div>
       </section>
+      </div>
     </div>
   </UContainer>
 </template>

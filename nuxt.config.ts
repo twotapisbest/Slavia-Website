@@ -1,9 +1,32 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  // Najnowsze domyślne zachowanie Nitro / presetów modułów dla wybranej osi czasu (bump przy większych upgrade’ach Nuxt).
+  compatibilityDate: '2026-05-03',
+
   modules: [
     '@nuxt/eslint',
-    '@nuxt/ui'
+    '@nuxt/ui',
+    '@vite-pwa/nuxt'
   ],
+
+  pwa: {
+    registerType: 'autoUpdate',
+    includeAssets: ['favicon.ico', 'logo.png'],
+    manifest: {
+      name: 'CKS Slavia Ruda Śląska',
+      short_name: 'Slavia',
+      description: 'Aplikacja klubu sportowego CKS Slavia Ruda Śląska: zawodnicy, kalendarz, wyniki i powiadomienia.',
+      theme_color: '#0f172a',
+      background_color: '#0f172a',
+      display: 'standalone',
+      start_url: '/',
+      scope: '/',
+      icons: [
+        { src: '/logo.png', sizes: '192x192', type: 'image/png' },
+        { src: '/logo.png', sizes: '512x512', type: 'image/png' }
+      ]
+    }
+  },
 
   devtools: { enabled: true },
 
@@ -19,7 +42,14 @@ export default defineNuxtConfig({
       /**
        * Publiczny URL strony — używany do canonical/og:url.
        */
-      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+      /**
+       * Lista rozdzielona przecinkami: identyfikatory funkcji eksperymentalnych zawsze wyłączone na buildzie (deploy).
+       * Nadpisuje localStorage i domyślne „włączone”. Zob. `app/data/experimentalFeaturesCatalog.ts`.
+       *
+       * Przykład: `pwa_service_worker,barbell_pose_analysis,club_notification_bell`
+       */
+      experimentalKillSwitch: process.env.NUXT_PUBLIC_EXPERIMENTAL_KILL_SWITCH || ''
     }
   }
 })

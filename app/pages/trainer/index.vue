@@ -55,7 +55,7 @@ const competitionsCount = computed(() => (Array.isArray(competitions.value) ? co
 
 const quickLinks = computed(() => {
   const admin = auth.isAdmin.value
-  return [
+  const links = [
     {
       title: 'Lista zawodników',
       description: admin ? 'Pełna edycja bazy zawodników' : 'Podgląd publicznej listy aktywnych zawodników',
@@ -97,6 +97,32 @@ const quickLinks = computed(() => {
       bg: 'bg-cyan-500/10'
     },
     {
+      title: 'Analiza toru sztangi',
+      description: 'Wideo + AI w przeglądarce: tor ruchu i komunikaty techniczne',
+      icon: 'i-lucide-scan-line',
+      to: '/trainer/analiza-sztangi',
+      color: 'text-orange-500',
+      bg: 'bg-orange-500/10'
+    },
+    {
+      title: 'Blog klubu',
+      description: 'Aktualności, ogłoszenia i wpisy na stronie',
+      icon: 'i-lucide-newspaper',
+      to: '/blog',
+      color: 'text-amber-600',
+      bg: 'bg-amber-500/10'
+    },
+    ...(admin
+      ? [{
+          title: 'Changelog systemu',
+          description: 'Historia zmian widoczna dla administratorów',
+          icon: 'i-lucide-file-text',
+          to: '/admin/changelog',
+          color: 'text-emerald-600',
+          bg: 'bg-emerald-500/10'
+        }]
+      : []),
+    {
       title: 'Moje konto',
       description: 'E-mail, avatar i hasło',
       icon: 'i-lucide-user-cog',
@@ -105,6 +131,7 @@ const quickLinks = computed(() => {
       bg: 'bg-neutral-500/10'
     }
   ]
+  return links
 })
 
 async function approveResult(id: string) {

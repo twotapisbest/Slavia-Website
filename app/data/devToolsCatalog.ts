@@ -1,0 +1,113 @@
+/** Grupy odnośników na stronie narzędzi developera (mapa aplikacji). */
+
+export interface DevToolLinkItem {
+  to: string
+  label: string
+  description: string
+  icon: string
+}
+
+export interface DevToolLinkGroup {
+  title: string
+  description?: string
+  links: DevToolLinkItem[]
+}
+
+export const DEV_TOOL_LINK_GROUPS: DevToolLinkGroup[] = [
+  {
+    title: 'Strona publiczna',
+    description: 'Widok dostępny bez paneli — treści klubu i narzędzia dla gości.',
+    links: [
+      { to: '/', label: 'Start', description: 'Strona główna klubu', icon: 'i-lucide-home' },
+      { to: '/zawodnicy', label: 'Zawodnicy', description: 'Lista i profile (`imię-nazwisko--uuid`)', icon: 'i-lucide-users' },
+      { to: '/ranking', label: 'Ranking', description: 'Ranking klubowy', icon: 'i-lucide-trophy' },
+      { to: '/blog', label: 'Blog', description: 'Aktualności i wpisy', icon: 'i-lucide-newspaper' },
+      { to: '/kalendarz', label: 'Kalendarz', description: 'Wydarzenia i zawody', icon: 'i-lucide-calendar' },
+      { to: '/kalkulator-sinclair', label: 'Kalkulator Sinclair', description: 'Przelicznik punktów', icon: 'i-lucide-calculator' },
+      { to: '/logowanie', label: 'Logowanie', description: 'Formularz sesji', icon: 'i-lucide-log-in' }
+    ]
+  },
+  {
+    title: 'Panel zawodnika',
+    description: 'Ścieżki `/athlete/*` po zalogowaniu kontem z rolą zawodnika.',
+    links: [
+      { to: '/athlete', label: 'Dashboard', description: 'Profil, wyniki, skróty', icon: 'i-lucide-dumbbell' },
+      { to: '/athlete/kalendarz', label: 'Mój kalendarz', description: 'Przypisane starty', icon: 'i-lucide-calendar-heart' },
+      { to: '/athlete/dziennik', label: 'Dziennik', description: 'Wpisy treningowe', icon: 'i-lucide-book-marked' },
+      { to: '/athlete/analiza-sztangi', label: 'Analiza sztangi', description: 'Tor sztangi (wideo)', icon: 'i-lucide-scan-line' }
+    ]
+  },
+  {
+    title: 'Panel trenera',
+    description: 'Narzędzia kadry — trener, admin z dostępem trenera, superadmin.',
+    links: [
+      { to: '/trainer', label: 'Dashboard trenera', description: 'Podsumowanie i skróty', icon: 'i-lucide-layout-dashboard' },
+      { to: '/trainer/wyniki', label: 'Wszystkie starty', description: 'Lista i edycja wyników', icon: 'i-lucide-list-checks' },
+      { to: '/trainer/dziennik', label: 'Dzienniki (lista)', description: 'Wybór zawodnika (`…/imię--uuid`)', icon: 'i-lucide-book-open' },
+      { to: '/trainer/analiza-sztangi', label: 'Analiza sztangi', description: 'Wersja kadry', icon: 'i-lucide-scan-line' }
+    ]
+  },
+  {
+    title: 'Panel administratora',
+    description: 'Zarządzanie treścią i kontami (`/admin/*`).',
+    links: [
+      { to: '/admin', label: 'Dashboard admina', description: 'Statystyki i oczekujące wyniki', icon: 'i-lucide-shield' },
+      { to: '/admin/zawodnicy', label: 'Zawodnicy (CMS)', description: 'Edycja bazy zawodników', icon: 'i-lucide-users-round' },
+      { to: '/admin/konta', label: 'Konta kadry', description: 'Hasła i dostępy administracyjne', icon: 'i-lucide-key-round' },
+      { to: '/admin/changelog', label: 'Changelog', description: 'Historia zmian w systemie', icon: 'i-lucide-file-text' }
+    ]
+  },
+  {
+    title: 'Superadmin',
+    description: 'Pełna kontrola systemu i narzędzia developerskie.',
+    links: [
+      { to: '/superadmin', label: 'Dashboard', description: 'Statystyki i skróty', icon: 'i-lucide-crown' },
+      { to: '/superadmin/administratorzy', label: 'Administratorzy', description: 'Konta administracyjne', icon: 'i-lucide-shield-alert' },
+      { to: '/superadmin/zawodnicy', label: 'Baza (super)', description: 'Zawodnicy — widok superadmina', icon: 'i-lucide-database' },
+      { to: '/superadmin/developer', label: 'Developer tools', description: 'Ta strona — testy i diagnostyka', icon: 'i-lucide-terminal' }
+    ]
+  },
+  {
+    title: 'Konto i profil',
+    description: 'Wspólne ustawienia użytkownika.',
+    links: [
+      { to: '/profil', label: 'Profil', description: 'E-mail, avatar, hasło, motyw', icon: 'i-lucide-user-cog' }
+    ]
+  },
+  {
+    title: 'Dokumentacja zewnętrzna',
+    description: 'Przydatne przy pracy z frontem, PWA i przeglądarką.',
+    links: [
+      {
+        to: 'https://nuxt.com/docs',
+        label: 'Nuxt',
+        description: 'Framework aplikacji',
+        icon: 'i-lucide-book-open'
+      },
+      {
+        to: 'https://ui.nuxt.com/',
+        label: 'Nuxt UI',
+        description: 'Komponenty interfejsu',
+        icon: 'i-lucide-panels-top-left'
+      },
+      {
+        to: 'https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API',
+        label: 'MDN: Service Worker',
+        description: 'Cykl życia SW i cache',
+        icon: 'i-lucide-globe'
+      },
+      {
+        to: 'https://web.dev/explore/progressive-web-apps',
+        label: 'web.dev — PWA',
+        description: 'Instalacja i jakość PWA',
+        icon: 'i-lucide-smartphone'
+      },
+      {
+        to: 'https://developer.chrome.com/docs/devtools/',
+        label: 'Chrome DevTools',
+        description: 'Sieć, wydajność, Lighthouse',
+        icon: 'i-lucide-wrench'
+      }
+    ]
+  }
+]

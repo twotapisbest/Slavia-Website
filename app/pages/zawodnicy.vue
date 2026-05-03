@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AtheleteCard from '~/components/AtheleteCard.vue'
+import { athleteProfilePath } from '~/utils/slug'
 import type { Athlete as AthleteModel, CompetitionResult } from '~/types/models'
 import type { SinclairGender } from '~/utils/sinclair'
 import { sinclairTotal } from '~/utils/sinclair'
@@ -387,11 +388,16 @@ const filteredRankings = computed(() => {
         Karty Zawodników
       </h2>
       <div class="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12 xl:gap-14">
-        <AtheleteCard
+        <NuxtLink
           v-for="player in mappedPlayers"
-          :key="player.name"
-          :model-value="player"
-        />
+          :key="player.id"
+          :to="athleteProfilePath(player.name, player.id)"
+          class="block"
+        >
+          <AtheleteCard
+            :model-value="player"
+          />
+        </NuxtLink>
       </div>
     </div>
 

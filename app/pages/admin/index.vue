@@ -118,6 +118,15 @@ const quickLinksAll = [
     trainerOnly: false
   },
   {
+    title: 'Analiza toru sztangi',
+    description: 'Wideo i szkielet ruchu — narzędzie kadry (ścieżka trenera)',
+    icon: 'i-lucide-scan-line',
+    to: '/trainer/analiza-sztangi',
+    color: 'text-orange-500',
+    bg: 'bg-orange-500/10',
+    trainerOnly: false
+  },
+  {
     title: 'Konta kadry',
     description: 'Login, e-mail i hasła kont administracyjnych',
     icon: 'i-lucide-key-round',

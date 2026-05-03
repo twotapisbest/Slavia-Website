@@ -59,12 +59,52 @@ const quickLinks = [
     bg: 'bg-emerald-500/10'
   },
   {
+    title: 'Panel Zawodnika',
+    description: 'Zobacz interfejs tak jak po stronie zawodnika',
+    icon: 'i-lucide-dumbbell',
+    to: '/athlete',
+    color: 'text-amber-500',
+    bg: 'bg-amber-500/10'
+  },
+  {
     title: 'Baza Zawodników',
     description: 'Pełny dostęp do edycji bazy zawodników',
     icon: 'i-lucide-users',
     to: '/superadmin/zawodnicy',
     color: 'text-blue-500',
     bg: 'bg-blue-500/10'
+  },
+  {
+    title: 'Narzędzia developera',
+    description: 'Mapa tras, ping API, PWA, logi lokalne i zrzuty diagnostyczne',
+    icon: 'i-lucide-terminal',
+    to: '/superadmin/developer',
+    color: 'text-violet-500',
+    bg: 'bg-violet-500/10'
+  },
+  {
+    title: 'Changelog systemu',
+    description: 'Lista wydań — ta sama co w panelu admina',
+    icon: 'i-lucide-file-text',
+    to: '/admin/changelog',
+    color: 'text-emerald-500',
+    bg: 'bg-emerald-500/10'
+  },
+  {
+    title: 'Dzienniki treningów',
+    description: 'Wpisy po jednostkach — widok trenera',
+    icon: 'i-lucide-book-marked',
+    to: '/trainer/dziennik',
+    color: 'text-cyan-600',
+    bg: 'bg-cyan-500/10'
+  },
+  {
+    title: 'Analiza toru sztangi',
+    description: 'Wideo i diagnostyka toru (kadra)',
+    icon: 'i-lucide-scan-line',
+    to: '/trainer/analiza-sztangi',
+    color: 'text-orange-500',
+    bg: 'bg-orange-500/10'
   },
   {
     title: 'Kalendarz Systemowy',

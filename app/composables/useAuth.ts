@@ -60,6 +60,7 @@ export function useAuth() {
       username,
       role: res.role
     }
+    await fetchMe()
     return user.value
   }
 

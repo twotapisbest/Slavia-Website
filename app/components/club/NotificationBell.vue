@@ -3,14 +3,24 @@ import { formatDistanceToNow } from 'date-fns'
 import { pl } from 'date-fns/locale'
 import type { ClubNotification } from '~/types/notifications'
 import { getApiErrorMessage } from '~/composables/useApi'
+import { useBrowserNotifications } from '~/composables/useBrowserNotifications'
 
 const auth = useAuth()
 const toast = useToast()
 const { resolveLink } = useNotificationLinks()
 const { items, loading, refresh, remove, clearLocal } = useNotifications()
+const {
+  enabled: systemNotificationsEnabled,
+  permission,
+  supported,
+  hasPermission,
+  requestPermission,
+  setEnabled,
+  notify
+} = useBrowserNotifications()
 
 const popoverOpen = ref(false)
-
+const knownNotificationIds = ref<Set<string>>(new Set())
 let pollTimer: ReturnType<typeof setInterval> | undefined
 
 function relativeTime(iso: string) {
@@ -19,6 +29,24 @@ function relativeTime(iso: string) {
   } catch {
     return ''
   }
+}
+
+async function loadNotifications() {
+  if (!auth.isLoggedIn.value) return
+  await refresh()
+
+  const newNotifications = items.value.filter((item) => !knownNotificationIds.value.has(item.id))
+  if (newNotifications.length > 0 && systemNotificationsEnabled.value && hasPermission.value) {
+    newNotifications.slice(0, 2).forEach((n) => {
+      notify(n.title, {
+        body: n.body,
+        tag: n.id,
+        icon: '/logo.png'
+      })
+    })
+  }
+
+  knownNotificationIds.value = new Set(items.value.map((item) => item.id))
 }
 
 async function onRemove(id: string, e: Event) {
@@ -44,23 +72,36 @@ function onRowClick(n: ClubNotification) {
 }
 
 watch(popoverOpen, (open) => {
-  if (open) refresh()
+  if (open) loadNotifications()
 })
 
 watch(
   () => auth.isLoggedIn.value,
   (loggedIn) => {
-    if (loggedIn) refresh()
+    if (loggedIn) loadNotifications()
     else clearLocal()
   }
 )
 
+watch(systemNotificationsEnabled, async (enabled) => {
+  if (!import.meta.client || !enabled || permission.value === 'granted') return
+  const result = await requestPermission()
+  if (result !== 'granted') {
+    setEnabled(false)
+    toast.add({
+      title: 'Powiadomienia systemowe zablokowane',
+      description: 'Aby je włączyć, pozwól na powiadomienia w ustawieniach przeglądarki.',
+      color: 'warning'
+    })
+  }
+})
+
 onMounted(() => {
-  if (auth.isLoggedIn.value) refresh()
+  if (auth.isLoggedIn.value) loadNotifications()
   pollTimer = setInterval(() => {
     if (!auth.isLoggedIn.value || !import.meta.client) return
     if (typeof document !== 'undefined' && document.hidden) return
-    refresh()
+    loadNotifications()
   }, 90_000)
 })
 
@@ -102,6 +143,18 @@ onBeforeUnmount(() => {
         <p class="text-xs font-semibold uppercase tracking-wide text-muted">
           Powiadomienia
         </p>
+      </div>
+
+      <div class="border-b border-default px-4 py-4">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <p class="text-sm font-semibold text-highlighted">Powiadomienia systemowe</p>
+            <p class="mt-1 text-xs text-muted/80">Włącz, aby otrzymywać nowe powiadomienia jako alerty systemowe.</p>
+          </div>
+          <USwitch v-model="systemNotificationsEnabled" :disabled="!supported" />
+        </div>
+        <p v-if="!supported" class="mt-3 text-xs text-warning">Przeglądarka nie obsługuje notyfikacji systemowych.</p>
+        <p v-else-if="permission === 'denied'" class="mt-3 text-xs text-warning">Powiadomienia zablokowane w ustawieniach przeglądarki.</p>
       </div>
 
       <div class="max-h-[min(70vh,24rem)] overflow-y-auto overscroll-contain">

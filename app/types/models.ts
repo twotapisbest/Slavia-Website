@@ -10,6 +10,10 @@ export interface AuthUser {
   email?: string | null
   avatar_url?: string | null
   role: UserRole
+  /** Preset kolorystyczny zapisany na koncie (`slavia`, `iron`, …). */
+  ui_theme_preset?: string | null
+  /** Jasny / ciemny / system — zsynchronizowany z backendem. */
+  ui_color_mode?: string | null
 }
 
 export interface LoginResponse {
