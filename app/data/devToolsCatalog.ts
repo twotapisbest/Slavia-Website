@@ -46,8 +46,9 @@ export const DEV_TOOL_LINK_GROUPS: DevToolLinkGroup[] = [
     links: [
       { to: '/athlete', label: 'Dashboard', description: 'Profil, wyniki, skróty', icon: 'i-lucide-dumbbell' },
       { to: '/athlete/kalendarz', label: 'Mój kalendarz', description: 'Przypisane starty', icon: 'i-lucide-calendar-heart' },
-      { to: '/athlete/dziennik', label: 'Dziennik', description: 'Wpisy treningowe', icon: 'i-lucide-book-marked' },
-      { to: '/athlete/analiza-sztangi', label: 'Analiza sztangi', description: 'Tor sztangi (wideo)', icon: 'i-lucide-scan-line' }
+      { to: '/dziennik', label: 'Dziennik', description: 'Wpisy treningowe', icon: 'i-lucide-book-marked' },
+      { to: '/athlete/analiza-sztangi', label: 'Analiza sztangi', description: 'Tor sztangi (wideo)', icon: 'i-lucide-scan-line' },
+      { to: '/athlete/exercises', label: 'Inne ćwiczenia', description: 'Przysiady, martwy, wyciskanie — ranking', icon: 'i-lucide-dumbbell' }
     ]
   },
   {
@@ -58,7 +59,8 @@ export const DEV_TOOL_LINK_GROUPS: DevToolLinkGroup[] = [
       { to: '/trainer/zawodnicy', label: 'Zawodnicy (trener)', description: 'CRUD profili — konto logowania przez admina lub prośba', icon: 'i-lucide-users' },
       { to: '/trainer/wyniki', label: 'Wszystkie starty', description: 'Lista i edycja wyników', icon: 'i-lucide-list-checks' },
       { to: '/trainer/dziennik', label: 'Dzienniki (lista)', description: 'Wybór zawodnika (`…/imię--uuid`)', icon: 'i-lucide-book-open' },
-      { to: '/trainer/analiza-sztangi', label: 'Analiza sztangi', description: 'Wersja kadry', icon: 'i-lucide-scan-line' }
+      { to: '/trainer/analiza-sztangi', label: 'Analiza sztangi', description: 'Wersja kadry', icon: 'i-lucide-scan-line' },
+      { to: '/trainer/exercises', label: 'Inne ćwiczenia', description: 'Ranking przysiadów, martwego itp.', icon: 'i-lucide-bar-chart-3' }
     ]
   },
   {
@@ -79,7 +81,8 @@ export const DEV_TOOL_LINK_GROUPS: DevToolLinkGroup[] = [
       { to: '/superadmin', label: 'Dashboard', description: 'Statystyki i skróty', icon: 'i-lucide-crown' },
       { to: '/superadmin/administratorzy', label: 'Zarządzanie kontami', description: 'Lista kont i role — wybór motywu także w `/profil`', icon: 'i-lucide-shield-alert' },
       { to: '/superadmin/zawodnicy', label: 'Baza (super)', description: 'Zawodnicy — widok superadmina', icon: 'i-lucide-database' },
-      { to: '/superadmin/developer', label: 'Developer tools', description: 'Motyw (diag.), smoke API, funkcje eksperymentalne', icon: 'i-lucide-terminal' }
+      { to: '/superadmin/developer', label: 'Developer tools', description: 'Motyw (diag.), smoke API, funkcje eksperymentalne', icon: 'i-lucide-terminal' },
+      { to: '/superadmin/import', label: 'Import danych', description: 'Import z federacji PZPC, Śląski Związek, podnoszenieciezarów.pl', icon: 'i-lucide-download' }
     ]
   },
   {

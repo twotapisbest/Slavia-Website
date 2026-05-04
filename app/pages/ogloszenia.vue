@@ -3,6 +3,10 @@ import { format, parseISO } from 'date-fns'
 import { pl } from 'date-fns/locale'
 import { getApiErrorMessage } from '~/composables/useApi'
 
+definePageMeta({
+  middleware: 'auth'
+})
+
 interface Announcement {
   id: string
   title: string

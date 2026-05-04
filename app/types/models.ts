@@ -94,6 +94,9 @@ export interface CompetitionResult {
   total: number
   status: 'Pending' | 'Approved'
   date: string
+  squat_kg?: number | null
+  bench_kg?: number | null
+  deadlift_kg?: number | null
 }
 
 /** Wpis w dzienniku treningów (zawodnik edytuje/usuwa tylko wpisy z własnym `author_user_id`). */

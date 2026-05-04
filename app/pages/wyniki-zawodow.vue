@@ -12,6 +12,9 @@ interface PublicResultBoardRow {
   clean_and_jerk: number
   total: number
   date: string
+  squat_kg?: number | null
+  bench_kg?: number | null
+  deadlift_kg?: number | null
 }
 
 useSeoMeta({
@@ -40,6 +43,17 @@ function formatDate(d: string) {
   } catch {
     return d.slice(0, 10)
   }
+}
+
+function formatKg(v: number | null | undefined) {
+  if (v == null || Number.isNaN(v)) return '—'
+  return `${v}`
+}
+
+function formatPlTriple(r: PublicResultBoardRow) {
+  const has = r.squat_kg != null || r.bench_kg != null || r.deadlift_kg != null
+  if (!has) return '—'
+  return `${formatKg(r.squat_kg)} / ${formatKg(r.bench_kg)} / ${formatKg(r.deadlift_kg)}`
 }
 </script>
 
@@ -87,7 +101,7 @@ function formatDate(d: string) {
       v-else
       class="overflow-x-auto rounded-2xl border border-default"
     >
-      <table class="w-full min-w-[640px] text-left text-sm">
+      <table class="w-full min-w-[880px] text-left text-sm">
         <thead class="border-b border-default bg-muted/40 text-xs font-semibold uppercase tracking-wide text-muted">
           <tr>
             <th class="px-4 py-3">
@@ -107,6 +121,9 @@ function formatDate(d: string) {
             </th>
             <th class="px-4 py-3 text-right font-semibold text-highlighted">
               Razem
+            </th>
+            <th class="hidden px-4 py-3 text-right lg:table-cell" title="Przysiad / wycisk / martwy">
+              Siła (kg)
             </th>
           </tr>
         </thead>
@@ -133,6 +150,9 @@ function formatDate(d: string) {
             </td>
             <td class="px-4 py-3 text-right tabular-nums font-semibold text-primary">
               {{ r.total }} kg
+            </td>
+            <td class="hidden px-4 py-3 text-right text-xs tabular-nums text-muted lg:table-cell">
+              {{ formatPlTriple(r) }}
             </td>
           </tr>
         </tbody>

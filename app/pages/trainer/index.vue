@@ -99,6 +99,14 @@ const quickLinks = computed(() => {
       bg: 'bg-cyan-500/10'
     },
     {
+      title: 'Inne ćwiczenia',
+      description: 'Ranking przysiadów, wyciskania i martwego',
+      icon: 'i-lucide-bar-chart-3',
+      to: '/trainer/exercises',
+      color: 'text-lime-600',
+      bg: 'bg-lime-500/10'
+    },
+    {
       title: 'Analiza toru sztangi',
       description: 'Wideo + AI w przeglądarce: tor ruchu i komunikaty techniczne',
       icon: 'i-lucide-scan-line',

@@ -31,6 +31,11 @@ type ManagementLink = {
   emphasis?: boolean
 }
 
+type PanelSection = {
+  heading: string
+  links: ManagementLink[]
+}
+
 const items = computed(() => {
   const main = [
     { label: 'Ogłoszenia', to: '/ogloszenia' },
@@ -43,9 +48,12 @@ const items = computed(() => {
     { label: 'Kalkulator', to: '/kalkulator-sinclair' }
   ]
 
-  const management: ManagementLink[] = []
+  const adminLinks: ManagementLink[] = []
+  const athleteLinks: ManagementLink[] = []
+  const accountLinks: ManagementLink[] = []
+
   if (!auth.isLoggedIn.value) {
-    return { main, management }
+    return { main, panelSections: [] as PanelSection[] }
   }
 
   const r = new Set(auth.user.value?.roles ?? [])
@@ -58,49 +66,69 @@ const items = computed(() => {
   const showTrainerPanel = hasSA || hasTrainer
 
   let emphasisPending = true
-  const pushLink = (link: ManagementLink) => {
+  const pushLink = (bucket: ManagementLink[], link: ManagementLink) => {
     if (emphasisPending) {
       link.emphasis = true
       emphasisPending = false
     }
-    management.push(link)
+    bucket.push(link)
   }
 
   if (hasSA) {
-    pushLink({ label: 'Panel SuperAdmin', to: '/superadmin', icon: 'i-lucide-shield-check' })
+    pushLink(adminLinks, { label: 'Panel SuperAdmin', to: '/superadmin', icon: 'i-lucide-shield-check' })
+    adminLinks.push({ label: 'Import federacji', to: '/superadmin/import', icon: 'i-lucide-download' })
   }
 
   if (needsAdminDashboard) {
-    pushLink({ label: 'Panel admina', to: '/admin', icon: 'i-lucide-layout-dashboard' })
+    pushLink(adminLinks, { label: 'Panel admina', to: '/admin', icon: 'i-lucide-layout-dashboard' })
   }
 
   if (showTrainerPanel) {
-    pushLink({ label: 'Panel trenera', to: '/trainer', icon: 'i-lucide-dumbbell' })
+    pushLink(adminLinks, { label: 'Panel trenera', to: '/trainer', icon: 'i-lucide-dumbbell' })
   }
 
   if (hasAthlete || hasSA) {
-    pushLink({ label: 'Profil zawodnika', to: '/athlete', icon: 'i-lucide-user' })
-    management.push({ label: 'Mój kalendarz', to: '/athlete/kalendarz', icon: 'i-lucide-calendar-days' })
-    management.push({ label: 'Dziennik', to: '/athlete/dziennik', icon: 'i-lucide-book-open' })
+    pushLink(athleteLinks, { label: 'Profil zawodnika', to: '/athlete', icon: 'i-lucide-user' })
+    athleteLinks.push({ label: 'Mój kalendarz', to: '/athlete/kalendarz', icon: 'i-lucide-calendar-days' })
+    athleteLinks.push({ label: 'Dziennik', to: '/dziennik', icon: 'i-lucide-book-open' })
+    athleteLinks.push({ label: 'Inne ćwiczenia', to: '/athlete/exercises', icon: 'i-lucide-bar-chart-3' })
   }
 
-  pushLink({
+  if (showTrainerPanel) {
+    adminLinks.push({ label: 'Ćwiczenia kadry', to: '/trainer/exercises', icon: 'i-lucide-clipboard-list' })
+  }
+
+  pushLink(accountLinks, {
     label: 'Moje konto',
     to: '/profil',
     icon: 'i-lucide-user-circle'
   })
 
-  return { main, management }
+  const panelSections: PanelSection[] = []
+  if (adminLinks.length) {
+    panelSections.push({ heading: 'Administracja i kadra', links: adminLinks })
+  }
+  if (athleteLinks.length) {
+    panelSections.push({ heading: 'Panel zawodnika', links: athleteLinks })
+  }
+  if (accountLinks.length) {
+    panelSections.push({ heading: 'Konto', links: accountLinks })
+  }
+
+  return { main, panelSections }
 })
 
-/** Dropdown „Panel” — jedna kontrolka zamiast wielu szerokich przycisków przy prawej krawędzi. */
+/** Dropdown „Panel” — grupy: kadra / zawodnik / konto. */
 const panelDropdownItems = computed(() =>
-  items.value.management.map(link => ({
-    label: link.label,
-    icon: link.icon,
-    to: link.to,
-    ...(link.emphasis ? { color: 'primary' as const } : {})
-  }))
+  items.value.panelSections.map(section => [
+    { type: 'label' as const, label: section.heading },
+    ...section.links.map(link => ({
+      label: link.label,
+      icon: link.icon,
+      to: link.to,
+      ...(link.emphasis ? { color: 'primary' as const } : {})
+    }))
+  ])
 )
 </script>
 
@@ -125,7 +153,7 @@ const panelDropdownItems = computed(() =>
     </nav>
 
     <UDropdownMenu
-      v-if="items.management.length > 0"
+      v-if="items.panelSections.length > 0"
       :modal="false"
       :items="panelDropdownItems"
       :content="{ align: 'end', collisionPadding: 16 }"
@@ -189,29 +217,34 @@ const panelDropdownItems = computed(() =>
             {{ link.label }}
           </UButton>
 
-          <template v-if="items.management.length > 0">
+          <template v-if="items.panelSections.length > 0">
             <USeparator class="my-3" />
-            <p class="mb-1 px-2 text-[10px] font-bold uppercase tracking-wider text-muted">
-              Panel i konto
-            </p>
-            <UButton
-              v-for="link in items.management"
-              :key="link.to + '-m-adm'"
-              :to="link.to"
-              :icon="link.icon"
-              variant="outline"
-              color="neutral"
-              block
-              class="min-h-11 justify-start rounded-xl font-semibold shadow-none"
-              :class="
-                link.emphasis
-                  ? 'border-primary/45 bg-primary/10 text-primary'
-                  : 'text-highlighted'
-              "
-              active-class="border-primary bg-primary/18 text-primary ring-1 ring-primary/25"
+            <template
+              v-for="section in items.panelSections"
+              :key="section.heading"
             >
-              {{ link.label }}
-            </UButton>
+              <p class="mb-1 mt-2 px-2 text-[10px] font-bold uppercase tracking-wider text-muted first:mt-0">
+                {{ section.heading }}
+              </p>
+              <UButton
+                v-for="link in section.links"
+                :key="link.to + section.heading"
+                :to="link.to"
+                :icon="link.icon"
+                variant="outline"
+                color="neutral"
+                block
+                class="min-h-11 justify-start rounded-xl font-semibold shadow-none"
+                :class="
+                  link.emphasis
+                    ? 'border-primary/45 bg-primary/10 text-primary'
+                    : 'text-highlighted'
+                "
+                active-class="border-primary bg-primary/18 text-primary ring-1 ring-primary/25"
+              >
+                {{ link.label }}
+              </UButton>
+            </template>
           </template>
 
           <USeparator class="my-4" />

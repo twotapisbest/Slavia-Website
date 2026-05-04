@@ -51,11 +51,17 @@ const resultForm = reactive<{
   clean_and_jerk: number | null
   total: number
   date: string
+  squat_kg: number | null
+  bench_kg: number | null
+  deadlift_kg: number | null
 }>({
   snatch: null,
   clean_and_jerk: null,
   total: 0,
-  date: new Date().toISOString().substring(0, 10)
+  date: new Date().toISOString().substring(0, 10),
+  squat_kg: null,
+  bench_kg: null,
+  deadlift_kg: null
 })
 
 const profileForm = reactive({
@@ -152,21 +158,29 @@ async function submitResult() {
   }
 
   try {
+    const body: Record<string, unknown> = {
+      athlete_id: athlete.value.id,
+      snatch: resultForm.snatch,
+      clean_and_jerk: resultForm.clean_and_jerk,
+      total: resultForm.total,
+      date: resultForm.date
+    }
+    if (resultForm.squat_kg != null && resultForm.squat_kg > 0) body.squat_kg = resultForm.squat_kg
+    if (resultForm.bench_kg != null && resultForm.bench_kg > 0) body.bench_kg = resultForm.bench_kg
+    if (resultForm.deadlift_kg != null && resultForm.deadlift_kg > 0) body.deadlift_kg = resultForm.deadlift_kg
+
     await apiFetch('/api/results', {
       method: 'POST',
-      body: {
-        athlete_id: athlete.value.id,
-        snatch: resultForm.snatch,
-        clean_and_jerk: resultForm.clean_and_jerk,
-        total: resultForm.total,
-        date: resultForm.date
-      }
+      body
     })
     toast.add({ title: 'Zgłoszono wynik', description: 'Wynik trafił do oczekujących.', color: 'success' })
     resultForm.snatch = null
     resultForm.clean_and_jerk = null
     resultForm.total = 0
     resultForm.date = new Date().toISOString().substring(0, 10)
+    resultForm.squat_kg = null
+    resultForm.bench_kg = null
+    resultForm.deadlift_kg = null
     await refreshResults()
   } catch (e) {
     toast.add({ title: 'Błąd zgłoszenia', description: String(e), color: 'error' })
@@ -224,12 +238,20 @@ const athleteDashboardTiles = [
     iconBg: 'bg-violet-500/15 text-violet-600 dark:text-violet-400'
   },
   {
-    to: '/athlete/dziennik',
+    to: '/dziennik',
     title: 'Dziennik treningów',
     desc: 'Wpisy po jednostkach',
     icon: 'i-lucide-book-marked',
     ring: 'ring-cyan-500/25 hover:ring-cyan-500/45',
     iconBg: 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400'
+  },
+  {
+    to: '/athlete/exercises',
+    title: 'Inne ćwiczenia',
+    desc: 'Przysiady, wyciskanie, martwy',
+    icon: 'i-lucide-bar-chart-3',
+    ring: 'ring-lime-500/25 hover:ring-lime-500/45',
+    iconBg: 'bg-lime-500/15 text-lime-700 dark:text-lime-400'
   },
   {
     to: '/aktualnosci',
@@ -596,7 +618,7 @@ const pageLead = computed(() => {
             Wynik startowy
           </div>
           <p class="slavia-form-panel__desc">
-            Trener zweryfikuje wpis — po akceptacji pojawi się na karcie i w rankingach.
+            Trener zweryfikuje wpis — po akceptacji pojawi się na karcie i w rankingach. Pola przysiad / wycisk / martwy są opcjonalne.
           </p>
         </div>
         <div class="slavia-form-panel__body">
@@ -627,12 +649,50 @@ const pageLead = computed(() => {
                 class="w-full"
               />
             </UFormField>
-            <UFormField label="Suma">
+            <UFormField label="Suma (dwubój)">
               <UInputNumber
                 :value="resultForm.total"
                 size="lg"
                 class="w-full"
                 disabled
+              />
+            </UFormField>
+          </div>
+          <div class="grid gap-5 border-t border-default/40 pt-5 sm:grid-cols-3">
+            <UFormField
+              label="Przysiad (kg)"
+              description="Opcjonalnie"
+            >
+              <UInputNumber
+                v-model="resultForm.squat_kg"
+                :min="0"
+                :step="0.5"
+                size="lg"
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField
+              label="Wyciskanie (kg)"
+              description="Opcjonalnie"
+            >
+              <UInputNumber
+                v-model="resultForm.bench_kg"
+                :min="0"
+                :step="0.5"
+                size="lg"
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField
+              label="Martwy ciąg (kg)"
+              description="Opcjonalnie"
+            >
+              <UInputNumber
+                v-model="resultForm.deadlift_kg"
+                :min="0"
+                :step="0.5"
+                size="lg"
+                class="w-full"
               />
             </UFormField>
           </div>
@@ -679,6 +739,9 @@ const pageLead = computed(() => {
                   Suma
                 </th>
                 <th class="px-4 py-3 text-center font-semibold text-muted">
+                  Siła (opcj.)
+                </th>
+                <th class="px-4 py-3 text-center font-semibold text-muted">
                   Status
                 </th>
               </tr>
@@ -694,6 +757,14 @@ const pageLead = computed(() => {
                 </td>
                 <td class="px-4 py-3 text-center font-bold">
                   {{ r.total }} kg
+                </td>
+                <td class="max-w-[10rem] px-4 py-3 text-center text-[11px] text-muted leading-snug">
+                  <template v-if="r.squat_kg != null || r.bench_kg != null || r.deadlift_kg != null">
+                    P {{ r.squat_kg ?? '—' }} · W {{ r.bench_kg ?? '—' }} · M {{ r.deadlift_kg ?? '—' }}
+                  </template>
+                  <template v-else>
+                    —
+                  </template>
                 </td>
                 <td class="px-4 py-3 text-center">
                   <UBadge

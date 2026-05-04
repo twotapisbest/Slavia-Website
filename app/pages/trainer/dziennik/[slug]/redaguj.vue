@@ -56,6 +56,9 @@ async function loadEntries() {
   } finally {
     loading.value = false
   }
+  if (wpisId.value) {
+    applyEntryToForm(wpisId.value)
+  }
 }
 
 watch(athleteId, () => loadEntries(), { immediate: true })
@@ -71,19 +74,24 @@ const previewOpen = ref(false)
 
 const sanitizedNotesPreview = computed(() => sanitizeRichHtml(form.notes.trim()))
 
-watch([wpisId, entries], () => {
-  if (!wpisId.value) {
+function applyEntryToForm(id: string) {
+  const e = entries.value.find(x => x.id === id)
+  if (!e) {
+    return
+  }
+  form.session_date = e.session_date.slice(0, 10)
+  form.title = e.title || ''
+  form.notes = e.notes
+}
+
+watch(wpisId, (id) => {
+  if (!id) {
     form.session_date = new Date().toISOString().slice(0, 10)
     form.title = ''
     form.notes = '<p></p>'
     return
   }
-  const e = entries.value.find(x => x.id === wpisId.value)
-  if (e) {
-    form.session_date = e.session_date.slice(0, 10)
-    form.title = e.title || ''
-    form.notes = e.notes
-  }
+  applyEntryToForm(id)
 }, { immediate: true })
 
 const pageTitle = computed(() => (wpisId.value ? 'Edycja wpisu' : 'Nowy wpis'))

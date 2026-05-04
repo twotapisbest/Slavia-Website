@@ -1061,6 +1061,24 @@ function downloadDevSelftestFile() {
               <span v-if="loopbackWithoutDev"> · localhost≠dev</span>
             </p>
 
+            <details class="mt-3 rounded-lg border border-default/55 bg-muted/5 px-3 py-2">
+              <summary class="cursor-pointer select-none text-[11px] font-bold uppercase tracking-wide text-muted">
+                Checklista wdrożenia PWA (Chrome / Brave / Android)
+              </summary>
+              <ul class="mt-2 list-disc space-y-1.5 pl-4 text-[11px] leading-snug text-muted">
+                <li>Origin z HTTPS (nie czyste HTTP na IP w LAN) — inaczej instalacja i część API przeglądarki są blokowane.</li>
+                <li>
+                  Flaga <span class="font-mono text-[10px]">pwa_service_worker</span> włączona; na deployu sprawdź brak wpisu w
+                  <span class="font-mono text-[10px]">NUXT_PUBLIC_EXPERIMENTAL_KILL_SWITCH</span>.
+                </li>
+                <li>Po wdrożeniu: wejście na stronę → odświeżenie z wyczyszczeniem cache → ponowna instalacja; na Androidzie Chrome menu ⋮ → „Zainstaluj aplikację”.</li>
+                <li>
+                  Aktualizacja: przy <span class="font-mono text-[10px]">registerType: autoUpdate</span> nowa wersja pobiera się w tle;
+                  drugie otwarcie aplikacji powinno już serwować świeży bundle (ew. zamknij kartę PWA i uruchom ponownie).
+                </li>
+              </ul>
+            </details>
+
             <div class="border-t border-default/40 pt-3">
               <p class="mb-2 text-[10px] font-bold uppercase text-muted">
                 API · storage · UI

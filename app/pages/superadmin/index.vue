@@ -100,6 +100,14 @@ const quickLinks = [
     bg: 'bg-cyan-500/10'
   },
   {
+    title: 'Inne ćwiczenia',
+    description: 'Ranking ćwiczeń pomocniczych dla kadry i adminów',
+    icon: 'i-lucide-bar-chart-3',
+    to: '/trainer/exercises',
+    color: 'text-lime-600',
+    bg: 'bg-lime-500/10'
+  },
+  {
     title: 'Analiza toru sztangi',
     description: 'Wideo i diagnostyka toru (kadra)',
     icon: 'i-lucide-scan-line',
@@ -138,6 +146,14 @@ const quickLinks = [
     to: '/aktualnosci',
     color: 'text-orange-500',
     bg: 'bg-orange-500/10'
+  },
+  {
+    title: 'Import federacji',
+    description: 'Import z PZPC, Śląskiego Związku i podnoszenieciezarów.pl',
+    icon: 'i-lucide-download',
+    to: '/superadmin/import',
+    color: 'text-indigo-500',
+    bg: 'bg-indigo-500/10'
   }
 ]
 </script>

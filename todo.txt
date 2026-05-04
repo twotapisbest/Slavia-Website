@@ -1,0 +1,9 @@
+Backlog — zamknięty na dziś (2026-05-04)
+
+Zrealizowane w tej iteracji:
+• Import produkcyjny — parser: separator Unicode „–” / „—” między rwaniem a podrzutem; fixture tests/fixtures/import_unicode_dash.html + testy w Slavia-backend/src/routes/import.rs; UI: alert na /superadmin/import z ścieżkami do fixture’ów i import.rs.
+• E2E smoke — @playwright/test, playwright.config.ts, e2e/smoke.spec.ts (/, /ogloszenia, redirect /superadmin/import → logowanie); skrypt pnpm run test:e2e przy działającym `pnpm dev --host 127.0.0.1 --port 3000`; opcjonalny auto-start: PLAYWRIGHT_START_SERVER=1.
+• Nawigacja — SiteNav: grupy „Administracja i kadra”, „Panel zawodnika”, „Konto” (drawer + dropdown Panel).
+• PWA — rozwijana checklista wdrożenia (HTTPS, flagi, Android, aktualizacja SW) na /superadmin/developer.
+
+Pełna ścieżka importu z zalogowanym SuperAdminem oraz ciężkie strony zależne od API nadal warto sprawdzić ręcznie po wdrożeniu.

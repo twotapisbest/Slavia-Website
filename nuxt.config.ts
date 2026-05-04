@@ -21,17 +21,22 @@ export default defineNuxtConfig({
     },
     includeAssets: ['favicon.ico', 'logo.png'],
     manifest: {
+      id: '/',
       name: 'CKS Slavia Ruda Śląska',
       short_name: 'Slavia',
       description: 'Aplikacja klubu sportowego CKS Slavia Ruda Śląska: zawodnicy, kalendarz, wyniki i powiadomienia.',
+      lang: 'pl-PL',
       theme_color: '#0f172a',
       background_color: '#0f172a',
       display: 'standalone',
+      display_override: ['standalone', 'minimal-ui', 'browser'],
       start_url: '/',
       scope: '/',
+      categories: ['sports', 'health', 'lifestyle'],
+      prefer_related_applications: false,
       icons: [
-        { src: '/logo.png', sizes: '192x192', type: 'image/png' },
-        { src: '/logo.png', sizes: '512x512', type: 'image/png' }
+        { src: '/logo.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+        { src: '/logo.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
       ]
     }
   },

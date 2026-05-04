@@ -1,0 +1,325 @@
+<script setup lang="ts">
+definePageMeta({
+  middleware: 'superadmin'
+})
+
+interface ImportRejectedSample {
+  full_name: string
+  reason: string
+}
+
+interface FederationImportRow {
+  source: string
+  urls_attempted?: number
+  urls_fetched_ok?: number
+  fetch_errors?: string[]
+  rows_parsed?: number
+  records_matched_roster?: number
+  records_saved?: number
+  records_duplicate_skipped?: number
+  records_preview_importable?: number
+  rejected_samples?: ImportRejectedSample[]
+  athletes_updated: number
+  new_results: number
+}
+
+const apiFetch = useApi()
+const toast = useToast()
+
+const importing = ref(false)
+const devMode = useExperimentalFlag('data_import_from_federations')
+
+const lastReport = useState<FederationImportRow[] | null>('import-last-report-full', () => null)
+const lastRunAt = useState<string | null>('import-last-run-at', () => null)
+
+const fetchErrorsFlat = computed(() => {
+  const r = lastReport.value
+  if (!r?.length) return [] as string[]
+  const out: string[] = []
+  for (const row of r) {
+    for (const err of row.fetch_errors ?? []) {
+      out.push(`${row.source}: ${err}`)
+    }
+  }
+  return out
+})
+
+const rejectedFlat = computed(() => {
+  const r = lastReport.value
+  if (!r?.length) return [] as Array<{ source: string, full_name: string, reason: string }>
+  const out: Array<{ source: string, full_name: string, reason: string }> = []
+  for (const row of r) {
+    for (const x of row.rejected_samples ?? []) {
+      out.push({ source: row.source, full_name: x.full_name, reason: x.reason })
+    }
+  }
+  return out
+})
+
+function exportJson() {
+  const blob = new Blob([JSON.stringify(lastReport.value ?? [], null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `slavia-import-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function exportCsv() {
+  const rows = lastReport.value ?? []
+  const header = [
+    'source',
+    'urls_attempted',
+    'urls_fetched_ok',
+    'rows_parsed',
+    'records_matched_roster',
+    'records_saved',
+    'records_duplicate_skipped',
+    'records_preview_importable',
+    'athletes_updated',
+    'new_results',
+    'fetch_errors_joined'
+  ].join(';')
+  const lines = rows.map((x) =>
+    [
+      escapeCsv(x.source),
+      x.urls_attempted ?? '',
+      x.urls_fetched_ok ?? '',
+      x.rows_parsed ?? '',
+      x.records_matched_roster ?? '',
+      x.records_saved ?? '',
+      x.records_duplicate_skipped ?? '',
+      x.records_preview_importable ?? '',
+      x.athletes_updated,
+      x.new_results,
+      escapeCsv((x.fetch_errors ?? []).join(' | '))
+    ].join(';')
+  )
+  const blob = new Blob(['\ufeff' + [header, ...lines].join('\n')], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `slavia-import-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function escapeCsv(s: string) {
+  const needs = /[;\r\n"]/.test(s)
+  const t = s.replace(/"/g, '""')
+  return needs ? `"${t}"` : t
+}
+
+async function importData() {
+  importing.value = true
+  try {
+    const saveToDb = devMode.value
+    const result = await apiFetch<FederationImportRow[]>('/api/import/data', {
+      method: 'POST',
+      body: { dev_mode: saveToDb }
+    })
+    lastReport.value = result
+    lastRunAt.value = new Date().toISOString()
+
+    await refreshNuxtData()
+
+    if (!saveToDb) {
+      toast.add({
+        title: 'Podgląd importu',
+        description: 'Tryb zapisu wyłączony — policzono rekordy bez zmian w bazie. Włącz flagę w Developer tools, aby zapisać.',
+        color: 'success'
+      })
+    } else {
+      toast.add({
+        title: 'Import zakończony',
+        description: 'Wyniki zapisane do bazy (zgodnie z przełącznikiem dev tools).',
+        color: 'success'
+      })
+    }
+  } catch (e) {
+    toast.add({ title: 'Błąd importu', description: String(e), color: 'error' })
+  } finally {
+    importing.value = false
+  }
+}
+
+useSeoMeta({
+  title: 'Import danych — SuperAdmin',
+  robots: 'noindex, nofollow'
+})
+</script>
+
+<template>
+  <UContainer class="py-8 sm:py-12 lg:py-14">
+    <div class="mb-8">
+      <h1 class="text-2xl font-bold tracking-tight text-highlighted sm:text-3xl lg:text-4xl">
+        Import danych z federacji
+      </h1>
+      <p class="mt-2 text-sm text-muted sm:text-base lg:leading-relaxed">
+        Import wyników z PZPC, Śląskiego Związku i podnoszenieciezarów.pl — dopasowanie wyłącznie do zawodników aktywnych w bazie klubu.
+      </p>
+      <UAlert
+        icon="i-lucide-info"
+        color="neutral"
+        variant="subtle"
+        class="mt-4"
+        title="Produkcyjne dopasowanie HTML"
+        description="Próbki statyczne w repo backendu: tests/fixtures/import_sample.html oraz import_unicode_dash.html. Zrzut rzeczywistej strony federacji + aktualizacja regexów i fallbacku tabel w Slavia-backend/src/routes/import.rs to najkrótsza ścieżka, gdy import na żywo zwraca zero wierszy."
+      />
+    </div>
+
+    <UCard>
+      <template #header>
+        <h2 class="text-lg font-semibold">
+          Rozpocznij import
+        </h2>
+      </template>
+      <p class="text-sm text-muted">
+        Źródła są pobierane na żywo; szczegóły sieci i parsowania znajdziesz w raporcie poniżej.
+      </p>
+      <div class="mt-4 rounded-xl border border-default bg-muted/10 p-4 text-sm">
+        <p class="font-semibold text-highlighted">
+          Zapis do bazy:
+          <span :class="devMode ? 'text-success' : 'text-warning'">{{ devMode ? 'włączony' : 'wyłączony' }}</span>
+        </p>
+        <p class="mt-1 text-muted">
+          Flaga z Developer tools:
+          <span class="font-mono">data_import_from_federations</span>.
+          Wyłączona — podgląd (parsowanie i dopasowanie bez INSERT). Włączona — zapis nowych rekordów jako zatwierdzone.
+        </p>
+        <p
+          v-if="lastRunAt"
+          class="mt-2 text-xs text-muted"
+        >
+          Ostatnie uruchomienie: {{ new Date(lastRunAt).toLocaleString('pl-PL') }}
+        </p>
+      </div>
+
+      <div
+        v-if="lastReport?.length"
+        class="mt-6 space-y-6"
+      >
+        <div class="flex flex-wrap gap-2">
+          <UButton
+            variant="soft"
+            color="neutral"
+            icon="i-lucide-file-json"
+            @click="exportJson"
+          >
+            Eksport JSON
+          </UButton>
+          <UButton
+            variant="soft"
+            color="neutral"
+            icon="i-lucide-table"
+            @click="exportCsv"
+          >
+            Eksport CSV
+          </UButton>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-default">
+          <table class="min-w-full text-sm">
+            <thead>
+              <tr class="border-b border-default bg-muted/30 text-left text-muted">
+                <th class="whitespace-nowrap px-3 py-2">
+                  Źródło
+                </th>
+                <th class="whitespace-nowrap px-2 py-2">
+                  URL OK
+                </th>
+                <th class="whitespace-nowrap px-2 py-2">
+                  Sparsowano
+                </th>
+                <th class="whitespace-nowrap px-2 py-2">
+                  Dopasowano
+                </th>
+                <th class="whitespace-nowrap px-2 py-2">
+                  Zapisano
+                </th>
+                <th class="whitespace-nowrap px-2 py-2">
+                  Duplikaty
+                </th>
+                <th class="whitespace-nowrap px-3 py-2">
+                  Podgląd (bez zapisu)
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="row in lastReport"
+                :key="row.source"
+                class="border-b border-default/60"
+              >
+                <td class="px-3 py-2 font-medium text-highlighted">
+                  {{ row.source }}
+                </td>
+                <td class="px-2 py-2 tabular-nums">
+                  {{ row.urls_fetched_ok ?? '—' }}/{{ row.urls_attempted ?? '—' }}
+                </td>
+                <td class="px-2 py-2 tabular-nums">
+                  {{ row.rows_parsed ?? '—' }}
+                </td>
+                <td class="px-2 py-2 tabular-nums">
+                  {{ row.records_matched_roster ?? row.athletes_updated }}
+                </td>
+                <td class="px-2 py-2 tabular-nums text-success">
+                  {{ row.records_saved ?? (devMode ? row.new_results : '—') }}
+                </td>
+                <td class="px-2 py-2 tabular-nums">
+                  {{ row.records_duplicate_skipped ?? '—' }}
+                </td>
+                <td class="px-3 py-2 tabular-nums">
+                  {{ row.records_preview_importable ?? (!devMode ? row.new_results : '—') }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div v-if="fetchErrorsFlat.length">
+          <h3 class="mb-2 text-sm font-bold uppercase tracking-wide text-error">
+            Ostatnie błędy sieci / HTTP
+          </h3>
+          <ul class="max-h-48 overflow-y-auto rounded-lg border border-error/25 bg-error/5 px-3 py-2 text-xs text-error">
+            <li
+              v-for="(line, i) in fetchErrorsFlat"
+              :key="'fe-' + i"
+              class="py-0.5 font-mono leading-snug"
+            >
+              {{ line }}
+            </li>
+          </ul>
+        </div>
+
+        <div v-if="rejectedFlat.length">
+          <h3 class="mb-2 text-sm font-bold uppercase tracking-wide text-highlighted">
+            Odrzucone (brak zawodnika w bazie klubu) — próbka
+          </h3>
+          <ul class="max-h-52 overflow-y-auto rounded-lg border border-default bg-muted/10 px-3 py-2 text-xs">
+            <li
+              v-for="(x, i) in rejectedFlat.slice(0, 80)"
+              :key="'rej-' + i"
+              class="py-1 border-b border-default/40 last:border-0"
+            >
+              <span class="font-semibold text-highlighted">{{ x.source }}</span>
+              · {{ x.full_name }}
+              <span class="text-muted">— {{ x.reason }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <template #footer>
+        <UButton
+          color="primary"
+          :loading="importing"
+          @click="importData"
+        >
+          Uruchom import
+        </UButton>
+      </template>
+    </UCard>
+  </UContainer>
+</template>

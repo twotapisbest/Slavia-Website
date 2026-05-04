@@ -15,6 +15,8 @@ const apiFetch = useApi()
 const toast = useToast()
 const auth = useAuth()
 
+const redagujBase = '/athlete/dziennik/redaguj'
+
 function isEntryMine(e: TrainingLogEntry) {
   const uid = auth.user.value?.id
   return !!uid && e.author_user_id === uid
@@ -46,6 +48,14 @@ async function removeEntry(e: TrainingLogEntry) {
   if (!aid) {
     return
   }
+  if (!isEntryMine(e)) {
+    toast.add({
+      title: 'Brak uprawnień',
+      description: 'Możesz usuwać tylko wpisy, które sam utworzyłeś.',
+      color: 'warning'
+    })
+    return
+  }
   if (!confirm(`Usunąć wpis z dnia ${e.session_date.slice(0, 10)}?`)) {
     return
   }
@@ -64,18 +74,46 @@ async function removeEntry(e: TrainingLogEntry) {
 </script>
 
 <template>
-  <UContainer class="py-8 md:py-14 lg:py-16 animate-page-in max-w-3xl">
-    <div class="mb-8">
-      <p class="text-xs font-bold uppercase tracking-wider text-primary">
-        Twój panel
-      </p>
-      <h1 class="mt-2 text-3xl font-bold tracking-tight text-highlighted">
-        Dziennik treningów
-      </h1>
-      <p class="mt-2 text-sm text-muted leading-relaxed">
-        Dodawaj własne notatki po jednostkach — widzą je także trenerzy i administracja.
-        Wpisy od kadry oznaczone są ich nazwą użytkownika.
-      </p>
+  <UContainer class="animate-page-in py-8 md:py-14 lg:py-16">
+    <div class="mb-8 flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-wider text-primary">
+          Twój panel
+        </p>
+        <h1 class="mt-2 text-3xl font-bold tracking-tight text-highlighted">
+          Dziennik treningów
+        </h1>
+        <p class="mt-2 max-w-2xl text-sm text-muted leading-relaxed">
+          Dodawaj własne notatki po jednostkach — widzą je także trenerzy i administracja.
+          Wpisy od kadry oznaczone są ich nazwą użytkownika. Pełna edycja (TipTap) jest na osobnej stronie — tak jak w panelu trenera.
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <UButton
+          v-if="meAthlete"
+          :to="redagujBase"
+          color="primary"
+          icon="i-lucide-maximize-2"
+        >
+          Nowy wpis (pełny ekran)
+        </UButton>
+        <UButton
+          icon="i-lucide-refresh-ccw"
+          variant="soft"
+          :loading="pending"
+          @click="refresh()"
+        >
+          Odśwież
+        </UButton>
+        <UButton
+          to="/athlete"
+          variant="ghost"
+          color="neutral"
+          icon="i-lucide-arrow-left"
+        >
+          Wróć do panelu
+        </UButton>
+      </div>
     </div>
 
     <div
@@ -98,32 +136,6 @@ async function removeEntry(e: TrainingLogEntry) {
     />
 
     <template v-else>
-      <div class="mb-6 flex flex-wrap gap-2">
-        <UButton
-          to="/athlete/dziennik/redaguj"
-          color="primary"
-          icon="i-lucide-maximize-2"
-        >
-          Nowy wpis — pełny ekran
-        </UButton>
-        <UButton
-          icon="i-lucide-refresh-ccw"
-          variant="soft"
-          :loading="pending"
-          @click="refresh()"
-        >
-          Odśwież
-        </UButton>
-        <UButton
-          to="/athlete"
-          variant="ghost"
-          color="neutral"
-          icon="i-lucide-arrow-left"
-        >
-          Wróć do panelu
-        </UButton>
-      </div>
-
       <h2 class="mb-4 text-xl font-bold text-highlighted">
         Historia wpisów
       </h2>
@@ -134,7 +146,7 @@ async function removeEntry(e: TrainingLogEntry) {
       >
         Nie ma jeszcze wpisów —
         <NuxtLink
-          to="/athlete/dziennik/redaguj"
+          :to="redagujBase"
           class="font-medium text-primary underline underline-offset-2"
         >
           dodaj pierwszą jednostkę
@@ -165,45 +177,49 @@ async function removeEntry(e: TrainingLogEntry) {
                   class="font-semibold text-highlighted"
                 >{{ e.title }}</span>
               </div>
-            <!-- eslint-disable-next-line vue/no-v-html — treść po DOMPurify -->
-            <div v-if="isProbablyRichHtml(e.notes)" class="slavia-rich-content text-sm leading-relaxed text-highlighted" v-html="sanitizeRichHtml(e.notes)" />
+              <!-- eslint-disable-next-line vue/no-v-html — treść po DOMPurify -->
+              <div v-if="isProbablyRichHtml(e.notes)" class="slavia-rich-content text-sm leading-relaxed text-highlighted" v-html="sanitizeRichHtml(e.notes)" />
               <p
                 v-else
                 class="text-sm text-highlighted whitespace-pre-wrap leading-relaxed"
               >
                 {{ e.notes }}
               </p>
-              <p class="text-[11px] text-muted pt-1 border-t border-default/60">
-                <span v-if="e.author_username">{{ e.author_username }}</span>
+              <p class="text-[11px] text-muted">
+                <span v-if="e.author_username">Dodał: {{ e.author_username }}</span>
                 <span v-if="e.created_at">{{ e.author_username ? ' · ' : '' }}{{ e.created_at.slice(0, 16).replace('T', ' ') }}</span>
               </p>
             </div>
-            <div
-              v-if="isEntryMine(e)"
-              class="flex shrink-0 gap-1 sm:flex-col"
-            >
-              <UButton
-                size="xs"
-                variant="soft"
-                icon="i-lucide-pencil"
-                :to="{ path: '/athlete/dziennik/redaguj', query: { wpis: e.id } }"
+            <div class="flex shrink-0 gap-1 sm:flex-col">
+              <template v-if="isEntryMine(e)">
+                <UButton
+                  size="xs"
+                  variant="soft"
+                  icon="i-lucide-pencil"
+                  :to="{ path: redagujBase, query: { wpis: e.id } }"
+                >
+                  Edytuj
+                </UButton>
+                <UButton
+                  size="xs"
+                  color="error"
+                  variant="ghost"
+                  icon="i-lucide-trash-2"
+                  @click="removeEntry(e)"
+                >
+                  Usuń
+                </UButton>
+              </template>
+              <span
+                v-else
+                class="max-w-[9rem] self-center text-center text-[11px] leading-snug text-muted sm:self-start sm:max-w-[11rem] sm:pt-0.5 sm:text-right"
               >
-                Edytuj
-              </UButton>
-              <UButton
-                size="xs"
-                color="error"
-                variant="ghost"
-                icon="i-lucide-trash-2"
-                @click="removeEntry(e)"
-              >
-                Usuń
-              </UButton>
+                Tylko podgląd — edycję wpisu kadry zostaw trenerowi.
+              </span>
             </div>
           </div>
         </UCard>
       </div>
     </template>
-
   </UContainer>
 </template>

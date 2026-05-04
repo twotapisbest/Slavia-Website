@@ -15,32 +15,50 @@ const toast = useToast()
 const auth = useAuth()
 
 const wpisId = computed(() => String(route.query.wpis || '').trim())
+const diaryListPath = '/athlete/dziennik'
 
 function isEntryMine(e: TrainingLogEntry) {
   const uid = auth.user.value?.id
   return !!uid && e.author_user_id === uid
 }
 
-type DiaryBundle = { athlete: Athlete | null, entries: TrainingLogEntry[] }
-
-const { data: bundle } = await useAsyncData(
-  'athlete-diary-compose',
-  async (): Promise<DiaryBundle> => {
-    const athlete = await apiFetch<Athlete>('/api/athletes/me').catch(() => null)
-    if (!athlete?.id) {
-      return { athlete: null, entries: [] }
-    }
-    const entries = await apiFetch<TrainingLogEntry[]>(`/api/athletes/${athlete.id}/training-log`).catch(
-      () => [] as TrainingLogEntry[]
-    )
-    return { athlete, entries }
-  },
-  { default: () => ({ athlete: null, entries: [] }) }
+const { data: meAthlete } = await useAsyncData(
+  'athlete-diary-compose-me',
+  async (): Promise<Athlete | null> => apiFetch<Athlete>('/api/athletes/me').catch(() => null)
 )
 
-const meAthlete = computed(() => bundle.value?.athlete ?? null)
-const entries = computed(() => bundle.value?.entries ?? [])
 const athleteId = computed(() => meAthlete.value?.id ?? '')
+const athleteName = computed(() => meAthlete.value?.full_name ?? 'Zawodnik')
+
+const entries = ref<TrainingLogEntry[]>([])
+const loading = ref(true)
+
+async function loadEntries() {
+  const aid = athleteId.value
+  if (!aid) {
+    entries.value = []
+    loading.value = false
+    return
+  }
+  loading.value = true
+  try {
+    entries.value = await apiFetch<TrainingLogEntry[]>(`/api/athletes/${aid}/training-log`)
+  } catch (e) {
+    entries.value = []
+    toast.add({
+      title: 'Nie udało się wczytać wpisów',
+      description: getApiErrorMessage(e),
+      color: 'error'
+    })
+  } finally {
+    loading.value = false
+  }
+  if (wpisId.value) {
+    applyEntryToForm(wpisId.value)
+  }
+}
+
+watch(athleteId, () => loadEntries(), { immediate: true })
 
 const form = reactive({
   session_date: new Date().toISOString().slice(0, 10),
@@ -49,27 +67,32 @@ const form = reactive({
 })
 
 const saving = ref(false)
-/** Podgląd HTML bez opuszczania strony — jednym przyciskiem wracasz do edycji. */
 const previewOpen = ref(false)
 
 const sanitizedNotesPreview = computed(() => sanitizeRichHtml(form.notes.trim()))
 
-watch([wpisId, entries], () => {
-  if (!wpisId.value) {
+/** Tylko przy edycji istniejącego wpisu — nie wołać przy samej zmianie listy, bo wtedy kasuje się treść „nowego wpisu” podczas ładowania `/api/athletes/me` + training-log. */
+function applyEntryToForm(id: string) {
+  const e = entries.value.find(x => x.id === id)
+  if (!e) {
+    return
+  }
+  form.session_date = e.session_date.slice(0, 10)
+  form.title = e.title || ''
+  form.notes = e.notes
+}
+
+watch(wpisId, (id) => {
+  if (!id) {
     form.session_date = new Date().toISOString().slice(0, 10)
     form.title = ''
     form.notes = '<p></p>'
     return
   }
-  const e = entries.value.find(x => x.id === wpisId.value)
-  if (e) {
-    form.session_date = e.session_date.slice(0, 10)
-    form.title = e.title || ''
-    form.notes = e.notes
-  }
+  applyEntryToForm(id)
 }, { immediate: true })
 
-const pageTitle = computed(() => (wpisId.value ? 'Edytuj wpis' : 'Nowy wpis'))
+const pageTitle = computed(() => (wpisId.value ? 'Edycja wpisu' : 'Nowy wpis'))
 
 async function save() {
   const aid = athleteId.value
@@ -123,7 +146,7 @@ async function save() {
       })
       toast.add({ title: 'Dodano wpis', color: 'success' })
     }
-    await navigateTo('/athlete/dziennik')
+    await navigateTo(diaryListPath)
   } catch (e) {
     toast.add({
       title: 'Błąd zapisu',
@@ -136,7 +159,7 @@ async function save() {
 }
 
 function cancel() {
-  void navigateTo('/athlete/dziennik')
+  void navigateTo(diaryListPath)
 }
 
 useSeoMeta({
@@ -151,7 +174,7 @@ useSeoMeta({
       <div class="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <div class="min-w-0">
           <p class="text-[11px] font-bold uppercase tracking-wider text-primary">
-            Twój dziennik
+            Twój dziennik · {{ athleteName }}
           </p>
           <h1 class="truncate text-lg font-bold text-highlighted">
             {{ pageTitle }}
@@ -201,10 +224,24 @@ useSeoMeta({
 
     <main class="flex-1 overflow-y-auto px-4 py-6 sm:px-6">
       <div
-        v-if="!meAthlete"
-        class="mx-auto max-w-md py-16 text-center text-muted"
+        v-if="loading"
+        class="flex justify-center py-16 text-muted"
       >
-        Brak profilu zawodnika — nie możesz zapisywać wpisów.
+        <UIcon
+          name="i-lucide-loader-2"
+          class="size-8 animate-spin"
+        />
+      </div>
+      <div
+        v-else-if="!meAthlete"
+        class="mx-auto max-w-3xl py-12"
+      >
+        <UAlert
+          color="warning"
+          variant="subtle"
+          title="Brak profilu zawodnika"
+          description="Twoje konto nie jest powiązane z rekordem zawodnika."
+        />
       </div>
       <div
         v-else
@@ -261,7 +298,7 @@ useSeoMeta({
             <UFormField label="Temat (opcjonalnie)">
               <UInput
                 v-model="form.title"
-                placeholder="np. Przysiad / technika"
+                placeholder="np. Technika rwania"
                 size="lg"
                 class="w-full"
               />
@@ -269,7 +306,7 @@ useSeoMeta({
           </div>
           <UFormField
             label="Treść / obciążenia / uwagi"
-            description="Pełny edytor na cały ekran — wygodniejszy przy dłuższych notatkach."
+            description="Pełny edytor — jak na osobnej stronie dokumentu (panel trenera)."
             required
           >
             <ClubRichTextEditor

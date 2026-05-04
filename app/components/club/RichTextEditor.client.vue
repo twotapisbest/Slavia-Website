@@ -9,6 +9,7 @@ import Placeholder from '@tiptap/extension-placeholder'
 import Highlight from '@tiptap/extension-highlight'
 import { Color } from '@tiptap/extension-color'
 import { TextStyle } from '@tiptap/extension-text-style'
+import Image from '@tiptap/extension-image'
 
 const props = withDefaults(
   defineProps<{
@@ -25,6 +26,9 @@ const props = withDefaults(
 const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
+
+/** Ostatni HTML wyemitowany z edytora — żeby `watch(modelValue)` nie wołał `setContent` na tym samym cyklu (psuje pisanie / fokus). */
+const lastEmittedHtml = ref<string | null>(null)
 
 const TEXT_COLORS = [
   { label: 'Domyślny', value: '' },
@@ -63,7 +67,12 @@ const editor = useEditor({
     }),
     Highlight.configure({ multicolor: true }),
     TextStyle,
-    Color
+    Color,
+    Image.configure({
+      HTMLAttributes: {
+        class: 'max-w-full h-auto rounded-lg'
+      }
+    })
   ],
   content: props.modelValue || '<p></p>',
   /** Obsługiwane w @tiptap/vue-3 (SSR/hydracja); typ `EditorOptions` bywa niekompletny w TS. */
@@ -76,7 +85,9 @@ const editor = useEditor({
     }
   },
   onUpdate: ({ editor: ed }) => {
-    emit('update:modelValue', ed.getHTML())
+    const html = ed.getHTML()
+    lastEmittedHtml.value = html
+    emit('update:modelValue', html)
   }
 })
 
@@ -88,12 +99,23 @@ watch(
       return
     }
     const next = html || '<p></p>'
+    if (lastEmittedHtml.value !== null && next === lastEmittedHtml.value) {
+      return
+    }
     if (next === ed.getHTML()) {
+      lastEmittedHtml.value = next
       return
     }
     ed.commands.setContent(next, { emitUpdate: false })
+    lastEmittedHtml.value = ed.getHTML()
   }
 )
+
+watch(editor, ed => {
+  if (ed && !ed.isDestroyed) {
+    lastEmittedHtml.value = ed.getHTML()
+  }
+})
 
 onBeforeUnmount(() => {
   editor.value?.destroy()
@@ -114,6 +136,18 @@ function setLink() {
     return
   }
   ed.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+}
+
+function setImage() {
+  const ed = editor.value
+  if (!ed) {
+    return
+  }
+  const url = window.prompt('Adres URL obrazu', 'https://')
+  if (url === null || url === '') {
+    return
+  }
+  ed.chain().focus().setImage({ src: url }).run()
 }
 
 function applyTextColor(hex: string) {
@@ -428,6 +462,17 @@ const colorPopoverOpen = ref(false)
       >
         <UIcon
           name="i-lucide-link"
+          class="size-4"
+        />
+      </button>
+      <button
+        type="button"
+        :class="toolbarBtn"
+        title="Wstaw obraz"
+        @click="setImage"
+      >
+        <UIcon
+          name="i-lucide-image"
           class="size-4"
         />
       </button>

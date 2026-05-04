@@ -55,7 +55,10 @@ const form = reactive({
   clean_and_jerk: 0,
   total: 0,
   date: '',
-  status: 'Approved' as 'Pending' | 'Approved'
+  status: 'Approved' as 'Pending' | 'Approved',
+  squat_kg: null as number | null,
+  bench_kg: null as number | null,
+  deadlift_kg: null as number | null
 })
 const saving = ref(false)
 
@@ -66,7 +69,10 @@ const formAdd = reactive({
   snatch: 0,
   clean_and_jerk: 0,
   total: 0,
-  date: ''
+  date: '',
+  squat_kg: null as number | null,
+  bench_kg: null as number | null,
+  deadlift_kg: null as number | null
 })
 
 function defaultDateStr() {
@@ -79,6 +85,9 @@ function openAddModal() {
   formAdd.clean_and_jerk = 0
   formAdd.total = 0
   formAdd.date = defaultDateStr()
+  formAdd.squat_kg = null
+  formAdd.bench_kg = null
+  formAdd.deadlift_kg = null
   addModalOpen.value = true
 }
 
@@ -93,15 +102,20 @@ async function submitAdd() {
   }
   savingAdd.value = true
   try {
+    const body: Record<string, unknown> = {
+      athlete_id: formAdd.athlete_id,
+      snatch: formAdd.snatch,
+      clean_and_jerk: formAdd.clean_and_jerk,
+      total: formAdd.snatch + formAdd.clean_and_jerk,
+      date: formAdd.date
+    }
+    if (formAdd.squat_kg != null && formAdd.squat_kg > 0) body.squat_kg = formAdd.squat_kg
+    if (formAdd.bench_kg != null && formAdd.bench_kg > 0) body.bench_kg = formAdd.bench_kg
+    if (formAdd.deadlift_kg != null && formAdd.deadlift_kg > 0) body.deadlift_kg = formAdd.deadlift_kg
+
     await apiFetch<CompetitionResult>('/api/results', {
       method: 'POST',
-      body: {
-        athlete_id: formAdd.athlete_id,
-        snatch: formAdd.snatch,
-        clean_and_jerk: formAdd.clean_and_jerk,
-        total: formAdd.snatch + formAdd.clean_and_jerk,
-        date: formAdd.date
-      }
+      body
     })
     toast.add({
       title: 'Start zapisany',
@@ -128,6 +142,9 @@ function openEdit(r: CompetitionResult) {
   form.total = r.total
   form.date = r.date.slice(0, 10)
   form.status = r.status
+  form.squat_kg = r.squat_kg ?? null
+  form.bench_kg = r.bench_kg ?? null
+  form.deadlift_kg = r.deadlift_kg ?? null
   modalOpen.value = true
 }
 
@@ -144,7 +161,10 @@ async function saveEdit() {
         clean_and_jerk: form.clean_and_jerk,
         total: form.snatch + form.clean_and_jerk,
         date: form.date,
-        status: form.status
+        status: form.status,
+        squat_kg: form.squat_kg != null && form.squat_kg > 0 ? form.squat_kg : null,
+        bench_kg: form.bench_kg != null && form.bench_kg > 0 ? form.bench_kg : null,
+        deadlift_kg: form.deadlift_kg != null && form.deadlift_kg > 0 ? form.deadlift_kg : null
       }
     })
     toast.add({ title: 'Zapisano start', color: 'success' })
@@ -243,6 +263,9 @@ watch([() => formAdd.snatch, () => formAdd.clean_and_jerk], () => {
             <th class="px-4 py-3 text-left font-semibold text-muted">
               Status
             </th>
+            <th class="hidden px-4 py-3 text-right text-xs font-semibold text-muted lg:table-cell">
+              Siła
+            </th>
             <th class="px-4 py-3 text-right font-semibold text-muted">
               Akcje
             </th>
@@ -251,7 +274,7 @@ watch([() => formAdd.snatch, () => formAdd.clean_and_jerk], () => {
         <tbody class="divide-y divide-default">
           <tr v-if="pending">
             <td
-              colspan="7"
+              colspan="8"
               class="px-4 py-10 text-center text-muted"
             >
               <UIcon
@@ -262,7 +285,7 @@ watch([() => formAdd.snatch, () => formAdd.clean_and_jerk], () => {
           </tr>
           <tr v-else-if="rows.length === 0">
             <td
-              colspan="7"
+              colspan="8"
               class="px-4 py-10 text-center text-muted"
             >
               Brak zapisanych startów.
@@ -296,6 +319,12 @@ watch([() => formAdd.snatch, () => formAdd.clean_and_jerk], () => {
                 >
                   {{ r.status === 'Approved' ? 'Zatwierdzony' : 'Oczekuje' }}
                 </UBadge>
+              </td>
+              <td class="hidden px-4 py-3 text-right text-[11px] tabular-nums text-muted lg:table-cell">
+                <span v-if="r.squat_kg != null || r.bench_kg != null || r.deadlift_kg != null">
+                  {{ r.squat_kg ?? '—' }}/{{ r.bench_kg ?? '—' }}/{{ r.deadlift_kg ?? '—' }}
+                </span>
+                <span v-else>—</span>
               </td>
               <td class="px-4 py-3 text-right">
                 <div class="flex justify-end gap-1">
@@ -383,6 +412,41 @@ watch([() => formAdd.snatch, () => formAdd.clean_and_jerk], () => {
               </UFormField>
               <p class="text-xs text-muted">
                 Suma (auto): <strong class="tabular-nums text-highlighted">{{ form.total }}</strong> kg
+              </p>
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <UFormField label="Przysiad (kg)">
+                  <UInput
+                    v-model.number="form.squat_kg"
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    size="lg"
+                    class="w-full tabular-nums"
+                  />
+                </UFormField>
+                <UFormField label="Wyciskanie (kg)">
+                  <UInput
+                    v-model.number="form.bench_kg"
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    size="lg"
+                    class="w-full tabular-nums"
+                  />
+                </UFormField>
+                <UFormField label="Martwy (kg)">
+                  <UInput
+                    v-model.number="form.deadlift_kg"
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    size="lg"
+                    class="w-full tabular-nums"
+                  />
+                </UFormField>
+              </div>
+              <p class="text-[11px] text-muted">
+                Puste lub 0 — kasuje zapis siłowy przy edycji (JSON null).
               </p>
             </div>
           </div>
@@ -484,6 +548,38 @@ watch([() => formAdd.snatch, () => formAdd.clean_and_jerk], () => {
               <p class="text-xs text-muted">
                 Dwubój (auto): <strong class="tabular-nums text-highlighted">{{ formAdd.total }}</strong> kg
               </p>
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <UFormField label="Przysiad (kg)">
+                  <UInput
+                    v-model.number="formAdd.squat_kg"
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    size="lg"
+                    class="w-full tabular-nums"
+                  />
+                </UFormField>
+                <UFormField label="Wyciskanie (kg)">
+                  <UInput
+                    v-model.number="formAdd.bench_kg"
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    size="lg"
+                    class="w-full tabular-nums"
+                  />
+                </UFormField>
+                <UFormField label="Martwy (kg)">
+                  <UInput
+                    v-model.number="formAdd.deadlift_kg"
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    size="lg"
+                    class="w-full tabular-nums"
+                  />
+                </UFormField>
+              </div>
             </div>
           </div>
           <div class="slavia-form-actions border-t border-default/60 pt-4">

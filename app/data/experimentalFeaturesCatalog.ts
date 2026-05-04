@@ -45,11 +45,11 @@ export const EXPERIMENTAL_FEATURES: ExperimentalFeatureDefinition[] = [
     defaultEnabled: true
   },
   {
-    id: 'barbell_pose_analysis',
-    label: 'Analiza toru sztangi (TensorFlow / pose)',
+    id: 'data_import_from_federations',
+    label: 'Import danych z federacji (PZPC, Śląski Związek, podnoszenieciezarów.pl)',
     description:
-      'Strony `/athlete/analiza-sztangi` i `/trainer/analiza-sztangi` oraz model MoveNet w przeglądarce. Ciężkie obliczenia — wyłącz, jeśli psuje stabilność lub urządzenia.',
-    defaultEnabled: true
+      'Po stronie API flaga jest przekazywana jako dev_mode: włączone = zapis nowych wyników do bazy (Approved); wyłączone = tylko podgląd raportu (parsowanie i dopasowanie bez INSERT).',
+    defaultEnabled: false
   }
 ]
 
@@ -57,3 +57,4 @@ export type ExperimentalFeatureId =
   | 'club_notification_bell'
   | 'pwa_service_worker'
   | 'barbell_pose_analysis'
+  | 'data_import_from_federations'

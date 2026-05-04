@@ -4,6 +4,7 @@ import { getApiErrorMessage } from '~/composables/useApi'
 interface GalleryPhoto {
   id: string
   image_url: string
+  media_type: string
   caption?: string | null
   sort_order: number
   published: boolean
@@ -43,14 +44,18 @@ const modalOpen = ref(false)
 const editingId = ref<string | null>(null)
 const draft = reactive({
   image_url: '',
+  media_type: 'image',
   caption: '',
   sort_order: 0,
   published: true
 })
+const uploadLoading = ref(false)
+const fileInputRef = ref<HTMLInputElement | null>(null)
 
 function openCreate() {
   editingId.value = null
   draft.image_url = ''
+  draft.media_type = 'image'
   draft.caption = ''
   draft.sort_order = 0
   draft.published = true
@@ -60,17 +65,50 @@ function openCreate() {
 function openEdit(p: GalleryPhoto) {
   editingId.value = p.id
   draft.image_url = p.image_url
+  draft.media_type = p.media_type || 'image'
   draft.caption = p.caption || ''
   draft.sort_order = Number(p.sort_order) || 0
   draft.published = p.published !== false
   modalOpen.value = true
 }
 
+function clickFileInput() {
+  fileInputRef.value?.click()
+}
+
+async function onFileChange(e: Event) {
+  const input = e.target as HTMLInputElement
+  if (!input.files?.length) {
+    return
+  }
+  const file = input.files[0]
+  input.value = ''
+  if (!file) {
+    return
+  }
+
+  const formData = new FormData()
+  formData.append('file', file)
+  uploadLoading.value = true
+  try {
+    const res = await apiFetch<{ url: string }>('/api/upload', {
+      method: 'POST',
+      body: formData
+    })
+    draft.image_url = res.url
+    toast.add({ title: 'Zdjęcie przesłane', color: 'success' })
+  } catch (err) {
+    toast.add({ title: 'Błąd uploadu', description: String(err), color: 'error' })
+  } finally {
+    uploadLoading.value = false
+  }
+}
+
 async function save() {
   if (!isAdmin.value) return
   const image_url = draft.image_url.trim()
   if (!image_url) {
-    toast.add({ title: 'Podaj adres zdjęcia (URL)', color: 'warning' })
+    toast.add({ title: 'Prześlij zdjęcie', color: 'warning' })
     return
   }
   try {
@@ -80,6 +118,7 @@ async function save() {
         method: 'PATCH',
         body: {
           image_url,
+          media_type: draft.media_type,
           caption: cap || null,
           sort_order: draft.sort_order,
           published: draft.published
@@ -91,6 +130,7 @@ async function save() {
         method: 'POST',
         body: {
           image_url,
+          media_type: draft.media_type,
           caption: cap || undefined,
           sort_order: draft.sort_order,
           published: draft.published
@@ -184,11 +224,20 @@ const sortedPhotos = computed(() => {
       >
         <div class="relative">
           <img
+            v-if="p.media_type === 'image'"
             :src="p.image_url"
             :alt="p.caption || 'Zdjęcie klubu'"
             class="w-full object-cover"
             loading="lazy"
           >
+          <video
+            v-else
+            :src="p.image_url"
+            :alt="p.caption || 'Film klubu'"
+            class="w-full object-cover"
+            controls
+            loading="lazy"
+          ></video>
           <UBadge
             v-if="isAdmin && !p.published"
             class="absolute left-2 top-2"
@@ -242,15 +291,45 @@ const sortedPhotos = computed(() => {
       <template #content>
         <div class="flex flex-col gap-4 p-4 sm:p-6">
           <UFormField
-            label="URL obrazu"
-            description="Wklej link z Cloudinary lub innego hostingu (jak przy okładce aktualności)."
+            label="Zdjęcie"
+            description="Prześlij zdjęcie z urządzenia."
             required
           >
-            <UInput
-              v-model="draft.image_url"
-              type="url"
-              size="lg"
-              class="w-full"
+            <div class="flex flex-wrap items-center gap-2">
+              <UInput
+                v-model="draft.image_url"
+                placeholder="URL zdjęcia..."
+                size="lg"
+                class="min-w-0 flex-1"
+                readonly
+              />
+              <UButton
+                icon="i-lucide-upload"
+                color="neutral"
+                variant="soft"
+                size="lg"
+                :loading="uploadLoading"
+                type="button"
+                @click="clickFileInput"
+              >
+                Prześlij
+              </UButton>
+              <input
+                ref="fileInputRef"
+                type="file"
+                hidden
+                :accept="draft.media_type === 'video' ? 'video/*' : 'image/*'"
+                @change="onFileChange"
+              >
+            </div>
+          </UFormField>
+          <UFormField label="Typ mediów">
+            <URadioGroup
+              v-model="draft.media_type"
+              :options="[
+                { label: 'Zdjęcie', value: 'image' },
+                { label: 'Film', value: 'video' }
+              ]"
             />
           </UFormField>
           <UFormField label="Podpis (opcjonalnie)">

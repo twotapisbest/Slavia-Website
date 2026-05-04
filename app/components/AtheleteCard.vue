@@ -144,7 +144,7 @@ function clearHover() {
         <div class="relative group">
           <div class="absolute inset-0 rounded-xl bg-primary/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
           <img
-            :src="athlete.photo || 'https://via.placeholder.com/300?text=Slavia'"
+            :src="athlete.photo || '/athlete-placeholder.svg'"
             :alt="athlete.name"
             class="relative h-44 w-44 rounded-xl object-cover border-2 border-primary/20 group-hover:border-primary transition-all shadow-md"
           >

@@ -178,7 +178,7 @@ const filteredRankings = computed(() => {
           <div class="flex flex-col items-center">
             <div class="relative mb-4">
               <img
-                :src="podium[1].photo || 'https://via.placeholder.com/300?text=Athlete'"
+                :src="podium[1].photo || '/athlete-placeholder.svg'"
                 class="size-32 rounded-full border-4 border-slate-400/50 object-cover shadow-xl grayscale-[0.3] group-hover:grayscale-0 transition-all duration-500 group-hover:scale-105"
               >
               <div class="absolute -bottom-2 -right-2 bg-slate-400 text-slate-950 size-10 rounded-full flex items-center justify-center font-black text-xl shadow-lg ring-4 ring-background">
@@ -213,7 +213,7 @@ const filteredRankings = computed(() => {
                 />
               </div>
               <img
-                :src="podium[0].photo || 'https://via.placeholder.com/300?text=Athlete'"
+                :src="podium[0].photo || '/athlete-placeholder.svg'"
                 class="size-48 rounded-full border-4 border-yellow-500 object-cover shadow-[0_0_30px_rgba(234,179,8,0.3)] ring-6 ring-yellow-500/10 group-hover:scale-110 transition-all duration-700"
               >
               <div class="absolute -bottom-2 -right-2 bg-yellow-500 text-yellow-950 size-14 rounded-full flex items-center justify-center font-black text-2xl shadow-xl ring-4 ring-background">
@@ -242,7 +242,7 @@ const filteredRankings = computed(() => {
           <div class="flex flex-col items-center">
             <div class="relative mb-4">
               <img
-                :src="podium[2].photo || 'https://via.placeholder.com/300?text=Athlete'"
+                :src="podium[2].photo || '/athlete-placeholder.svg'"
                 class="size-28 rounded-full border-4 border-amber-700/50 object-cover shadow-lg grayscale-[0.5] group-hover:grayscale-0 transition-all duration-500 group-hover:scale-105"
               >
               <div class="absolute -bottom-2 -right-2 bg-amber-700 text-white size-8 rounded-full flex items-center justify-center font-black text-lg shadow-lg ring-4 ring-background">
