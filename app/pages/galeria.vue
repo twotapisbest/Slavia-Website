@@ -51,6 +51,8 @@ const draft = reactive({
 })
 const uploadLoading = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
+const mediaPreviewOpen = ref(false)
+const mediaPreviewItem = ref<GalleryPhoto | null>(null)
 
 function openCreate() {
   editingId.value = null
@@ -76,6 +78,11 @@ function clickFileInput() {
   fileInputRef.value?.click()
 }
 
+function openMediaPreview(item: GalleryPhoto) {
+  mediaPreviewItem.value = item
+  mediaPreviewOpen.value = true
+}
+
 async function onFileChange(e: Event) {
   const input = e.target as HTMLInputElement
   if (!input.files?.length) {
@@ -85,6 +92,15 @@ async function onFileChange(e: Event) {
   input.value = ''
   if (!file) {
     return
+  }
+  const isVideo = file.type.startsWith('video/')
+  const isImage = file.type.startsWith('image/')
+  if (!isVideo && !isImage) {
+    toast.add({ title: 'Obsługiwane formaty', description: 'Prześlij obraz albo film (mp4/mov).', color: 'warning' })
+    return
+  }
+  if (isVideo) {
+    draft.media_type = 'video'
   }
 
   const formData = new FormData()
@@ -96,7 +112,7 @@ async function onFileChange(e: Event) {
       body: formData
     })
     draft.image_url = res.url
-    toast.add({ title: 'Zdjęcie przesłane', color: 'success' })
+    toast.add({ title: isVideo ? 'Film przesłany' : 'Zdjęcie przesłane', color: 'success' })
   } catch (err) {
     toast.add({ title: 'Błąd uploadu', description: String(err), color: 'error' })
   } finally {
@@ -227,17 +243,29 @@ const sortedPhotos = computed(() => {
             v-if="p.media_type === 'image'"
             :src="p.image_url"
             :alt="p.caption || 'Zdjęcie klubu'"
-            class="w-full object-cover"
+            class="w-full cursor-zoom-in object-cover"
             loading="lazy"
+            @click="openMediaPreview(p)"
           >
-          <video
+          <button
             v-else
-            :src="p.image_url"
-            :alt="p.caption || 'Film klubu'"
-            class="w-full object-cover"
-            controls
-            loading="lazy"
-          ></video>
+            type="button"
+            class="group relative block w-full text-left"
+            @click="openMediaPreview(p)"
+          >
+            <video
+              :src="p.image_url"
+              class="w-full object-cover"
+              preload="metadata"
+              muted
+            />
+            <div class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25 group-hover:bg-black/35">
+              <span class="flex items-center gap-2 rounded-full bg-black/65 px-3 py-1 text-xs font-semibold text-white">
+                <UIcon name="i-lucide-play" class="size-4" />
+                Odtwórz film
+              </span>
+            </div>
+          </button>
           <UBadge
             v-if="isAdmin && !p.published"
             class="absolute left-2 top-2"
@@ -364,6 +392,29 @@ const sortedPhotos = computed(() => {
               Zapisz
             </UButton>
           </div>
+        </div>
+      </template>
+    </UModal>
+    <UModal
+      v-model:open="mediaPreviewOpen"
+      :title="mediaPreviewItem?.caption || (mediaPreviewItem?.media_type === 'video' ? 'Podgląd filmu' : 'Podgląd zdjęcia')"
+      :ui="{ content: 'max-w-5xl' }"
+    >
+      <template #content>
+        <div class="p-3 sm:p-4">
+          <img
+            v-if="mediaPreviewItem?.media_type === 'image'"
+            :src="mediaPreviewItem.image_url"
+            :alt="mediaPreviewItem.caption || 'Podgląd zdjęcia'"
+            class="max-h-[75vh] w-full rounded-lg object-contain"
+          >
+          <video
+            v-else-if="mediaPreviewItem"
+            :src="mediaPreviewItem.image_url"
+            controls
+            class="max-h-[75vh] w-full rounded-lg bg-black object-contain"
+            autoplay
+          />
         </div>
       </template>
     </UModal>

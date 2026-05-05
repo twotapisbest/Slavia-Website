@@ -17,6 +17,8 @@ const phaseStep = ref(0)
 const frameProgress = ref({ current: 0, total: 0 })
 const feedback = ref<string[]>([])
 const samplesCount = ref(0)
+const analyzedSamples = ref<BarbellSample[]>([])
+const playbackReady = computed(() => analyzedSamples.value.length >= 2 && !!videoRef.value)
 
 let detector: Awaited<
   ReturnType<typeof import('@tensorflow-models/pose-detection').createDetector>
@@ -74,12 +76,16 @@ function resizeCanvasToVideo() {
   }
 }
 
-function drawPath(samples: BarbellSample[]) {
+function drawPath(samples: BarbellSample[], untilSec?: number) {
   const v = videoRef.value
   const c = canvasRef.value
   if (!v || !c || samples.length < 2) {
     return
   }
+  const visible = typeof untilSec === 'number'
+    ? samples.filter(s => s.t <= untilSec)
+    : samples
+  if (visible.length < 2) return
   resizeCanvasToVideo()
   const ctx = c.getContext('2d')
   if (!ctx) {
@@ -92,7 +98,7 @@ function drawPath(samples: BarbellSample[]) {
   ctx.strokeStyle = 'rgba(34, 197, 94, 0.45)'
   ctx.lineWidth = 2
   ctx.setLineDash([6, 6])
-  const hip = samples[Math.floor(samples.length / 2)]!
+  const hip = visible[Math.floor(visible.length / 2)]!
   ctx.beginPath()
   ctx.moveTo(hip.hipMidX * w, 0)
   ctx.lineTo(hip.hipMidX * w, h)
@@ -103,8 +109,8 @@ function drawPath(samples: BarbellSample[]) {
   ctx.lineWidth = 3
   ctx.lineJoin = 'round'
   ctx.beginPath()
-  for (let i = 0; i < samples.length; i++) {
-    const pt = samples[i]!
+  for (let i = 0; i < visible.length; i++) {
+    const pt = visible[i]!
     const x = pt.barX * w
     const y = pt.barY * h
     if (i === 0) {
@@ -116,7 +122,7 @@ function drawPath(samples: BarbellSample[]) {
   ctx.stroke()
 
   ctx.fillStyle = 'rgba(251, 191, 36, 0.9)'
-  const last = samples[samples.length - 1]!
+  const last = visible[visible.length - 1]!
   ctx.beginPath()
   ctx.arc(last.barX * w, last.barY * h, 6, 0, Math.PI * 2)
   ctx.fill()
@@ -154,6 +160,32 @@ function extractSample(pose: Pose, videoW: number, videoH: number): BarbellSampl
 
 function clamp01(n: number) {
   return Math.min(1, Math.max(0, n))
+}
+
+function filterActiveLiftWindow(samples: BarbellSample[]): BarbellSample[] {
+  if (samples.length < 8) return samples
+  const withVel = samples.map((s, i) => {
+    if (i === 0) return { i, vY: 0 }
+    const prev = samples[i - 1]!
+    const dt = Math.max(0.001, s.t - prev.t)
+    return { i, vY: (s.barY - prev.barY) / dt }
+  })
+  const upThreshold = -0.025
+  const downThreshold = 0.018
+  const startIdx = withVel.findIndex(v => v.vY < upThreshold)
+  if (startIdx <= 0) return samples
+  let peakIdx = startIdx
+  for (let i = startIdx; i < samples.length; i++) {
+    if (samples[i]!.barY < samples[peakIdx]!.barY) peakIdx = i
+  }
+  let stopIdx = samples.length - 1
+  for (let i = peakIdx + 1; i < withVel.length; i++) {
+    if (withVel[i]!.vY > downThreshold && samples[i]!.barY >= samples[startIdx]!.barY - 0.03) {
+      stopIdx = i
+      break
+    }
+  }
+  return samples.slice(startIdx, stopIdx + 1)
 }
 
 /** Klatki UI — bez blokady, jeśli zdarzenie już minęło */
@@ -316,6 +348,7 @@ async function analyzeVideo() {
   frameProgress.value = { current: 0, total: 0 }
   feedback.value = []
   samplesCount.value = 0
+  analyzedSamples.value = []
 
   try {
     const det = await ensureDetector((pct) => {
@@ -374,8 +407,9 @@ async function analyzeVideo() {
       }
     }
 
-    samplesCount.value = raw.length
-    if (raw.length < 8) {
+    const activeLift = filterActiveLiftWindow(raw)
+    samplesCount.value = activeLift.length
+    if (activeLift.length < 8) {
       feedback.value = buildBiomechanicalFeedback([])
       drawPath([])
       toast.add({
@@ -386,8 +420,9 @@ async function analyzeVideo() {
       return
     }
 
-    drawPath(raw)
-    feedback.value = buildBiomechanicalFeedback(raw)
+    analyzedSamples.value = activeLift
+    drawPath(activeLift)
+    feedback.value = buildBiomechanicalFeedback(activeLift)
     toast.add({ title: 'Analiza zakończona', color: 'success' })
   } catch (e) {
     console.error(e)
@@ -407,6 +442,17 @@ async function analyzeVideo() {
     frameProgress.value = { current: 0, total: 0 }
     progress.value = 100
   }
+}
+
+function onVideoTimeUpdate() {
+  const v = videoRef.value
+  if (!v || analyzedSamples.value.length < 2) return
+  drawPath(analyzedSamples.value, v.currentTime)
+}
+
+function onVideoEnded() {
+  if (analyzedSamples.value.length < 2) return
+  drawPath(analyzedSamples.value)
 }
 
 onMounted(() => {
@@ -580,6 +626,8 @@ onBeforeUnmount(() => {
             muted
             preload="auto"
             @loadedmetadata="resizeCanvasToVideo"
+            @timeupdate="onVideoTimeUpdate"
+            @ended="onVideoEnded"
           />
           <canvas
             ref="canvasRef"
@@ -596,6 +644,12 @@ onBeforeUnmount(() => {
             class="size-4 text-primary"
           />
           Wykorzystano {{ samplesCount }} próbek z widoczną sztangą (nadgarstki).
+        </p>
+        <p
+          v-if="playbackReady && !busy"
+          class="text-xs text-muted"
+        >
+          Odtwarzanie rysuje trajektorię w czasie rzeczywistym tylko dla fazy aktywnego podnoszenia (bez odkładania).
         </p>
       </div>
     </div>
