@@ -12,6 +12,7 @@ import {
   useSlaviaAppearance,
   type SlaviaThemePreset
 } from '~/composables/useSlaviaAppearance'
+import { getApiErrorMessage } from '~/composables/useApi'
 import type { CompetitionResult } from '~/types/models'
 
 definePageMeta({ middleware: 'superadmin' })
@@ -22,6 +23,7 @@ useSeoMeta({
 })
 
 const auth = useAuth()
+const backendProvider = useBackendProvider()
 const apiFetch = useApi()
 const toast = useToast()
 const experimental = useExperimentalFeatures()
@@ -150,6 +152,17 @@ const buildMeta = computed(() => `Środowisko: ${import.meta.dev ? 'development'
 const devLinkGroups = DEV_TOOL_LINK_GROUPS
 
 const apiPingMs = ref<number | null>(null)
+const backendProviderSaving = ref(false)
+const backendProviderServerUpdatedAt = ref<string | null>(null)
+const selectedBackendProvider = ref<'leapcell' | 'northflank'>(backendProvider.activeProvider.value)
+const activeBackendProvider = computed(() => backendProvider.activeProvider.value)
+
+watch(
+  () => backendProvider.activeProvider.value,
+  (next) => {
+    selectedBackendProvider.value = next
+  }
+)
 
 function isExternalHref(to: string) {
   return /^https?:\/\//i.test(to)
@@ -161,6 +174,17 @@ onMounted(() => {
     userAgentDisplay.value = navigator.userAgent
     refreshDomPresetAttr()
   }
+  void $fetch<{ active_provider: 'leapcell' | 'northflank', updated_at?: string | null }>('/api/system/backend-provider', {
+    headers: auth.token.value ? { Authorization: `Bearer ${auth.token.value}` } : undefined
+  })
+    .then((res) => {
+      if (res.active_provider === 'leapcell' || res.active_provider === 'northflank') {
+        backendProvider.setActiveProvider(res.active_provider)
+        selectedBackendProvider.value = res.active_provider
+      }
+      backendProviderServerUpdatedAt.value = res.updated_at ?? null
+    })
+    .catch(() => {})
 })
 
 function formatLogTs(ts: number) {
@@ -485,6 +509,44 @@ async function pingApiLatency() {
   }
 }
 
+async function refreshBackendProviderSetting() {
+  try {
+    const res = await $fetch<{ active_provider: 'leapcell' | 'northflank', updated_at?: string | null }>('/api/system/backend-provider', {
+      headers: auth.token.value ? { Authorization: `Bearer ${auth.token.value}` } : undefined
+    })
+    if (res.active_provider === 'leapcell' || res.active_provider === 'northflank') {
+      backendProvider.setActiveProvider(res.active_provider)
+      selectedBackendProvider.value = res.active_provider
+    }
+    backendProviderServerUpdatedAt.value = res.updated_at ?? null
+    toast.add({ title: 'Odświeżono globalne ustawienie backendu', color: 'success' })
+  } catch (e) {
+    toast.add({ title: 'Nie udało się pobrać ustawienia backendu', description: getApiErrorMessage(e), color: 'error' })
+  }
+}
+
+async function saveBackendProviderSetting() {
+  backendProviderSaving.value = true
+  try {
+    const res = await $fetch<{ active_provider: 'leapcell' | 'northflank', updated_at?: string | null }>('/api/system/backend-provider', {
+      method: 'PATCH',
+      headers: auth.token.value ? { Authorization: `Bearer ${auth.token.value}` } : undefined,
+      body: { active_provider: selectedBackendProvider.value }
+    })
+    backendProvider.setActiveProvider(res.active_provider)
+    backendProviderServerUpdatedAt.value = res.updated_at ?? null
+    toast.add({
+      title: `Ustawiono backend: ${res.active_provider === 'northflank' ? 'Northflank' : 'Leapcell'}`,
+      description: 'Zmiana jest globalna (serwerowa) i działa na wszystkich urządzeniach.',
+      color: 'success'
+    })
+  } catch (e) {
+    toast.add({ title: 'Nie udało się zapisać ustawienia backendu', description: getApiErrorMessage(e), color: 'error' })
+  } finally {
+    backendProviderSaving.value = false
+  }
+}
+
 async function clearBrowserCachesApi() {
   if (!import.meta.client || !('caches' in window)) {
     toast.add({ title: 'Cache Storage niedostępny', color: 'warning' })
@@ -796,6 +858,65 @@ function downloadDevSelftestFile() {
         >
           Ping GET /api/posts: <span class="text-highlighted">{{ apiPingMs }}</span> ms
         </p>
+        <div class="mt-3 rounded-xl border border-default/60 bg-muted/10 p-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-muted">
+              Globalny provider backendu
+            </p>
+            <UBadge size="xs" variant="subtle" color="primary">
+              aktywny: {{ activeBackendProvider === 'northflank' ? 'Northflank' : 'Leapcell' }}
+            </UBadge>
+          </div>
+          <p class="mt-1 text-[11px] leading-snug text-muted">
+            Ustawienie zapisuje się po stronie API i obowiązuje dla wszystkich urządzeń/kont.
+          </p>
+          <div class="mt-2 flex flex-wrap gap-1">
+            <UButton
+              size="xs"
+              color="neutral"
+              class="touch-manipulation"
+              :variant="selectedBackendProvider === 'leapcell' ? 'solid' : 'outline'"
+              @click="selectedBackendProvider = 'leapcell'"
+            >
+              Leapcell
+            </UButton>
+            <UButton
+              size="xs"
+              color="neutral"
+              class="touch-manipulation"
+              :variant="selectedBackendProvider === 'northflank' ? 'solid' : 'outline'"
+              @click="selectedBackendProvider = 'northflank'"
+            >
+              Northflank
+            </UButton>
+          </div>
+          <div class="mt-2 flex flex-wrap gap-1">
+            <UButton
+              size="xs"
+              color="primary"
+              icon="i-lucide-save"
+              :loading="backendProviderSaving"
+              @click="saveBackendProviderSetting"
+            >
+              Zapisz globalnie
+            </UButton>
+            <UButton
+              size="xs"
+              variant="soft"
+              color="neutral"
+              icon="i-lucide-refresh-cw"
+              @click="refreshBackendProviderSetting"
+            >
+              Odśwież z serwera
+            </UButton>
+          </div>
+          <p
+            v-if="backendProviderServerUpdatedAt"
+            class="mt-2 font-mono text-[10px] text-muted"
+          >
+            updated_at: {{ backendProviderServerUpdatedAt }}
+          </p>
+        </div>
       </UCard>
 
       <UCard class="rounded-2xl border-default/60 p-4 shadow-sm lg:col-span-5">

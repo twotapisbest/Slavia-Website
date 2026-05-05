@@ -53,6 +53,14 @@ export default defineNuxtConfig({
        */
       apiBase: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000',
       /**
+       * URL backendu Leapcell (provider przełączany globalnie po stronie API).
+       */
+      apiBaseLeapcell: process.env.NUXT_PUBLIC_API_BASE_URL_LEAPCELL || process.env.NUXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000',
+      /**
+       * URL backendu Northflank (provider przełączany globalnie po stronie API).
+       */
+      apiBaseNorthflank: process.env.NUXT_PUBLIC_API_BASE_URL_NORTHFLANK || process.env.NUXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000',
+      /**
        * Publiczny URL strony — używany do canonical/og:url.
        */
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',

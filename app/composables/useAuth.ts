@@ -23,7 +23,7 @@ export function pickPostLoginPath(roleList: UserRole[]): string {
 }
 
 export function useAuth() {
-  const config = useRuntimeConfig()
+  const backendProvider = useBackendProvider()
   const token = useCookie<string | null>('slavia_token', {
     maxAge: 60 * 60 * 24 * 14,
     sameSite: 'lax',
@@ -32,7 +32,7 @@ export function useAuth() {
   })
   const user = useState<AuthUser | null>(USER_STATE_KEY, () => null)
 
-  const apiBase = computed(() => (config.public.apiBase as string).replace(/\/$/, ''))
+  const apiBase = computed(() => backendProvider.activeApiBase.value)
 
   const isLoggedIn = computed(() => !!token.value)
 

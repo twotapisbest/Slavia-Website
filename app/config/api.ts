@@ -57,6 +57,9 @@ export const apiRoutes = {
     manage: '/api/contact/manage',
     manageOne: (id: string) => `/api/contact/manage/${encodeURIComponent(id)}`
   },
+  system: {
+    backendProvider: '/api/system/backend-provider'
+  },
   upload: '/api/upload',
   notifications: {
     collection: '/api/notifications',
