@@ -1,0 +1,81 @@
+import { apiRoutes } from '~/config/api'
+
+export interface ChatThread {
+  id: string
+  athlete_user_id: string
+  trainer_user_id: string
+  created_at: string
+  updated_at: string
+}
+
+export interface ChatMessage {
+  id: string
+  thread_id: string
+  sender_user_id: string
+  body: string
+  created_at: string
+}
+
+export function useChat() {
+  const api = useApi()
+  const threads = ref<ChatThread[]>([])
+  const activeThreadId = ref<string | null>(null)
+  const messages = ref<ChatMessage[]>([])
+  const loading = ref(false)
+
+  async function refreshThreads() {
+    loading.value = true
+    try {
+      threads.value = await api<ChatThread[]>(apiRoutes.chat.threads).catch(() => [])
+      if (!activeThreadId.value && threads.value.length > 0) {
+        activeThreadId.value = threads.value[0]!.id
+      }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function openThread(athleteUserId: string, trainerUserId: string) {
+    const thread = await api<ChatThread>(apiRoutes.chat.threads, {
+      method: 'POST',
+      body: {
+        athlete_user_id: athleteUserId,
+        trainer_user_id: trainerUserId
+      }
+    })
+    activeThreadId.value = thread.id
+    await refreshThreads()
+    await refreshMessages()
+    return thread
+  }
+
+  async function refreshMessages() {
+    if (!activeThreadId.value) {
+      messages.value = []
+      return
+    }
+    messages.value = await api<ChatMessage[]>(apiRoutes.chat.messages(activeThreadId.value)).catch(() => [])
+  }
+
+  async function sendMessage(body: string) {
+    const threadId = activeThreadId.value
+    if (!threadId || !body.trim()) return
+    await api(apiRoutes.chat.messages(threadId), {
+      method: 'POST',
+      body: { body }
+    })
+    await refreshThreads()
+    await refreshMessages()
+  }
+
+  return {
+    threads,
+    activeThreadId,
+    messages,
+    loading,
+    refreshThreads,
+    openThread,
+    refreshMessages,
+    sendMessage
+  }
+}

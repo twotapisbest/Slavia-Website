@@ -139,6 +139,22 @@ const quickLinks = computed(() => {
       to: '/profil',
       color: 'text-neutral-500',
       bg: 'bg-neutral-500/10'
+    },
+    {
+      title: 'Czat trener–zawodnik',
+      description: 'Wiadomości 1:1 i szybki kontakt',
+      icon: 'i-lucide-messages-square',
+      to: '/chat',
+      color: 'text-sky-600',
+      bg: 'bg-sky-500/10'
+    },
+    {
+      title: 'Lista obecności',
+      description: 'Statusy obecności i historia',
+      icon: 'i-lucide-user-check',
+      to: '/attendance',
+      color: 'text-indigo-600',
+      bg: 'bg-indigo-500/10'
     }
   ]
   return links
