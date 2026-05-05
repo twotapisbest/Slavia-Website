@@ -6,4 +6,5 @@ export interface ClubNotification {
   body: string
   payload?: string | null
   created_at: string
+  is_read: boolean
 }

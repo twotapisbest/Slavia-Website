@@ -25,9 +25,19 @@ export function useNotifications() {
     items.value = items.value.filter(i => i.id !== id)
   }
 
+  async function markRead(id: string) {
+    await api(apiRoutes.notifications.markRead(id), { method: 'PATCH' })
+    items.value = items.value.map(i => (i.id === id ? { ...i, is_read: true } : i))
+  }
+
+  async function markAllRead() {
+    await api(apiRoutes.notifications.markAllRead, { method: 'PATCH' })
+    items.value = items.value.map(i => ({ ...i, is_read: true }))
+  }
+
   function clearLocal() {
     items.value = []
   }
 
-  return { items, loading, refresh, remove, clearLocal }
+  return { items, loading, refresh, remove, markRead, markAllRead, clearLocal }
 }

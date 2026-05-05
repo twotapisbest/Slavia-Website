@@ -8,7 +8,7 @@ import { useBrowserNotifications } from '~/composables/useBrowserNotifications'
 const auth = useAuth()
 const toast = useToast()
 const { resolveLink } = useNotificationLinks()
-const { items, loading, refresh, remove, clearLocal } = useNotifications()
+const { items, loading, refresh, remove, markRead, markAllRead, clearLocal } = useNotifications()
 const {
   enabled: systemNotificationsEnabled,
   permission,
@@ -57,6 +57,32 @@ async function onRemove(id: string, e: Event) {
   } catch (err) {
     toast.add({
       title: 'Nie udało się usunąć powiadomienia',
+      description: getApiErrorMessage(err),
+      color: 'error'
+    })
+  }
+}
+
+async function onMarkRead(id: string, e: Event) {
+  e.preventDefault()
+  e.stopPropagation()
+  try {
+    await markRead(id)
+  } catch (err) {
+    toast.add({
+      title: 'Nie udało się oznaczyć jako przeczytane',
+      description: getApiErrorMessage(err),
+      color: 'error'
+    })
+  }
+}
+
+async function onMarkAllRead() {
+  try {
+    await markAllRead()
+  } catch (err) {
+    toast.add({
+      title: 'Nie udało się oznaczyć wszystkich jako przeczytane',
       description: getApiErrorMessage(err),
       color: 'error'
     })
@@ -140,9 +166,14 @@ onBeforeUnmount(() => {
 
     <template #content>
       <div class="border-b border-default bg-muted/30 px-4 py-2.5">
-        <p class="text-xs font-semibold uppercase tracking-wide text-muted">
-          Powiadomienia
-        </p>
+        <div class="flex items-center justify-between gap-2">
+          <p class="text-xs font-semibold uppercase tracking-wide text-muted">
+            Powiadomienia
+          </p>
+          <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-check-check" @click="onMarkAllRead">
+            Oznacz wszystko
+          </UButton>
+        </div>
       </div>
 
       <div class="border-b border-default px-4 py-4">
@@ -175,7 +206,10 @@ onBeforeUnmount(() => {
           role="button"
           tabindex="0"
           class="group flex gap-2 border-b border-default px-3 py-3 text-left transition-colors last:border-b-0 hover:bg-primary/[0.06]"
-          :class="resolveLink(n) ? 'cursor-pointer' : 'cursor-default'"
+          :class="[
+            n.is_read ? '' : 'bg-primary/[0.05]',
+            resolveLink(n) ? 'cursor-pointer' : 'cursor-default'
+          ]"
           @click="onRowClick(n)"
           @keydown.enter="onRowClick(n)"
         >
@@ -190,6 +224,17 @@ onBeforeUnmount(() => {
               {{ relativeTime(n.created_at) }}
             </p>
           </div>
+          <UButton
+            v-if="!n.is_read"
+            color="primary"
+            variant="ghost"
+            size="xs"
+            icon="i-lucide-check"
+            square
+            aria-label="Oznacz jako przeczytane"
+            type="button"
+            @click.stop="onMarkRead(n.id, $event)"
+          />
           <UButton
             color="neutral"
             variant="ghost"

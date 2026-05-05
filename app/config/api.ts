@@ -57,13 +57,27 @@ export const apiRoutes = {
     manage: '/api/contact/manage',
     manageOne: (id: string) => `/api/contact/manage/${encodeURIComponent(id)}`
   },
+  exercises: {
+    board: '/api/exercises/board'
+  },
+  attendance: {
+    collection: '/api/attendance',
+    athlete: (athleteId: string) => `/api/attendance/${encodeURIComponent(athleteId)}`
+  },
+  chat: {
+    threads: '/api/chat/threads',
+    messages: (threadId: string) => `/api/chat/threads/${encodeURIComponent(threadId)}/messages`
+  },
   system: {
-    backendProvider: '/api/system/backend-provider'
+    backendProvider: '/api/system/backend-provider',
+    auditLogs: '/api/system/audit-logs'
   },
   upload: '/api/upload',
   notifications: {
     collection: '/api/notifications',
-    one: (id: string) => `/api/notifications/${encodeURIComponent(id)}`
+    one: (id: string) => `/api/notifications/${encodeURIComponent(id)}`,
+    markRead: (id: string) => `/api/notifications/${encodeURIComponent(id)}/read`,
+    markAllRead: '/api/notifications/read-all'
   },
   competitions: {
     collection: '/api/competitions',
