@@ -1,42 +1,24 @@
 <script setup lang="ts">
-import type { Athlete } from '~/types/models'
+import type { ExerciseBoardRow } from '~/types/models'
 
 definePageMeta({
   middleware: 'auth'
 })
 
 const auth = useAuth()
-const apiFetch = useApi()
+const { fetchBoard, withTotal } = useExercisesBoard()
 
 const canOpen = computed(() => auth.isAthlete.value || auth.isSuperAdmin.value)
 
-const { data: athletes, pending } = await useAsyncData('athlete-exercises-ranking', async (): Promise<Athlete[]> => {
+const { data: rows, pending } = await useAsyncData('athlete-exercises-ranking', async (): Promise<ExerciseBoardRow[]> => {
   if (!canOpen.value) {
     return []
   }
-  try {
-    return await apiFetch<Athlete[]>('/api/athletes/admin')
-  } catch {
-    return await apiFetch<Athlete[]>('/api/athletes').catch(() => [])
-  }
+  return fetchBoard()
 })
 
 const ranking = computed(() => {
-  return [...(athletes.value || [])]
-    .filter(a => a.is_active !== false)
-    .map(a => {
-      const snatch = Number(a.best_snatch_kg || 0)
-      const clean = Number(a.best_clean_jerk_kg || 0)
-      return {
-        id: a.id,
-        full_name: a.full_name,
-        squat: Math.round((snatch * 1.45) * 10) / 10,
-        bench: Math.round((clean * 0.72) * 10) / 10,
-        deadlift: Math.round((clean * 1.18) * 10) / 10,
-        total: Math.round((snatch * 1.45 + clean * 0.72 + clean * 1.18) * 10) / 10
-      }
-    })
-    .sort((a, b) => b.total - a.total)
+  return withTotal([...(rows.value || [])]).sort((a, b) => (b.total || 0) - (a.total || 0))
 })
 
 useSeoMeta({
@@ -52,7 +34,7 @@ useSeoMeta({
         Inne ćwiczenia
       </h1>
       <p class="mt-2 text-sm text-muted sm:text-base lg:leading-relaxed">
-        Ranking pomocniczych bojów (przysiad, wyciskanie, martwy) dla zawodników klubu.
+        Rzeczywiste wyniki siłowe z zatwierdzonych wpisów (trener/admin) + status zgłoszeń zawodników.
       </p>
     </div>
 
@@ -77,20 +59,37 @@ useSeoMeta({
               <th class="py-2 px-3">Przysiad</th>
               <th class="py-2 px-3">Wyciskanie</th>
               <th class="py-2 px-3">Martwy</th>
-              <th class="py-2 pl-3">Suma</th>
+              <th class="py-2 px-3">Suma</th>
+              <th class="py-2 pl-3">Źródła</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in ranking" :key="row.id" class="border-b border-default/60">
-              <td class="py-2 pr-3 font-medium text-highlighted">{{ row.full_name }}</td>
-              <td class="py-2 px-3">{{ row.squat }} kg</td>
-              <td class="py-2 px-3">{{ row.bench }} kg</td>
-              <td class="py-2 px-3">{{ row.deadlift }} kg</td>
-              <td class="py-2 pl-3 font-semibold">{{ row.total }} kg</td>
+            <tr v-for="row in ranking" :key="row.athlete_id" class="border-b border-default/60 align-top">
+              <td class="py-2 pr-3 font-medium text-highlighted">{{ row.athlete_name }}</td>
+              <td class="py-2 px-3">{{ row.squat ?? '—' }}<span v-if="row.squat != null"> kg</span></td>
+              <td class="py-2 px-3">{{ row.bench ?? '—' }}<span v-if="row.bench != null"> kg</span></td>
+              <td class="py-2 px-3">{{ row.deadlift ?? '—' }}<span v-if="row.deadlift != null"> kg</span></td>
+              <td class="py-2 px-3 font-semibold">{{ row.total ?? '—' }}<span v-if="row.total != null"> kg</span></td>
+              <td class="py-2 pl-3">
+                <div class="flex flex-wrap gap-1">
+                  <UBadge size="xs" variant="subtle" :color="row.source_trainer_direct ? 'success' : 'neutral'">
+                    trener: {{ row.source_trainer_direct ? 'tak' : 'brak' }}
+                  </UBadge>
+                  <UBadge size="xs" variant="subtle" color="warning">
+                    pending zawodnika: {{ row.source_athlete_pending_count }}
+                  </UBadge>
+                  <UBadge size="xs" variant="subtle" color="primary">
+                    historia treningów: {{ row.source_training_log_count }}
+                  </UBadge>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
+      <p class="mt-3 text-xs text-muted">
+        Zasada: wartości ćwiczeń pochodzą wyłącznie z zatwierdzonych wpisów siłowych; zgłoszenia zawodnika są widoczne jako licznik oczekujących.
+      </p>
     </UCard>
   </UContainer>
 </template>

@@ -40,7 +40,6 @@
     "@nuxt/eslint": "^1.15.2",
     "@playwright/test": "^1.59.1",
     "@types/node": "^25.6.0",
-    "@vite-pwa/nuxt": "^1.1.1",
     "esbuild": "0.28.0",
     "eslint": "^10.3.0",
     "typescript": "^6.0.3",

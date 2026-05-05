@@ -92,8 +92,6 @@ async function logout() {
 
 <template>
   <UApp>
-    <!-- Manifest PWA; na localhost instalacja/SW tylko przy `nuxt dev` — zob. plugin `slavia-experimental-bootstrap` i `usePwaInstall`. -->
-    <VitePwaManifest />
     <!-- Splash: pełna nieprzezroczysta warstwa; bez fade-out całego overlay (wtedy „przeświecał” tekst strony). -->
     <div
       v-if="isAppLoading"

@@ -2,6 +2,11 @@ type BackendProvider = 'leapcell' | 'render'
 
 const STORE_KEY = 'active_backend_provider'
 const VER_CEL_BLOB_PATH = 'slavia-config/active_backend_provider.json'
+const VERCEL_BLOB_PREFIX = 'slavia-config/'
+
+function isProductionRuntime(): boolean {
+  return process.env.NODE_ENV === 'production'
+}
 
 function normalizeProvider(raw: unknown): BackendProvider {
   if (typeof raw === 'string') {
@@ -38,23 +43,37 @@ async function writeToNetlify(provider: BackendProvider): Promise<boolean> {
 }
 
 async function readFromVercelBlob(): Promise<BackendProvider | null> {
-  if (!process.env.VERCEL && !process.env.BLOB_READ_WRITE_TOKEN) return null
+  if (!isProductionRuntime() || !process.env.BLOB_READ_WRITE_TOKEN) return null
   try {
     const { list } = await import('@vercel/blob')
-    const listed = await list({ prefix: VER_CEL_BLOB_PATH, limit: 1 })
-    const blob = listed.blobs[0]
+    const listed = await list({ prefix: VERCEL_BLOB_PREFIX, limit: 100 })
+    const blob = listed.blobs
+      .filter(b => b.pathname === VER_CEL_BLOB_PATH)
+      .sort((a, b) => (new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()))[0]
     if (!blob?.url) return null
-    const res = await fetch(blob.url, { cache: 'no-store' })
-    if (!res.ok) return null
+    const candidateUrl =
+      ((blob as unknown as { downloadUrl?: string }).downloadUrl && String((blob as unknown as { downloadUrl?: string }).downloadUrl))
+      || blob.url
+    const res = await fetch(candidateUrl, { cache: 'no-store' })
+    if (!res.ok) {
+      throw new Error(`Vercel Blob read failed: HTTP ${res.status}`)
+    }
     const payload = (await res.json()) as { active_provider?: string }
     return normalizeProvider(payload.active_provider)
-  } catch {
+  } catch (e) {
+    console.error('[backendProviderStore] readFromVercelBlob error:', e)
     return null
   }
 }
 
 async function writeToVercelBlob(provider: BackendProvider): Promise<boolean> {
-  if (!process.env.VERCEL && !process.env.BLOB_READ_WRITE_TOKEN) return false
+  if (!isProductionRuntime()) return false
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Brak BLOB_READ_WRITE_TOKEN w środowisku Vercel.'
+    })
+  }
   try {
     const { put } = await import('@vercel/blob')
     await put(
@@ -71,7 +90,8 @@ async function writeToVercelBlob(provider: BackendProvider): Promise<boolean> {
       }
     )
     return true
-  } catch {
+  } catch (e) {
+    console.error('[backendProviderStore] writeToVercelBlob error:', e)
     return false
   }
 }

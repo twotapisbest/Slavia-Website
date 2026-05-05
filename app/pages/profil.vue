@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { getApiErrorMessage } from '~/composables/useApi'
-import { usePwaInstall } from '~/composables/usePwaInstall'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -12,43 +11,7 @@ useSeoMeta({
 const auth = useAuth()
 const apiFetch = useApi()
 const toast = useToast()
-const pwaFeatureOn = useExperimentalFlag('pwa_service_worker')
-const { supported: pwaSupported, canPrompt, promptInstall, installed, loopbackWithoutDev } = usePwaInstall()
 const { preset, presets, setPreset, colorMode } = useSlaviaAppearance()
-
-async function installPwaFromProfile() {
-  if (!import.meta.client) {
-    return
-  }
-  if (installed.value) {
-    toast.add({ title: 'Aplikacja jest już zainstalowana', color: 'info' })
-    return
-  }
-  if (loopbackWithoutDev.value) {
-    toast.add({
-      title: 'Instalacja PWA na localhost',
-      description:
-        'Przy zbudowanej aplikacji na localhost nie włączamy service workera. Uruchom projekt przez `nuxt dev` albo testuj pod wdrożonym HTTPS.',
-      color: 'warning'
-    })
-    return
-  }
-  if (!canPrompt.value) {
-    toast.add({
-      title: 'Instalacja z przycisku niedostępna',
-      description: pwaSupported.value
-        ? 'Chrome i Edge często potrzebują chwili po wejściu — sprawdź też menu ⋮ → „Zainstaluj aplikację” / „Zainstaluj Slavia”. Na iPhonie: Udostępnij → Dodaj do ekranu głównego.'
-        : 'Używasz adresu bez HTTPS (np. IP komputera w Wi‑Fi) — wtedy PWA się nie instaluje. Na telefonie w tej samej sieci użyj adresu komputera przez HTTPS lub tunelu (np. ngrok).',
-      color: 'warning'
-    })
-    return
-  }
-  const accepted = await promptInstall()
-  toast.add({
-    title: accepted ? 'Aplikacja zainstalowana' : 'Instalacja anulowana',
-    color: accepted ? 'success' : 'info'
-  })
-}
 
 const form = reactive({
   email: '',
@@ -296,37 +259,8 @@ async function save() {
               >
                 Wgraj z urządzenia
               </UButton>
-              <template v-if="pwaFeatureOn">
-                <UButton
-                  color="primary"
-                  variant="soft"
-                  block
-                  size="lg"
-                  class="touch-manipulation justify-center font-semibold"
-                  :disabled="loopbackWithoutDev"
-                  @click="installPwaFromProfile"
-                >
-                  {{ installed ? 'Aplikacja zainstalowana' : 'Zainstaluj aplikację' }}
-                </UButton>
-                <p
-                  v-if="loopbackWithoutDev"
-                  class="text-xs leading-relaxed text-muted"
-                >
-                  Na localhost PWA działa tylko przy <span class="font-mono text-[11px]">nuxt dev</span>. Zbudowany podgląd na 127.0.0.1 nie rejestruje instalacji — użyj HTTPS wdrożenia lub tunelu.
-                </p>
-                <p
-                  v-else-if="!canPrompt"
-                  class="text-xs leading-relaxed text-muted"
-                >
-                  <span v-if="pwaSupported">Gdy instalacja z przycisku nie wyskakuje: menu przeglądarki ⋮ → „Zainstaluj aplikację” albo poczekaj kilka sekund po wejściu.</span>
-                  <span v-else>Wpisuj adres przez HTTPS lub <span class="font-mono text-[11px]">localhost</span> w dev — HTTP na samym IP w LAN często blokuje PWA w Chrome/Android.</span>
-                </p>
-              </template>
-              <p
-                v-else
-                class="text-xs leading-relaxed text-muted"
-              >
-                Instalacja PWA i service worker są wyłączone (flaga eksperymentalna lub ustawienie deployu).
+              <p class="text-xs leading-relaxed text-muted">
+                Service worker i funkcje PWA są wyłączone dla stabilniejszego działania aplikacji web.
               </p>
             </div>
           </UCard>

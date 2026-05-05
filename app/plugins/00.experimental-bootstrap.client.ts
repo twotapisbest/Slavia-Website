@@ -1,12 +1,7 @@
-import { registerSW } from 'virtual:pwa-register'
 import { EXPERIMENTAL_FEATURES, EXPERIMENTAL_FEATURES_STORAGE_KEY } from '~/data/experimentalFeaturesCatalog'
 import { computeExperimentalEnabled, parseExperimentalKillSwitch } from '~/utils/experimentalEffective'
-import { isPwaLoopbackHost } from '~/utils/pwaOrigin'
 
-/**
- * 1) Hydracja nadpisań flag z localStorage (muszi być przed logiką zależną od stanu).
- * 2) Rejestracja PWA tylko gdy funkcja `pwa_service_worker` jest skutecznie włączona.
- */
+/** Hydracja nadpisań flag z localStorage (musi być przed logiką zależną od stanu). */
 export default defineNuxtPlugin({
   name: 'slavia-experimental-bootstrap',
   setup() {
@@ -36,38 +31,11 @@ export default defineNuxtPlugin({
     }
 
     const kill = parseExperimentalKillSwitch(String(runtimeConfig.public.experimentalKillSwitch ?? ''))
-    const pwaDef = EXPERIMENTAL_FEATURES.find(f => f.id === 'pwa_service_worker')
-    const pwaOn = computeExperimentalEnabled('pwa_service_worker', {
+    // Bootstrap utrzymany dla innych flag eksperymentalnych.
+    void computeExperimentalEnabled('pwa_service_worker', {
       killSwitch: kill,
       overrides: overrides.value,
-      defaultEnabled: pwaDef?.defaultEnabled ?? true
-    })
-
-    if (kill.has('pwa_service_worker')) {
-      return
-    }
-
-    /** Na localhost poza `nuxt dev` nie rejestruj SW — spójnie z `usePwaInstall` (brak „fałszywej” instalacji z preview). */
-    if (isPwaLoopbackHost() && !import.meta.dev) {
-      return
-    }
-
-    /**
-     * Na localhost + `nuxt dev` zawsze rejestruj SW (o ile moduł PWA ma devOptions), żeby instalacja PWA i cache działały
-     * nawet gdy ktoś wyłączył eksperyment `pwa_service_worker` w devTools — poza pętlą zwrotnej nadal obowiązuje `pwaOn`.
-     */
-    const loopbackDev = import.meta.dev && isPwaLoopbackHost()
-    if (!loopbackDev && !pwaOn) {
-      return
-    }
-
-    registerSW({
-      onNeedRefresh() {
-        console.info('Nowa wersja aplikacji jest dostępna. Odśwież stronę, aby zainstalować aktualizację.')
-      },
-      onOfflineReady() {
-        console.info('Aplikacja jest dostępna w trybie offline.')
-      }
+      defaultEnabled: EXPERIMENTAL_FEATURES.find(f => f.id === 'pwa_service_worker')?.defaultEnabled ?? true
     })
   }
 })
