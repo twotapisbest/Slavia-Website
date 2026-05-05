@@ -445,6 +445,30 @@ html.dark[data-slavia-preset='neon'] body {
 /**
  * Akcent „primary” (skala green z UI) — spójność przycisków i pierścieni w każdym presecie.
  */
+html[data-slavia-preset='pink']:not(.dark) {
+  --color-green-400: #f9a8d4;
+  --color-green-500: #ec4899;
+  --color-green-600: #db2777;
+}
+
+html.dark[data-slavia-preset='pink'] {
+  --color-green-400: #f9a8d4;
+  --color-green-500: #ec4899;
+  --color-green-600: #be185d;
+}
+
+html[data-slavia-preset='dark']:not(.dark) {
+  --color-green-400: #93c5fd;
+  --color-green-500: #3b82f6;
+  --color-green-600: #2563eb;
+}
+
+html.dark[data-slavia-preset='dark'] {
+  --color-green-400: #93c5fd;
+  --color-green-500: #3b82f6;
+  --color-green-600: #1d4ed8;
+}
+
 html[data-slavia-preset='iron']:not(.dark) {
   --color-green-400: #38bdf8;
   --color-green-500: #0ea5e9;

@@ -64,82 +64,6 @@ const resultForm = reactive<{
   deadlift_kg: null
 })
 
-const profileForm = reactive({
-  email: auth.user.value?.email || '',
-  avatar_url: auth.user.value?.avatar_url || '',
-  currentPassword: '',
-  newPassword: '',
-  confirmPassword: ''
-})
-
-watch(
-  () => auth.user.value,
-  (u) => {
-    if (!u) return
-    profileForm.email = u.email || ''
-    profileForm.avatar_url = u.avatar_url || ''
-  },
-  { immediate: true }
-)
-
-const profileLoading = ref(false)
-const avatarUploadLoading = ref(false)
-const avatarFileInput = ref<HTMLInputElement | null>(null)
-
-async function onAvatarFileChange(e: Event) {
-  const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
-  input.value = ''
-  if (!file || !file.type.startsWith('image/')) {
-    toast.add({ title: 'Wybierz plik graficzny', color: 'warning' })
-    return
-  }
-  avatarUploadLoading.value = true
-  try {
-    const fd = new FormData()
-    fd.append('file', file)
-    const res = await apiFetch<{ url: string }>('/api/upload', { method: 'POST', body: fd })
-    profileForm.avatar_url = res.url
-    toast.add({ title: 'Wgrano zdjęcie — zapisz zmiany profilu', color: 'success' })
-  } catch (err) {
-    toast.add({ title: 'Upload nie powiódł się', description: String(err), color: 'error' })
-  } finally {
-    avatarUploadLoading.value = false
-  }
-}
-
-async function updateProfile() {
-  if (profileForm.newPassword || profileForm.currentPassword) {
-    if (profileForm.newPassword !== profileForm.confirmPassword) {
-      toast.add({ title: 'Hasła się nie zgadzają', color: 'error' })
-      return
-    }
-    if (!profileForm.newPassword) {
-      toast.add({ title: 'Wpisz nowe hasło', color: 'warning' })
-      return
-    }
-  }
-
-  profileLoading.value = true
-  try {
-    const payload: Record<string, string> = {}
-    if (profileForm.email) payload.email = profileForm.email
-    if (profileForm.newPassword) payload.password = profileForm.newPassword
-    if (profileForm.avatar_url !== undefined) payload.avatar_url = profileForm.avatar_url
-
-    await apiFetch('/api/auth/profile', { method: 'PATCH', body: payload })
-    await auth.fetchMe()
-    toast.add({ title: 'Profil zaktualizowany', color: 'success' })
-    profileForm.currentPassword = ''
-    profileForm.newPassword = ''
-    profileForm.confirmPassword = ''
-  } catch (e) {
-    toast.add({ title: 'Błąd aktualizacji profilu', description: String(e), color: 'error' })
-  } finally {
-    profileLoading.value = false
-  }
-}
-
 watch(
   () => [resultForm.snatch, resultForm.clean_and_jerk],
   ([snatch, clean]) => {
@@ -260,6 +184,22 @@ const athleteDashboardTiles = [
     icon: 'i-lucide-newspaper',
     ring: 'ring-amber-500/25 hover:ring-amber-500/45',
     iconBg: 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
+  },
+  {
+    to: '/chat',
+    title: 'Czat z trenerem',
+    desc: 'Wiadomości 1:1',
+    icon: 'i-lucide-messages-square',
+    ring: 'ring-sky-500/25 hover:ring-sky-500/45',
+    iconBg: 'bg-sky-500/15 text-sky-700 dark:text-sky-400'
+  },
+  {
+    to: '/attendance',
+    title: 'Moja obecność',
+    desc: 'Zgłoś obecność i sprawdź historię',
+    icon: 'i-lucide-user-check',
+    ring: 'ring-indigo-500/25 hover:ring-indigo-500/45',
+    iconBg: 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-400'
   }
 ] as const
 
@@ -490,7 +430,6 @@ const pageLead = computed(() => {
     <div class="grid gap-10 xl:grid-cols-12 xl:gap-8">
       <!-- Lewa kolumna: formularze -->
       <div class="space-y-10 xl:col-span-7">
-    <!-- Edycja profilu -->
     <section>
       <h2 class="mb-5 flex items-center gap-3">
         <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/15">
@@ -501,97 +440,21 @@ const pageLead = computed(() => {
         </span>
         <span class="text-lg font-black tracking-tight text-highlighted sm:text-xl">Ustawienia konta</span>
       </h2>
-      <div class="slavia-form-panel shadow-md">
-        <div class="slavia-form-panel__header">
-          <div class="slavia-form-panel__title">
-            <span class="slavia-form-panel__icon">
-              <UIcon
-                name="i-lucide-user-round"
-                class="size-4"
-              />
-            </span>
-            Dane logowania i zdjęcie
-          </div>
+      <UCard class="rounded-2xl border-default/70 shadow-md ring-1 ring-default/40">
+        <div class="space-y-3 p-4 sm:p-6">
+          <p class="text-sm text-muted">
+            Edycja danych konta została przeniesiona do jednego miejsca, aby uniknąć duplikacji formularzy.
+          </p>
+          <UButton
+            to="/profil"
+            color="primary"
+            icon="i-lucide-user-round-cog"
+            size="lg"
+          >
+            Przejdź do „Moje konto”
+          </UButton>
         </div>
-        <div class="slavia-form-panel__body">
-          <div class="grid gap-5 sm:grid-cols-2">
-            <UFormField label="Email">
-              <UInput
-                v-model="profileForm.email"
-                type="email"
-                size="lg"
-                class="w-full"
-              />
-            </UFormField>
-            <UFormField label="Zdjęcie profilowe">
-              <input
-                ref="avatarFileInput"
-                type="file"
-                accept="image/*"
-                class="sr-only"
-                @change="onAvatarFileChange"
-              >
-              <div class="flex flex-wrap items-center gap-2">
-                <UInput
-                  v-model="profileForm.avatar_url"
-                  type="url"
-                  placeholder="https://... lub wgraj plik"
-                  size="lg"
-                  class="min-w-0 flex-1"
-                />
-                <UButton
-                  color="neutral"
-                  variant="soft"
-                  size="lg"
-                  icon="i-lucide-upload"
-                  :loading="avatarUploadLoading"
-                  @click="avatarFileInput?.click()"
-                >
-                  Wgraj
-                </UButton>
-              </div>
-              <p class="mt-2 text-xs text-muted">
-                Możesz wkleić URL lub wgrać plik (Cloudinary). Poprzednie zdjęcie w Cloudinary jest usuwane przy zapisie, jeśli zmienisz adres.
-              </p>
-            </UFormField>
-            <UFormField label="Nowe hasło (opcjonalnie)">
-              <UInput
-                v-model="profileForm.newPassword"
-                type="password"
-                placeholder="Zostaw puste aby nie zmieniać"
-                size="lg"
-                class="w-full"
-              />
-            </UFormField>
-            <UFormField label="Potwierdzenie hasła">
-              <UInput
-                v-model="profileForm.confirmPassword"
-                type="password"
-                placeholder="Potwierdzenie nowego hasła"
-                size="lg"
-                class="w-full"
-              />
-            </UFormField>
-          </div>
-          <div class="slavia-form-actions border-t border-default/60 pt-5">
-            <UButton
-              color="neutral"
-              variant="soft"
-              size="lg"
-              @click="() => { profileForm.email = auth.user.value?.email || ''; profileForm.newPassword = ''; profileForm.confirmPassword = '' }"
-            >
-              Anuluj
-            </UButton>
-            <UButton
-              size="lg"
-              :loading="profileLoading"
-              @click="updateProfile"
-            >
-              Zapisz zmiany
-            </UButton>
-          </div>
-        </div>
-      </div>
+      </UCard>
     </section>
 
     <section

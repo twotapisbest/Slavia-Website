@@ -2,6 +2,16 @@ import type { AuthUser } from '~/types/models'
 
 export const SLAVIA_THEME_PRESETS = [
   {
+    id: 'pink',
+    label: 'Pink — athlete',
+    description: 'Akcent różowy dla kont zawodniczek (domyślny wg płci).'
+  },
+  {
+    id: 'dark',
+    label: 'Dark — athlete',
+    description: 'Mocny ciemny preset dla kont zawodników (domyślny wg płci).'
+  },
+  {
     id: 'slavia',
     label: 'Slavia — sala klubu',
     description: 'Świeży jasny motyw i klasyczny ciemny z klubową zielenią.'
@@ -59,6 +69,17 @@ function modeKey(uid: string | number) {
 
 function isValidPreset(id: string | null | undefined): id is SlaviaThemePreset {
   return !!id && SLAVIA_THEME_PRESETS.some(x => x.id === id)
+}
+
+function defaultPresetByGender(gender: string | null | undefined): SlaviaThemePreset {
+  const g = String(gender || '').trim().toLowerCase()
+  if (g === 'female' || g === 'kobieta') {
+    return 'pink'
+  }
+  if (g === 'male' || g === 'mężczyzna' || g === 'mezczyzna') {
+    return 'dark'
+  }
+  return 'slavia'
 }
 
 function mirrorLocal(uid: string, p: SlaviaThemePreset, mode: string) {
@@ -127,7 +148,7 @@ export function useSlaviaAppearance() {
   }
 
   function resolveFromUser(u: AuthUser): { preset: SlaviaThemePreset, colorModePref?: string } {
-    let p: SlaviaThemePreset = 'slavia'
+    let p: SlaviaThemePreset = defaultPresetByGender(u.athlete_gender)
     if (isValidPreset(u.ui_theme_preset ?? undefined)) {
       p = u.ui_theme_preset as SlaviaThemePreset
     }

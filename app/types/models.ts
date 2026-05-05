@@ -14,6 +14,8 @@ export interface AuthUser {
   ui_theme_preset?: string | null
   /** Jasny / ciemny / system — zsynchronizowany z backendem. */
   ui_color_mode?: string | null
+  /** Płeć zawodnika powiązanego z kontem (jeśli konto ma profil athlete). */
+  athlete_gender?: string | null
 }
 
 export interface LoginResponse {
@@ -120,6 +122,19 @@ export interface GroupedAdminAccounts {
   admins: AdminAccount[]
   trainers: AdminAccount[]
   athletes: AdminAccount[]
+}
+
+export interface ExerciseBoardRow {
+  athlete_id: string
+  athlete_name: string
+  squat_kg?: number | null
+  bench_kg?: number | null
+  deadlift_kg?: number | null
+  source_trainer_direct: boolean
+  source_athlete_pending_count: number
+  source_approved_results_count: number
+  source_training_log_count: number
+  source_last_approved_date?: string | null
 }
 
 export interface PlayerPayload {
