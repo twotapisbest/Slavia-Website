@@ -3,7 +3,7 @@ declare module 'nuxt/schema' {
   interface PublicRuntimeConfig {
     apiBase: string
     apiBaseLeapcell: string
-    apiBaseNorthflank: string
+    apiBaseRender: string
     /** Lista rozdzielona przecinkami — identyfikatory funkcji eksperymentalnych wymuszonych jako wyłączone. */
     experimentalKillSwitch: string
   }

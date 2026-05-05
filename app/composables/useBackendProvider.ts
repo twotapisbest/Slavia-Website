@@ -1,4 +1,4 @@
-type BackendProvider = 'leapcell' | 'northflank'
+type BackendProvider = 'leapcell' | 'render'
 
 interface BackendProviderResponse {
   active_provider: BackendProvider
@@ -19,11 +19,11 @@ export function useBackendProvider() {
 
   const fallbackBase = computed(() => normalizeBase(config.public.apiBase))
   const leapcellBase = computed(() => normalizeBase(config.public.apiBaseLeapcell))
-  const northflankBase = computed(() => normalizeBase(config.public.apiBaseNorthflank))
+  const renderBase = computed(() => normalizeBase(config.public.apiBaseRender))
 
   function resolveApiBase(provider: BackendProvider): string {
-    if (provider === 'northflank') {
-      return northflankBase.value || fallbackBase.value
+    if (provider === 'render') {
+      return renderBase.value || fallbackBase.value
     }
     return leapcellBase.value || fallbackBase.value
   }
@@ -41,7 +41,7 @@ export function useBackendProvider() {
 
     try {
       const res = await $fetch<BackendProviderResponse>('/api/system/backend-provider')
-      if (res?.active_provider === 'leapcell' || res?.active_provider === 'northflank') {
+      if (res?.active_provider === 'leapcell' || res?.active_provider === 'render') {
         activeProvider.value = res.active_provider
       }
     } catch {

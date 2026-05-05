@@ -17,7 +17,7 @@ export async function ensureSuperAdmin(event: H3Event) {
   const config = useRuntimeConfig(event)
   const candidates = [
     normalizeBase(config.public.apiBaseLeapcell as string),
-    normalizeBase(config.public.apiBaseNorthflank as string),
+    normalizeBase(config.public.apiBaseRender as string),
     normalizeBase(config.public.apiBase as string)
   ].filter(Boolean)
 

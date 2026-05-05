@@ -154,7 +154,7 @@ const devLinkGroups = DEV_TOOL_LINK_GROUPS
 const apiPingMs = ref<number | null>(null)
 const backendProviderSaving = ref(false)
 const backendProviderServerUpdatedAt = ref<string | null>(null)
-const selectedBackendProvider = ref<'leapcell' | 'northflank'>(backendProvider.activeProvider.value)
+const selectedBackendProvider = ref<'leapcell' | 'render'>(backendProvider.activeProvider.value)
 const activeBackendProvider = computed(() => backendProvider.activeProvider.value)
 
 watch(
@@ -174,11 +174,11 @@ onMounted(() => {
     userAgentDisplay.value = navigator.userAgent
     refreshDomPresetAttr()
   }
-  void $fetch<{ active_provider: 'leapcell' | 'northflank', updated_at?: string | null }>('/api/system/backend-provider', {
+  void $fetch<{ active_provider: 'leapcell' | 'render', updated_at?: string | null }>('/api/system/backend-provider', {
     headers: auth.token.value ? { Authorization: `Bearer ${auth.token.value}` } : undefined
   })
     .then((res) => {
-      if (res.active_provider === 'leapcell' || res.active_provider === 'northflank') {
+      if (res.active_provider === 'leapcell' || res.active_provider === 'render') {
         backendProvider.setActiveProvider(res.active_provider)
         selectedBackendProvider.value = res.active_provider
       }
@@ -511,10 +511,10 @@ async function pingApiLatency() {
 
 async function refreshBackendProviderSetting() {
   try {
-    const res = await $fetch<{ active_provider: 'leapcell' | 'northflank', updated_at?: string | null }>('/api/system/backend-provider', {
+    const res = await $fetch<{ active_provider: 'leapcell' | 'render', updated_at?: string | null }>('/api/system/backend-provider', {
       headers: auth.token.value ? { Authorization: `Bearer ${auth.token.value}` } : undefined
     })
-    if (res.active_provider === 'leapcell' || res.active_provider === 'northflank') {
+    if (res.active_provider === 'leapcell' || res.active_provider === 'render') {
       backendProvider.setActiveProvider(res.active_provider)
       selectedBackendProvider.value = res.active_provider
     }
@@ -528,7 +528,7 @@ async function refreshBackendProviderSetting() {
 async function saveBackendProviderSetting() {
   backendProviderSaving.value = true
   try {
-    const res = await $fetch<{ active_provider: 'leapcell' | 'northflank', updated_at?: string | null }>('/api/system/backend-provider', {
+    const res = await $fetch<{ active_provider: 'leapcell' | 'render', updated_at?: string | null }>('/api/system/backend-provider', {
       method: 'PATCH',
       headers: auth.token.value ? { Authorization: `Bearer ${auth.token.value}` } : undefined,
       body: { active_provider: selectedBackendProvider.value }
@@ -536,7 +536,7 @@ async function saveBackendProviderSetting() {
     backendProvider.setActiveProvider(res.active_provider)
     backendProviderServerUpdatedAt.value = res.updated_at ?? null
     toast.add({
-      title: `Ustawiono backend: ${res.active_provider === 'northflank' ? 'Northflank' : 'Leapcell'}`,
+      title: `Ustawiono backend: ${res.active_provider === 'render' ? 'Render' : 'Leapcell'}`,
       description: 'Zmiana jest globalna (serwerowa) i działa na wszystkich urządzeniach.',
       color: 'success'
     })
@@ -864,7 +864,7 @@ function downloadDevSelftestFile() {
               Globalny provider backendu
             </p>
             <UBadge size="xs" variant="subtle" color="primary">
-              aktywny: {{ activeBackendProvider === 'northflank' ? 'Northflank' : 'Leapcell' }}
+              aktywny: {{ activeBackendProvider === 'render' ? 'Render' : 'Leapcell' }}
             </UBadge>
           </div>
           <p class="mt-1 text-[11px] leading-snug text-muted">
@@ -884,10 +884,10 @@ function downloadDevSelftestFile() {
               size="xs"
               color="neutral"
               class="touch-manipulation"
-              :variant="selectedBackendProvider === 'northflank' ? 'solid' : 'outline'"
-              @click="selectedBackendProvider = 'northflank'"
+              :variant="selectedBackendProvider === 'render' ? 'solid' : 'outline'"
+              @click="selectedBackendProvider = 'render'"
             >
-              Northflank
+              Render
             </UButton>
           </div>
           <div class="mt-2 flex flex-wrap gap-1">

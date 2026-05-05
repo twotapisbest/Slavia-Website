@@ -1,11 +1,14 @@
-type BackendProvider = 'leapcell' | 'northflank'
+type BackendProvider = 'leapcell' | 'render'
 
 const STORE_KEY = 'active_backend_provider'
 const VER_CEL_BLOB_PATH = 'slavia-config/active_backend_provider.json'
 
 function normalizeProvider(raw: unknown): BackendProvider {
-  if (typeof raw === 'string' && raw.toLowerCase() === 'northflank') {
-    return 'northflank'
+  if (typeof raw === 'string') {
+    const normalized = raw.toLowerCase()
+    if (normalized === 'render') {
+      return 'render'
+    }
   }
   return 'leapcell'
 }
