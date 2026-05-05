@@ -20,10 +20,14 @@ export function useExperimentalFeatures() {
     const o = overrides.value
     const map: Record<string, boolean> = {}
     for (const def of EXPERIMENTAL_FEATURES) {
+      // W dev analiza sztangi ma być domyślnie aktywna, nawet jeśli katalog ma inną wartość.
+      const defaultEnabled = def.id === 'barbell_pose_analysis' && import.meta.dev
+        ? true
+        : def.defaultEnabled
       map[def.id] = computeExperimentalEnabled(def.id, {
         killSwitch: kill,
         overrides: o,
-        defaultEnabled: def.defaultEnabled
+        defaultEnabled
       })
     }
     return map

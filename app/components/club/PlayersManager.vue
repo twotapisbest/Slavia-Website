@@ -35,6 +35,8 @@ const form = reactive<{
   total_kg: number | null
   image_url: string | undefined
   notes: string | undefined
+  profile_tagline: string | undefined
+  public_bio: string | undefined
   is_active: boolean
   create_account: boolean
   username: string
@@ -50,6 +52,8 @@ const form = reactive<{
   total_kg: null,
   image_url: undefined,
   notes: undefined,
+  profile_tagline: undefined,
+  public_bio: undefined,
   is_active: true,
   // Account fields
   create_account: false,
@@ -105,6 +109,8 @@ function resetForm() {
   form.total_kg = null
   form.image_url = undefined
   form.notes = undefined
+  form.profile_tagline = undefined
+  form.public_bio = undefined
   form.is_active = true
   form.create_account = false
   form.username = ''
@@ -169,6 +175,8 @@ function openEdit(p: Player) {
   form.total_kg = p.total_kg ?? null
   form.image_url = p.image_url || undefined
   form.notes = p.notes ?? undefined
+  form.profile_tagline = p.profile_tagline ?? undefined
+  form.public_bio = p.public_bio ?? undefined
   form.is_active = p.is_active !== false
   modalOpen.value = true
 }
@@ -229,6 +237,8 @@ async function savePlayer() {
       total_kg: form.total_kg,
       image_url: form.image_url,
       notes: form.notes || null,
+      profile_tagline: form.profile_tagline?.trim() || null,
+      public_bio: form.public_bio?.trim() || null,
       is_active: form.is_active,
       username: form.create_account ? form.username : undefined,
       password: form.create_account ? form.password : undefined
@@ -772,6 +782,48 @@ onMounted(() => {
                 <div class="slavia-form-panel__title">
                   <span class="slavia-form-panel__icon">
                     <UIcon
+                      name="i-lucide-globe"
+                      class="size-4"
+                    />
+                  </span>
+                  Profil publiczny
+                </div>
+                <p class="slavia-form-panel__desc">
+                  Widoczne na stronie „Zawodnicy” i na publicznym profilu pod adresem /athlete/…
+                </p>
+              </div>
+              <div class="slavia-form-panel__body space-y-5">
+                <UFormField
+                  label="Slogan / krótki podtytuł"
+                  hint="Np. rola w klubie, kategoria wiekowa."
+                >
+                  <UInput
+                    v-model="form.profile_tagline"
+                    placeholder="np. Junior · waga 73 kg"
+                    size="lg"
+                    class="w-full"
+                  />
+                </UFormField>
+                <UFormField
+                  label="Rozbudowany opis (bio)"
+                  hint="To jest główny tekst na publicznym profilu zawodnika."
+                >
+                  <UTextarea
+                    v-model="form.public_bio"
+                    :rows="5"
+                    autoresize
+                    placeholder="Osiągnięcia, styl startów, cele…"
+                    class="w-full"
+                  />
+                </UFormField>
+              </div>
+            </div>
+
+            <div class="slavia-form-panel">
+              <div class="slavia-form-panel__header">
+                <div class="slavia-form-panel__title">
+                  <span class="slavia-form-panel__icon">
+                    <UIcon
                       name="i-lucide-sticky-note"
                       class="size-4"
                     />
@@ -785,7 +837,7 @@ onMounted(() => {
                     v-model="form.notes"
                     :rows="3"
                     autoresize
-                    placeholder="Opcjonalnie…"
+                    placeholder="Tylko dla kadry — nie pokazujemy na publicznym profilu."
                     class="w-full"
                   />
                 </UFormField>

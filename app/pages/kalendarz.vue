@@ -583,9 +583,9 @@ function handleDayClick(day: Date) {
     </div>
 
     <!-- Calendar Grid -->
-    <div class="overflow-x-auto rounded-2xl border border-default bg-card shadow-2xl sm:overflow-visible">
+    <div class="overflow-hidden rounded-2xl border border-default bg-card shadow-2xl">
       <!-- Header -->
-      <div class="grid min-w-[520px] grid-cols-7 border-b border-default bg-muted/30 sm:min-w-0">
+      <div class="grid grid-cols-7 border-b border-default bg-muted/30">
         <div
           v-for="day in weekDays"
           :key="day"
@@ -596,7 +596,7 @@ function handleDayClick(day: Date) {
       </div>
 
       <!-- Days -->
-      <div class="grid min-w-[520px] grid-cols-7 sm:min-w-0">
+      <div class="grid grid-cols-7">
         <div
           v-for="day in days"
           :key="day.toString()"

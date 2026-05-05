@@ -23,14 +23,7 @@ interface FederationImportRow {
   new_results: number
 }
 
-const apiFetch = useApi()
-const toast = useToast()
-
-const importing = ref(false)
-const devMode = useExperimentalFlag('data_import_from_federations')
-
 const lastReport = useState<FederationImportRow[] | null>('import-last-report-full', () => null)
-const lastRunAt = useState<string | null>('import-last-run-at', () => null)
 
 const fetchErrorsFlat = computed(() => {
   const r = lastReport.value
@@ -55,6 +48,9 @@ const rejectedFlat = computed(() => {
   }
   return out
 })
+
+/** Import zawodników jest wyłączony, więc widok działa tylko w trybie „podgląd bez zapisu”. */
+const devMode = false
 
 function exportJson() {
   const blob = new Blob([JSON.stringify(lastReport.value ?? [], null, 2)], { type: 'application/json' })
@@ -111,39 +107,6 @@ function escapeCsv(s: string) {
   return needs ? `"${t}"` : t
 }
 
-async function importData() {
-  importing.value = true
-  try {
-    const saveToDb = devMode.value
-    const result = await apiFetch<FederationImportRow[]>('/api/import/data', {
-      method: 'POST',
-      body: { dev_mode: saveToDb }
-    })
-    lastReport.value = result
-    lastRunAt.value = new Date().toISOString()
-
-    await refreshNuxtData()
-
-    if (!saveToDb) {
-      toast.add({
-        title: 'Podgląd importu',
-        description: 'Tryb zapisu wyłączony — policzono rekordy bez zmian w bazie. Włącz flagę w Developer tools, aby zapisać.',
-        color: 'success'
-      })
-    } else {
-      toast.add({
-        title: 'Import zakończony',
-        description: 'Wyniki zapisane do bazy (zgodnie z przełącznikiem dev tools).',
-        color: 'success'
-      })
-    }
-  } catch (e) {
-    toast.add({ title: 'Błąd importu', description: String(e), color: 'error' })
-  } finally {
-    importing.value = false
-  }
-}
-
 useSeoMeta({
   title: 'Import danych — SuperAdmin',
   robots: 'noindex, nofollow'
@@ -157,44 +120,21 @@ useSeoMeta({
         Import danych z federacji
       </h1>
       <p class="mt-2 text-sm text-muted sm:text-base lg:leading-relaxed">
-        Import wyników z PZPC, Śląskiego Związku i podnoszenieciezarów.pl — dopasowanie wyłącznie do zawodników aktywnych w bazie klubu.
+        Import danych zawodników z federacji został wyłączony. Synchronizacja zawodów nadal działa w module kalendarza klubowego.
       </p>
-      <UAlert
-        icon="i-lucide-info"
-        color="neutral"
-        variant="subtle"
-        class="mt-4"
-        title="Produkcyjne dopasowanie HTML"
-        description="Próbki statyczne w repo backendu: tests/fixtures/import_sample.html oraz import_unicode_dash.html. Zrzut rzeczywistej strony federacji + aktualizacja regexów i fallbacku tabel w Slavia-backend/src/routes/import.rs to najkrótsza ścieżka, gdy import na żywo zwraca zero wierszy."
-      />
     </div>
 
     <UCard>
       <template #header>
-        <h2 class="text-lg font-semibold">
-          Rozpocznij import
-        </h2>
+        <h2 class="text-lg font-semibold">Import zawodników z federacji</h2>
       </template>
-      <p class="text-sm text-muted">
-        Źródła są pobierane na żywo; szczegóły sieci i parsowania znajdziesz w raporcie poniżej.
-      </p>
-      <div class="mt-4 rounded-xl border border-default bg-muted/10 p-4 text-sm">
-        <p class="font-semibold text-highlighted">
-          Zapis do bazy:
-          <span :class="devMode ? 'text-success' : 'text-warning'">{{ devMode ? 'włączony' : 'wyłączony' }}</span>
-        </p>
-        <p class="mt-1 text-muted">
-          Flaga z Developer tools:
-          <span class="font-mono">data_import_from_federations</span>.
-          Wyłączona — podgląd (parsowanie i dopasowanie bez INSERT). Włączona — zapis nowych rekordów jako zatwierdzone.
-        </p>
-        <p
-          v-if="lastRunAt"
-          class="mt-2 text-xs text-muted"
-        >
-          Ostatnie uruchomienie: {{ new Date(lastRunAt).toLocaleString('pl-PL') }}
-        </p>
-      </div>
+      <UAlert
+        icon="i-lucide-circle-off"
+        color="warning"
+        variant="subtle"
+        title="Wyłączone"
+        description="Ten moduł nie wykonuje już importu. Dane zawodników prowadź ręcznie w panelu. Import zawodów uruchamiaj w kalendarzu przyciskiem „Synchronizuj PZPC i PC”."
+      />
 
       <div
         v-if="lastReport?.length"
@@ -312,12 +252,8 @@ useSeoMeta({
       </div>
 
       <template #footer>
-        <UButton
-          color="primary"
-          :loading="importing"
-          @click="importData"
-        >
-          Uruchom import
+        <UButton to="/kalendarz" icon="i-lucide-calendar-sync" color="primary">
+          Przejdź do importu zawodów
         </UButton>
       </template>
     </UCard>

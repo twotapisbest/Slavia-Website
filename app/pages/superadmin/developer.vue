@@ -12,7 +12,7 @@ import {
   useSlaviaAppearance,
   type SlaviaThemePreset
 } from '~/composables/useSlaviaAppearance'
-import { getApiErrorMessage } from '~/composables/useApi'
+import { getApiDetailedErrorMessage, getApiErrorMessage } from '~/composables/useApi'
 import type { CompetitionResult } from '~/types/models'
 
 definePageMeta({ middleware: 'superadmin' })
@@ -156,6 +156,7 @@ const backendProviderSaving = ref(false)
 const backendProviderServerUpdatedAt = ref<string | null>(null)
 const selectedBackendProvider = ref<'leapcell' | 'render'>(backendProvider.activeProvider.value)
 const activeBackendProvider = computed(() => backendProvider.activeProvider.value)
+const activeBackendApiBase = computed(() => backendProvider.activeApiBase.value)
 
 watch(
   () => backendProvider.activeProvider.value,
@@ -535,13 +536,29 @@ async function saveBackendProviderSetting() {
     })
     backendProvider.setActiveProvider(res.active_provider)
     backendProviderServerUpdatedAt.value = res.updated_at ?? null
+    systemLogs.push({
+      level: 'change',
+      title: `Przełączono backend: ${res.active_provider}`,
+      detail: backendProvider.activeApiBase.value
+    })
+    console.info('[backend-provider] global switch saved', {
+      provider: res.active_provider,
+      apiBase: backendProvider.activeApiBase.value
+    })
     toast.add({
       title: `Ustawiono backend: ${res.active_provider === 'render' ? 'Render' : 'Leapcell'}`,
-      description: 'Zmiana jest globalna (serwerowa) i działa na wszystkich urządzeniach.',
+      description: `Aktywny URL backendu: ${backendProvider.activeApiBase.value}`,
       color: 'success'
     })
   } catch (e) {
-    toast.add({ title: 'Nie udało się zapisać ustawienia backendu', description: getApiErrorMessage(e), color: 'error' })
+    const detail = getApiDetailedErrorMessage(e)
+    systemLogs.push({
+      level: 'error',
+      title: 'Błąd zapisu ustawienia backendu',
+      detail
+    })
+    console.error('[backend-provider] save failed', e)
+    toast.add({ title: 'Nie udało się zapisać ustawienia backendu', description: detail, color: 'error' })
   } finally {
     backendProviderSaving.value = false
   }
@@ -869,6 +886,9 @@ function downloadDevSelftestFile() {
           </div>
           <p class="mt-1 text-[11px] leading-snug text-muted">
             Ustawienie zapisuje się po stronie API i obowiązuje dla wszystkich urządzeń/kont.
+          </p>
+          <p class="mt-1 break-all font-mono text-[10px] text-muted">
+            URL: {{ activeBackendApiBase }}
           </p>
           <div class="mt-2 flex flex-wrap gap-1">
             <UButton

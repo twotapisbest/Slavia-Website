@@ -114,6 +114,7 @@ async function onFileChange(e: Event) {
     draft.image_url = res.url
     toast.add({ title: isVideo ? 'Film przesłany' : 'Zdjęcie przesłane', color: 'success' })
   } catch (err) {
+    console.error('[gallery] upload failed', err)
     toast.add({ title: 'Błąd uploadu', description: String(err), color: 'error' })
   } finally {
     uploadLoading.value = false
@@ -157,6 +158,7 @@ async function save() {
     modalOpen.value = false
     await refresh()
   } catch (e) {
+    console.error('[gallery] save failed', e)
     toast.add({
       title: 'Błąd zapisu',
       description: getApiErrorMessage(e),
@@ -173,6 +175,7 @@ async function remove(id: string) {
     toast.add({ title: 'Usunięto', color: 'success' })
     await refresh()
   } catch (e) {
+    console.error('[gallery] delete failed', e)
     toast.add({
       title: 'Błąd',
       description: getApiErrorMessage(e),

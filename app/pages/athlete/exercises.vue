@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ExerciseBoardRow } from '~/types/models'
+import { getApiErrorMessage } from '~/composables/useApi'
 
 definePageMeta({
   middleware: 'auth'
@@ -7,6 +8,8 @@ definePageMeta({
 
 const auth = useAuth()
 const { fetchBoard, withTotal } = useExercisesBoard()
+const apiFetch = useApi()
+const toast = useToast()
 
 const canOpen = computed(() => auth.isAthlete.value || auth.isSuperAdmin.value)
 
@@ -20,6 +23,52 @@ const { data: rows, pending } = await useAsyncData('athlete-exercises-ranking', 
 const ranking = computed(() => {
   return withTotal([...(rows.value || [])]).sort((a, b) => (b.total || 0) - (a.total || 0))
 })
+
+const podium = computed(() => ranking.value.slice(0, 3))
+const myAthlete = ref<{ id: string } | null>(null)
+const form = reactive({
+  squat_kg: null as number | null,
+  bench_kg: null as number | null,
+  deadlift_kg: null as number | null,
+  date: new Date().toISOString().slice(0, 10)
+})
+
+onMounted(async () => {
+  myAthlete.value = await apiFetch<{ id: string } | null>('/api/athletes/me').catch(() => null)
+})
+
+async function submitStrengthResult() {
+  if (!myAthlete.value?.id) {
+    toast.add({ title: 'Brak powiązanego profilu zawodnika', color: 'warning' })
+    return
+  }
+  if (!form.squat_kg && !form.bench_kg && !form.deadlift_kg) {
+    toast.add({ title: 'Podaj minimum jeden wynik', color: 'warning' })
+    return
+  }
+  try {
+    await apiFetch('/api/results', {
+      method: 'POST',
+      body: {
+        athlete_id: myAthlete.value.id,
+        snatch: 1,
+        clean_and_jerk: 1,
+        total: 2,
+        date: form.date,
+        squat_kg: form.squat_kg || undefined,
+        bench_kg: form.bench_kg || undefined,
+        deadlift_kg: form.deadlift_kg || undefined
+      }
+    })
+    toast.add({ title: 'Wysłano do zatwierdzenia', color: 'success' })
+    form.squat_kg = null
+    form.bench_kg = null
+    form.deadlift_kg = null
+    await refreshNuxtData('athlete-exercises-ranking')
+  } catch (e) {
+    toast.add({ title: 'Błąd wysyłki', description: getApiErrorMessage(e), color: 'error' })
+  }
+}
 
 useSeoMeta({
   title: 'Inne ćwiczenia — Zawodnik',
@@ -46,7 +95,32 @@ useSeoMeta({
       description="Ta sekcja jest dostępna dla zawodnika oraz superadmina."
     />
 
-    <UCard v-else>
+    <div v-else class="space-y-6">
+      <UCard>
+        <h2 class="mb-3 text-lg font-semibold text-highlighted">Wyślij wynik do zatwierdzenia</h2>
+        <div class="grid gap-3 sm:grid-cols-4">
+          <UFormField label="Przysiad (kg)"><UInputNumber v-model="form.squat_kg" :min="0" :step="0.5" class="w-full" /></UFormField>
+          <UFormField label="Wyciskanie (kg)"><UInputNumber v-model="form.bench_kg" :min="0" :step="0.5" class="w-full" /></UFormField>
+          <UFormField label="Martwy (kg)"><UInputNumber v-model="form.deadlift_kg" :min="0" :step="0.5" class="w-full" /></UFormField>
+          <UFormField label="Data"><UInput v-model="form.date" type="date" class="w-full" /></UFormField>
+        </div>
+        <div class="mt-3">
+          <UButton icon="i-lucide-send" @click="submitStrengthResult">Wyślij do trenera</UButton>
+        </div>
+      </UCard>
+
+      <UCard>
+        <h2 class="mb-4 text-lg font-semibold text-highlighted">Podium</h2>
+        <div class="grid gap-3 sm:grid-cols-3">
+          <div v-for="(p, idx) in podium" :key="p.athlete_id" class="rounded-xl border border-default/60 bg-muted/10 p-4 text-center">
+            <p class="text-xs font-bold text-muted">#{{ idx + 1 }}</p>
+            <p class="mt-1 font-semibold text-highlighted">{{ p.athlete_name }}</p>
+            <p class="text-2xl font-black text-primary">{{ p.total || '—' }}<span class="text-sm"> kg</span></p>
+          </div>
+        </div>
+      </UCard>
+
+      <UCard>
       <div v-if="pending" class="flex items-center gap-2 text-muted">
         <UIcon name="i-lucide-loader-2" class="size-4 animate-spin" />
         Ładowanie rankingu…
@@ -90,6 +164,7 @@ useSeoMeta({
       <p class="mt-3 text-xs text-muted">
         Zasada: wartości ćwiczeń pochodzą wyłącznie z zatwierdzonych wpisów siłowych; zgłoszenia zawodnika są widoczne jako licznik oczekujących.
       </p>
-    </UCard>
+      </UCard>
+    </div>
   </UContainer>
 </template>

@@ -146,14 +146,6 @@ const quickLinks = [
     to: '/aktualnosci',
     color: 'text-orange-500',
     bg: 'bg-orange-500/10'
-  },
-  {
-    title: 'Import federacji',
-    description: 'Import z PZPC, Śląskiego Związku i podnoszenieciezarów.pl',
-    icon: 'i-lucide-download',
-    to: '/superadmin/import',
-    color: 'text-indigo-500',
-    bg: 'bg-indigo-500/10'
   }
 ]
 </script>

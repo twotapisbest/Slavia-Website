@@ -45,11 +45,11 @@ export const EXPERIMENTAL_FEATURES: ExperimentalFeatureDefinition[] = [
     defaultEnabled: true
   },
   {
-    id: 'data_import_from_federations',
-    label: 'Import danych z federacji (PZPC, Śląski Związek, podnoszenieciezarów.pl)',
+    id: 'barbell_pose_analysis',
+    label: 'Analiza ruchu sztangi (overlay + heurystyki)',
     description:
-      'Po stronie API flaga jest przekazywana jako dev_mode: włączone = zapis nowych wyników do bazy (Approved); wyłączone = tylko podgląd raportu (parsowanie i dopasowanie bez INSERT).',
-    defaultEnabled: false
+      'Analiza toru sztangi w panelu trenera i zawodnika (MoveNet + nakładka toru + wskazówki techniczne).',
+    defaultEnabled: true
   }
 ]
 
@@ -57,4 +57,3 @@ export type ExperimentalFeatureId =
   | 'club_notification_bell'
   | 'pwa_service_worker'
   | 'barbell_pose_analysis'
-  | 'data_import_from_federations'

@@ -4,7 +4,7 @@
   >
     <!-- Jedna belka: marka | nawigacja (desktop) | akcje. Bez drugiego rzędu i bez poziomego paska pod spodem na mobile. -->
     <div
-      class="mx-auto flex max-w-[1440px] items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-5 lg:min-h-[3.5rem] lg:gap-5 lg:px-8 lg:py-0"
+      class="mx-auto flex w-full max-w-[1440px] items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-5 lg:min-h-[3.5rem] lg:gap-5 lg:px-8 lg:py-0"
     >
       <div class="flex shrink-0 items-center gap-2 sm:gap-3">
         <ClubBrand />

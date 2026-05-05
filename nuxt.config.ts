@@ -13,6 +13,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
 
   runtimeConfig: {
+    blobReadWriteToken: process.env.BLOB_READ_WRITE_TOKEN || '',
     public: {
       /**
        * Zewnętrzny backend — tylko ten URL; brak proxy Nitro, brak kodu serwera w tym repo.
@@ -41,6 +42,14 @@ export default defineNuxtConfig({
        * Przykład: `pwa_service_worker,barbell_pose_analysis,club_notification_bell`
        */
       experimentalKillSwitch: process.env.NUXT_PUBLIC_EXPERIMENTAL_KILL_SWITCH || ''
+    }
+  },
+  vite: {
+    optimizeDeps: {
+      include: [
+        'date-fns',
+        'date-fns/locale'
+      ]
     }
   }
 })

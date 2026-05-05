@@ -82,7 +82,7 @@ export const DEV_TOOL_LINK_GROUPS: DevToolLinkGroup[] = [
       { to: '/superadmin/administratorzy', label: 'Zarządzanie kontami', description: 'Lista kont i role — wybór motywu także w `/profil`', icon: 'i-lucide-shield-alert' },
       { to: '/superadmin/zawodnicy', label: 'Baza (super)', description: 'Zawodnicy — widok superadmina', icon: 'i-lucide-database' },
       { to: '/superadmin/developer', label: 'Developer tools', description: 'Motyw (diag.), smoke API, funkcje eksperymentalne', icon: 'i-lucide-terminal' },
-      { to: '/superadmin/import', label: 'Import danych', description: 'Import z federacji PZPC, Śląski Związek, podnoszenieciezarów.pl', icon: 'i-lucide-download' }
+      { to: '/kalendarz', label: 'Import zawodów', description: 'Synchronizacja wydarzeń i zawodów w kalendarzu klubowym', icon: 'i-lucide-calendar-plus-2' }
     ]
   },
   {

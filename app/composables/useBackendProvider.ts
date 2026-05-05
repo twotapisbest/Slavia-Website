@@ -32,6 +32,13 @@ export function useBackendProvider() {
 
   function setActiveProvider(provider: BackendProvider) {
     activeProvider.value = provider
+    if (import.meta.client) {
+      // Jedno źródło prawdy: provider -> activeApiBase.
+      console.info('[backend-provider] switched', {
+        provider,
+        apiBase: resolveApiBase(provider)
+      })
+    }
   }
 
   async function hydrateFromServer(force = false) {

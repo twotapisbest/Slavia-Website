@@ -106,7 +106,11 @@ function mapToCard(p: AthleteModel, rb: Record<string, CompetitionResult[]>) {
     cleanAndJerk: cjKg,
     total: totalKg,
     sinclair: Number(sc.toFixed(2)),
-    description: p.notes || 'Zawodnik klubu CKS Slavia Ruda Śląska.',
+    description:
+      (p.public_bio && String(p.public_bio).trim())
+      || (p.profile_tagline && String(p.profile_tagline).trim())
+      || p.notes
+      || 'Zawodnik klubu CKS Slavia Ruda Śląska.',
     photo: p.image_url || undefined,
     chartHistory,
     maxHistory
@@ -171,9 +175,10 @@ const filteredRankings = computed(() => {
       <div class="absolute inset-0 -z-10 bg-linear-to-b from-primary/5 to-transparent blur-3xl opacity-50" />
       <div class="mx-auto grid max-w-4xl grid-cols-1 items-end gap-8 px-2 sm:gap-10 sm:px-4 md:grid-cols-3">
         <!-- 2nd Place -->
-        <div
+        <NuxtLink
           v-if="podium[1]"
-          class="order-2 md:order-1 group"
+          :to="athleteProfilePath(podium[1].name, podium[1].id)"
+          class="order-2 md:order-1 group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-3xl"
         >
           <div class="flex flex-col items-center">
             <div class="relative mb-4">
@@ -197,12 +202,13 @@ const filteredRankings = computed(() => {
               <span class="text-white/10 text-4xl font-black tracking-tighter">SILVER</span>
             </div>
           </div>
-        </div>
+        </NuxtLink>
 
         <!-- 1st Place -->
-        <div
+        <NuxtLink
           v-if="podium[0]"
-          class="order-1 md:order-2 group -mt-6 md:-mt-16"
+          :to="athleteProfilePath(podium[0].name, podium[0].id)"
+          class="order-1 md:order-2 group -mt-6 md:-mt-16 block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-3xl"
         >
           <div class="flex flex-col items-center">
             <div class="relative mb-6">
@@ -232,12 +238,13 @@ const filteredRankings = computed(() => {
               <span class="text-white/20 text-6xl font-black tracking-tighter">GOLD</span>
             </div>
           </div>
-        </div>
+        </NuxtLink>
 
         <!-- 3rd Place -->
-        <div
+        <NuxtLink
           v-if="podium[2]"
-          class="order-3 md:order-3 group"
+          :to="athleteProfilePath(podium[2].name, podium[2].id)"
+          class="order-3 md:order-3 group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-3xl"
         >
           <div class="flex flex-col items-center">
             <div class="relative mb-4">
@@ -261,7 +268,7 @@ const filteredRankings = computed(() => {
               <span class="text-white/10 text-3xl font-black tracking-tighter">BRONZE</span>
             </div>
           </div>
-        </div>
+        </NuxtLink>
       </div>
     </div>
 
@@ -335,7 +342,7 @@ const filteredRankings = computed(() => {
             <tbody class="divide-y divide-white/5">
               <tr
                 v-for="(p, idx) in filteredRankings"
-                :key="p.name"
+                :key="p.id"
                 class="group transition-all hover:bg-primary/10"
               >
                 <td class="px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
@@ -344,15 +351,18 @@ const filteredRankings = computed(() => {
                   </span>
                 </td>
                 <td class="min-w-0 px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
-                  <div class="flex min-w-0 items-center gap-2 sm:gap-4">
+                  <NuxtLink
+                    :to="athleteProfilePath(p.name, p.id)"
+                    class="flex min-w-0 items-center gap-2 sm:gap-4 rounded-lg text-left outline-offset-2 hover:text-primary focus-visible:outline-2 focus-visible:outline-primary"
+                  >
                     <UAvatar
                       :src="p.photo"
                       :alt="p.name"
                       size="sm"
                       class="shrink-0 ring-1 ring-white/10"
                     />
-                    <span class="truncate font-bold text-highlighted">{{ p.name }}</span>
-                  </div>
+                    <span class="truncate font-bold text-highlighted group-hover:text-primary">{{ p.name }}</span>
+                  </NuxtLink>
                   <p class="mt-0.5 font-mono text-[11px] text-muted md:hidden">
                     {{ p.weightCategory }} kg
                   </p>

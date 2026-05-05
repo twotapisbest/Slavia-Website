@@ -138,7 +138,7 @@ function clearHover() {
 </script>
 
 <template>
-  <UCard class="overflow-visible border-default/60 transition-all duration-300 hover:border-primary/30 hover:shadow-primary/10 shadow-lg">
+  <UCard class="h-full overflow-visible border-default/60 shadow-lg transition-all duration-300 hover:border-primary/30 hover:shadow-primary/10 cursor-pointer">
     <div class="grid gap-6 md:grid-cols-12">
       <div class="md:col-span-4 flex flex-col items-center text-center">
         <div class="relative group">

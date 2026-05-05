@@ -76,7 +76,6 @@ const items = computed(() => {
 
   if (hasSA) {
     pushLink(adminLinks, { label: 'Panel SuperAdmin', to: '/superadmin', icon: 'i-lucide-shield-check' })
-    adminLinks.push({ label: 'Import federacji', to: '/superadmin/import', icon: 'i-lucide-download' })
   }
 
   if (needsAdminDashboard) {

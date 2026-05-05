@@ -66,6 +66,7 @@ export const apiRoutes = {
   },
   chat: {
     threads: '/api/chat/threads',
+    thread: (threadId: string) => `/api/chat/threads/${encodeURIComponent(threadId)}`,
     messages: (threadId: string) => `/api/chat/threads/${encodeURIComponent(threadId)}/messages`
   },
   system: {

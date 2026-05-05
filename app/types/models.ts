@@ -37,8 +37,15 @@ export interface Athlete {
   total_kg?: number | null
   image_url?: string | null
   notes?: string | null
+  /** Krótki podtytuł widoczny na publicznym profilu i w SEO (uzupełnia trener/admin). */
+  profile_tagline?: string | null
+  /** Dłuższy opis na publicznej stronie zawodnika. */
+  public_bio?: string | null
   is_active: boolean
 }
+
+/** Odpowiedź `GET /api/athletes/:id` — bez powiązania konta i bez notatek wewnętrznych. */
+export type AthletePublicProfile = Omit<Athlete, 'user_id' | 'notes'>
 
 /** Alias for Athlete used in management components */
 export type Player = Athlete

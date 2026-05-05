@@ -16,6 +16,24 @@ body {
   max-width: 100%;
 }
 
+#__nuxt {
+  width: 100%;
+  overflow-x: clip;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
 /**
  * Bezpieczne obszary (notch, home indicator) + wygodniejszy „dolny klosz” na telefonie.
  */

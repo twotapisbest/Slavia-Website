@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import type { ExerciseBoardRow } from '~/types/models'
+import type { CompetitionResult, ExerciseBoardRow } from '~/types/models'
+import { getApiErrorMessage } from '~/composables/useApi'
 
 definePageMeta({
   middleware: 'trainer'
 })
 
 const { fetchBoard, withTotal } = useExercisesBoard()
+const apiFetch = useApi()
+const toast = useToast()
 
 const { data: rows, pending } = await useAsyncData('trainer-exercises-ranking', async (): Promise<ExerciseBoardRow[]> => {
   return fetchBoard()
@@ -14,6 +17,24 @@ const { data: rows, pending } = await useAsyncData('trainer-exercises-ranking', 
 const ranking = computed(() => {
   return withTotal([...(rows.value || [])]).sort((a, b) => (b.total || 0) - (a.total || 0))
 })
+
+const { data: pendingStrength, refresh: refreshPendingStrength } = await useAsyncData(
+  'trainer-strength-pending',
+  async (): Promise<CompetitionResult[]> => {
+    const all = await apiFetch<CompetitionResult[]>('/api/results/pending').catch(() => [])
+    return all.filter(r => (r.squat_kg ?? 0) > 0 || (r.bench_kg ?? 0) > 0 || (r.deadlift_kg ?? 0) > 0)
+  }
+)
+
+async function approve(id: string) {
+  try {
+    await apiFetch(`/api/results/${id}/approve`, { method: 'PATCH' })
+    toast.add({ title: 'Zatwierdzono wynik', color: 'success' })
+    await Promise.all([refreshPendingStrength(), refreshNuxtData('trainer-exercises-ranking')])
+  } catch (e) {
+    toast.add({ title: 'Błąd zatwierdzania', description: getApiErrorMessage(e), color: 'error' })
+  }
+}
 
 useSeoMeta({
   title: 'Inne ćwiczenia — Trener',
@@ -32,7 +53,22 @@ useSeoMeta({
       </p>
     </div>
 
-    <UCard>
+    <div class="space-y-6">
+      <UCard>
+        <h2 class="mb-3 text-lg font-semibold text-highlighted">Kolejka zgłoszeń do zatwierdzenia</h2>
+        <div v-if="!pendingStrength?.length" class="text-sm text-muted">Brak oczekujących zgłoszeń siłowych.</div>
+        <div v-else class="space-y-2">
+          <div v-for="r in pendingStrength" :key="r.id" class="flex flex-col gap-2 rounded-xl border border-default/60 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <div class="text-sm">
+              <p class="font-semibold text-highlighted">ID zawodnika: {{ r.athlete_id }}</p>
+              <p class="text-muted">P {{ r.squat_kg ?? '—' }} · W {{ r.bench_kg ?? '—' }} · M {{ r.deadlift_kg ?? '—' }} · {{ r.date }}</p>
+            </div>
+            <UButton size="sm" icon="i-lucide-check" @click="approve(r.id)">Zatwierdź</UButton>
+          </div>
+        </div>
+      </UCard>
+
+      <UCard>
       <div v-if="pending" class="flex items-center gap-2 text-muted">
         <UIcon name="i-lucide-loader-2" class="size-4 animate-spin" />
         Ładowanie rankingu…
@@ -76,6 +112,7 @@ useSeoMeta({
       <p class="mt-3 text-xs text-muted">
         Źródło danych: zatwierdzone wpisy siłowe (trainer/admin). Brak estymacji z dwuboju.
       </p>
-    </UCard>
+      </UCard>
+    </div>
   </UContainer>
 </template>

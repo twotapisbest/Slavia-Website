@@ -4,6 +4,7 @@ export interface ChatThread {
   id: string
   athlete_user_id: string
   trainer_user_id: string
+  title?: string | null
   created_at: string
   updated_at: string
 }
@@ -35,12 +36,13 @@ export function useChat() {
     }
   }
 
-  async function openThread(athleteUserId: string, trainerUserId: string) {
+  async function openThread(athleteUserId: string, trainerUserId: string, title?: string) {
     const thread = await api<ChatThread>(apiRoutes.chat.threads, {
       method: 'POST',
       body: {
         athlete_user_id: athleteUserId,
-        trainer_user_id: trainerUserId
+        trainer_user_id: trainerUserId,
+        title: title?.trim() || undefined
       }
     })
     activeThreadId.value = thread.id
@@ -68,6 +70,14 @@ export function useChat() {
     await refreshMessages()
   }
 
+  async function updateThreadTitle(threadId: string, title: string) {
+    await api(apiRoutes.chat.thread(threadId), {
+      method: 'PATCH',
+      body: { title: title.trim() || null }
+    })
+    await refreshThreads()
+  }
+
   return {
     threads,
     activeThreadId,
@@ -76,6 +86,7 @@ export function useChat() {
     refreshThreads,
     openThread,
     refreshMessages,
-    sendMessage
+    sendMessage,
+    updateThreadTitle
   }
 }
