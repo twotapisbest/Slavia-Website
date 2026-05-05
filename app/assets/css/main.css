@@ -205,9 +205,18 @@ html:not(.dark) .text-highlighted {
 /** Preset „Slavia” na jasnym — delikatny akcent primary na obramowaniach i tłach wtórnych */
 html[data-slavia-preset='slavia']:not(.dark),
 html.light[data-slavia-preset='slavia'] {
+  --ui-bg: #f6f9ff;
   --ui-border: color-mix(in oklab, var(--ui-primary, #00a155) 14%, #e2e8f0);
   --ui-bg-muted: color-mix(in oklab, var(--ui-primary, #00a155) 5%, #f1f5f9);
   --ui-bg-elevated: color-mix(in oklab, var(--ui-primary, #00a155) 4%, #eef2f7);
+  --ui-bg-accented: color-mix(in oklab, var(--ui-primary, #00a155) 11%, #e5eaf3);
+  --ui-border-muted: color-mix(in oklab, var(--ui-primary, #00a155) 9%, #eceff4);
+  --ui-border-accented: color-mix(in oklab, var(--ui-primary, #00a155) 28%, #cbd5e1);
+  --ui-text-dimmed: #7f92ab;
+  --ui-text-muted: #546a84;
+  --ui-text-toned: #3d526d;
+  --ui-text: #2a3f59;
+  --ui-text-highlighted: #0f2138;
 }
 
 /**
@@ -330,17 +339,59 @@ html.dark[data-slavia-preset='iron'] body {
     radial-gradient(ellipse 90% 55% at 80% -15%, rgba(56, 189, 248, 0.08), transparent 50%),
     linear-gradient(168deg, #0b1220 0%, #0f172a 100%);
 }
+html.dark[data-slavia-preset='iron'] {
+  --ui-bg: #0a1322;
+  --ui-bg-muted: #0f1b31;
+  --ui-bg-elevated: #12223d;
+  --ui-bg-accented: #16315a;
+  --ui-border: #244267;
+  --ui-border-muted: #1a3254;
+  --ui-border-accented: #22d3ee;
+  --ui-text-dimmed: #86a7c9;
+  --ui-text-muted: #a9c2dd;
+  --ui-text-toned: #c0d4ea;
+  --ui-text: #dce9f8;
+  --ui-text-highlighted: #f3f8ff;
+}
 
 html.dark[data-slavia-preset='arena'] body {
   background-image:
     radial-gradient(ellipse 85% 50% at 50% -16%, rgba(251, 191, 36, 0.07), transparent 48%),
     linear-gradient(172deg, #120f0d 0%, #1c1410 100%);
 }
+html.dark[data-slavia-preset='arena'] {
+  --ui-bg: #18110d;
+  --ui-bg-muted: #251a14;
+  --ui-bg-elevated: #2f2119;
+  --ui-bg-accented: #4a321f;
+  --ui-border: #6b4b33;
+  --ui-border-muted: #553b28;
+  --ui-border-accented: #fbbf24;
+  --ui-text-dimmed: #c7b094;
+  --ui-text-muted: #e5cfb4;
+  --ui-text-toned: #efdcc6;
+  --ui-text: #faebdb;
+  --ui-text-highlighted: #fff5ea;
+}
 
 html.dark[data-slavia-preset='platform'] body {
   background-image:
     radial-gradient(circle at 50% 120%, rgba(16, 185, 129, 0.06), transparent 42%),
     linear-gradient(180deg, #09090b 0%, #18181b 100%);
+}
+html.dark[data-slavia-preset='platform'] {
+  --ui-bg: #0e1115;
+  --ui-bg-muted: #151a20;
+  --ui-bg-elevated: #1d232c;
+  --ui-bg-accented: #263140;
+  --ui-border: #324052;
+  --ui-border-muted: #273244;
+  --ui-border-accented: #34d399;
+  --ui-text-dimmed: #8ca0b5;
+  --ui-text-muted: #afc0d0;
+  --ui-text-toned: #c4d1dd;
+  --ui-text: #dde5ee;
+  --ui-text-highlighted: #f4f8fb;
 }
 
 /** Motyw „midnight” */
@@ -371,6 +422,20 @@ html.dark[data-slavia-preset='midnight'] body {
   background-image:
     radial-gradient(ellipse 85% 55% at 70% -18%, rgba(52, 211, 153, 0.09), transparent 50%),
     linear-gradient(165deg, #020617 0%, #0f172a 55%, #172554 100%);
+}
+html.dark[data-slavia-preset='midnight'] {
+  --ui-bg: #050b1e;
+  --ui-bg-muted: #0a1330;
+  --ui-bg-elevated: #101b43;
+  --ui-bg-accented: #172d62;
+  --ui-border: #24407d;
+  --ui-border-muted: #1a2f62;
+  --ui-border-accented: #34d399;
+  --ui-text-dimmed: #8ca3d4;
+  --ui-text-muted: #b0c3ea;
+  --ui-text-toned: #c5d4f3;
+  --ui-text: #dfebff;
+  --ui-text-highlighted: #f5f9ff;
 }
 
 /** Motyw „ruby” */
@@ -403,6 +468,20 @@ html.dark[data-slavia-preset='ruby'] body {
   background-image:
     radial-gradient(ellipse 88% 52% at 50% -14%, rgba(248, 113, 113, 0.08), transparent 48%),
     linear-gradient(172deg, #1c0a0a 0%, #2a1212 100%);
+}
+html.dark[data-slavia-preset='ruby'] {
+  --ui-bg: #1a0b0b;
+  --ui-bg-muted: #281212;
+  --ui-bg-elevated: #331919;
+  --ui-bg-accented: #4d2424;
+  --ui-border: #7a3d3d;
+  --ui-border-muted: #633131;
+  --ui-border-accented: #f87171;
+  --ui-text-dimmed: #d5b1b1;
+  --ui-text-muted: #f0cdcd;
+  --ui-text-toned: #f7dede;
+  --ui-text: #fff0f0;
+  --ui-text-highlighted: #fff3f3;
 }
 
 /** Motyw „neon gym” — jasny */
@@ -441,29 +520,127 @@ html.dark[data-slavia-preset='neon'] body {
     linear-gradient(168deg, #070510 0%, #0f0820 38%, #12061c 100%);
   background-attachment: fixed;
 }
+html.dark[data-slavia-preset='neon'] {
+  --ui-bg: #090612;
+  --ui-bg-muted: #140d24;
+  --ui-bg-elevated: #1d1230;
+  --ui-bg-accented: #2c1845;
+  --ui-border: #3d2360;
+  --ui-border-muted: #2f1b4d;
+  --ui-border-accented: #22d3ee;
+  --ui-text-dimmed: #b09fcb;
+  --ui-text-muted: #cfbfec;
+  --ui-text-toned: #dccff5;
+  --ui-text: #efe6ff;
+  --ui-text-highlighted: #faf5ff;
+}
+
+/**
+ * Globalne mapowanie utility -> tokeny motywu.
+ * Dzięki temu preset wpływa szerzej na karty, sekcje, obramowania i teksty.
+ */
+html[data-slavia-preset] .bg-background {
+  background-color: var(--ui-bg, #f8fafc);
+}
+
+html[data-slavia-preset] .bg-card {
+  background-color: var(--ui-bg-elevated, #eef2f7);
+}
+
+html[data-slavia-preset] .bg-muted\/10 {
+  background-color: color-mix(in oklab, var(--ui-bg-muted, #f1f5f9) 55%, transparent);
+}
+
+html[data-slavia-preset] .bg-muted\/20 {
+  background-color: color-mix(in oklab, var(--ui-bg-muted, #f1f5f9) 72%, transparent);
+}
+
+html[data-slavia-preset] .text-muted {
+  color: var(--ui-text-muted, #64748b);
+}
+
+html[data-slavia-preset] .text-toned {
+  color: var(--ui-text-toned, #475569);
+}
+
+html[data-slavia-preset] .text-highlighted {
+  color: var(--ui-text-highlighted, #0f172a);
+}
+
+html[data-slavia-preset] .border-default {
+  border-color: var(--ui-border, #e2e8f0);
+}
 
 /**
  * Akcent „primary” (skala green z UI) — spójność przycisków i pierścieni w każdym presecie.
  */
 html[data-slavia-preset='pink']:not(.dark) {
+  --ui-bg: #fff7fb;
+  --ui-bg-muted: #fce7f3;
+  --ui-bg-elevated: #fbcfe8;
+  --ui-bg-accented: #f9a8d4;
+  --ui-border: #f5b7d8;
+  --ui-border-muted: #f9c8e2;
+  --ui-border-accented: #ec4899;
+  --ui-text-dimmed: #be6c9b;
+  --ui-text-muted: #9d4e7f;
+  --ui-text-toned: #7a305d;
+  --ui-text: #5a1f45;
+  --ui-text-highlighted: #3a0f2b;
   --color-green-400: #f9a8d4;
   --color-green-500: #ec4899;
   --color-green-600: #db2777;
 }
 
 html.dark[data-slavia-preset='pink'] {
+  --ui-bg: #170811;
+  --ui-bg-muted: #26101f;
+  --ui-bg-elevated: #311329;
+  --ui-bg-accented: #4b1c3d;
+  --ui-border: #5b2449;
+  --ui-border-muted: #4a1b3a;
+  --ui-border-accented: #ec4899;
+  --ui-text-dimmed: #d89aba;
+  --ui-text-muted: #f0b7d5;
+  --ui-text-toned: #f6c5de;
+  --ui-text: #ffe2f1;
+  --ui-text-highlighted: #fff4fa;
   --color-green-400: #f9a8d4;
   --color-green-500: #ec4899;
   --color-green-600: #be185d;
 }
 
 html[data-slavia-preset='dark']:not(.dark) {
+  --ui-bg: #f3f8ff;
+  --ui-bg-muted: #dbeafe;
+  --ui-bg-elevated: #bfdbfe;
+  --ui-bg-accented: #93c5fd;
+  --ui-border: #9fc5f8;
+  --ui-border-muted: #bed9fb;
+  --ui-border-accented: #3b82f6;
+  --ui-text-dimmed: #4f6d95;
+  --ui-text-muted: #2f4b72;
+  --ui-text-toned: #1f3d63;
+  --ui-text: #132f54;
+  --ui-text-highlighted: #0b1f3d;
   --color-green-400: #93c5fd;
   --color-green-500: #3b82f6;
   --color-green-600: #2563eb;
 }
 
 html.dark[data-slavia-preset='dark'] {
+  --ui-bg: #060d1b;
+  --ui-bg-muted: #0d1b33;
+  --ui-bg-elevated: #122445;
+  --ui-bg-accented: #1e3a6b;
+  --ui-border: #24487f;
+  --ui-border-muted: #18325f;
+  --ui-border-accented: #3b82f6;
+  --ui-text-dimmed: #8fb0dd;
+  --ui-text-muted: #b5cff1;
+  --ui-text-toned: #c3daf7;
+  --ui-text: #e3efff;
+  --ui-text-highlighted: #f5f9ff;
   --color-green-400: #93c5fd;
   --color-green-500: #3b82f6;
   --color-green-600: #1d4ed8;

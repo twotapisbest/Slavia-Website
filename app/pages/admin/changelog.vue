@@ -8,6 +8,22 @@ useSeoMeta({
 
 const updates = [
   {
+    version: 'v2.2.0',
+    date: '5 Maj 2026',
+    title: 'Ujednolicone źródła ćwiczeń, wyłączone PWA, nowe moduły i pełniejsze motywy UI',
+    features: [
+      'Ćwiczenia: ekrany zawodnika i trenera korzystają ze wspólnego modelu danych (zatwierdzone wpisy siłowe + licznik pending + historia treningów), bez estymacji z dwuboju.',
+      'PWA/service worker wyłączone w runtime: usunięto rejestrację i manifest z aplikacji, co eliminuje lokalne ostrzeżenia o `dev-sw.js` i upraszcza zachowanie podczas developmentu.',
+      'Backend provider switch: odczyt/zapis Vercel Blob działa tylko na produkcji (`NODE_ENV=production`), więc lokalnie aplikacja nie próbuje odpytania Blob.',
+      'Motywy: dodano profile `pink` i `dark` zależne od płci zawodnika oraz rozszerzono mapowanie tokenów, aby wszystkie presety wpływały globalnie na tła, karty, obramowania i tekst.',
+      'Analiza sztangi: trajektoria liczona tylko w fazie aktywnego podnoszenia, z replayem zsynchronizowanym z czasem odtwarzania.',
+      'Galeria: pełniejsza obsługa wideo (upload + podgląd + pełny widok), a backend upload rozróżnia zasoby image/video.',
+      'Nowe moduły: obecność (statusy + historia), rozszerzone powiadomienia (read/unread) oraz chat trener–zawodnik (wątki i wiadomości 1:1).',
+      'Wydanie podzielone na osobne commity per release (R1–R5) dla prostszego review.'
+    ],
+    type: 'feature'
+  },
+  {
     version: 'v2.1.1',
     date: '3 Maj 2026',
     title: 'Flagi eksperymentalne z kill switchem deployu i pełnym panelem Dev Tools',
