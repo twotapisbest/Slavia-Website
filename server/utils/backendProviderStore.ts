@@ -1,5 +1,18 @@
 type BackendProvider = 'leapcell' | 'render'
 
+/**
+ * Vercel Blob domyślnie wyłączony. Jawne włączenie: `SLAVIA_ENABLE_BLOB=1` (produkcja + token).
+ * Awaryjne wyłączenie mimo flagi: `SLAVIA_DISABLE_BLOB=1` lub `DISABLE_VERCEL_BLOB=1`.
+ */
+function blobGloballyEnabled(): boolean {
+  const kill = (process.env.SLAVIA_DISABLE_BLOB || process.env.DISABLE_VERCEL_BLOB || '').trim().toLowerCase()
+  if (kill === '1' || kill === 'true' || kill === 'yes') {
+    return false
+  }
+  const v = (process.env.SLAVIA_ENABLE_BLOB || '').trim().toLowerCase()
+  return v === '1' || v === 'true' || v === 'yes'
+}
+
 const STORE_KEY = 'active_backend_provider'
 const VER_CEL_BLOB_PATH = 'slavia-config/active_backend_provider.json'
 const VERCEL_BLOB_PREFIX = 'slavia-config/'
@@ -43,6 +56,7 @@ async function writeToNetlify(provider: BackendProvider): Promise<boolean> {
 }
 
 async function readFromVercelBlob(): Promise<BackendProvider | null> {
+  if (!blobGloballyEnabled()) return null
   if (!isProductionRuntime() || !process.env.BLOB_READ_WRITE_TOKEN) return null
   try {
     const { list } = await import('@vercel/blob')
@@ -67,6 +81,7 @@ async function readFromVercelBlob(): Promise<BackendProvider | null> {
 }
 
 async function writeToVercelBlob(provider: BackendProvider): Promise<boolean> {
+  if (!blobGloballyEnabled()) return false
   if (!isProductionRuntime()) return false
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
     throw createError({

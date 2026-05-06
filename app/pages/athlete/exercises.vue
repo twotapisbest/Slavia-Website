@@ -51,9 +51,6 @@ async function submitStrengthResult() {
       method: 'POST',
       body: {
         athlete_id: myAthlete.value.id,
-        snatch: 1,
-        clean_and_jerk: 1,
-        total: 2,
         date: form.date,
         squat_kg: form.squat_kg || undefined,
         bench_kg: form.bench_kg || undefined,
@@ -162,7 +159,8 @@ useSeoMeta({
         </table>
       </div>
       <p class="mt-3 text-xs text-muted">
-        Zasada: wartości ćwiczeń pochodzą wyłącznie z zatwierdzonych wpisów siłowych; zgłoszenia zawodnika są widoczne jako licznik oczekujących.
+        Zgłoszenie samych przysiadów/wycisku/martwego nie wymaga podawania dwuboju — w wpisie technicznym używane są wartości z profilu zawodnika.
+        Ranking nadal liczy wyłącznie zatwierdzone wpisy siłowe; oczekujące zgłoszenia pokazujemy jako licznik.
       </p>
       </UCard>
     </div>

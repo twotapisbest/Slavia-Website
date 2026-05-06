@@ -16,6 +16,8 @@ export interface AuthUser {
   ui_color_mode?: string | null
   /** Płeć zawodnika powiązanego z kontem (jeśli konto ma profil athlete). */
   athlete_gender?: string | null
+  /** Zdjęcie z `athletes.image_url` (Cloudinary), gdy konto jest powiązane ze zawodnikiem. */
+  athlete_image_url?: string | null
 }
 
 export interface LoginResponse {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { getApiErrorMessage } from '~/composables/useApi'
+import { resolveAuthProfilePhotoSrc } from '~/utils/profilePhoto'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -27,33 +28,24 @@ watch(
       return
     }
     form.email = u.email || ''
-    form.avatar_url = u.avatar_url || ''
+    /** Wpis w formularzu: jawny avatar konta lub — jak pusty — zdjęcie z profilu zawodnika (`/me`). */
+    form.avatar_url = u.avatar_url?.trim() || u.athlete_image_url?.trim() || ''
   },
   { immediate: true }
 )
 
-/** Podgląd: najpierw wpisywany URL, potem zapisane na koncie (np. zanim zapiszesz zmianę). */
+/** Podgląd — ta sama kolejność co navbar: wpis w formularzu, potem `resolveAuthProfilePhotoSrc`. */
 const profileAvatarSrc = computed(() => {
   const typed = form.avatar_url?.trim()
-  if (typed) {
-    return typed
-  }
-  const saved = auth.user.value?.avatar_url?.trim()
-  return saved || ''
+  if (typed) return typed
+  return resolveAuthProfilePhotoSrc(auth.user.value ?? undefined) || ''
 })
 
 const avatarBroken = ref(false)
 
-watch(() => form.avatar_url, () => {
+watch(profileAvatarSrc, () => {
   avatarBroken.value = false
 })
-
-watch(
-  () => auth.user.value?.avatar_url,
-  () => {
-    avatarBroken.value = false
-  }
-)
 
 const saving = ref(false)
 const uploadLoading = ref(false)
@@ -65,7 +57,7 @@ function resetForm() {
     return
   }
   form.email = u.email || ''
-  form.avatar_url = u.avatar_url || ''
+  form.avatar_url = u.avatar_url?.trim() || u.athlete_image_url?.trim() || ''
   form.newPassword = ''
   form.confirmPassword = ''
   avatarBroken.value = false
@@ -84,8 +76,14 @@ async function onAvatarFileChange(e: Event) {
     const fd = new FormData()
     fd.append('file', file)
     const res = await apiFetch<{ url: string }>('/api/upload', { method: 'POST', body: fd })
-    form.avatar_url = res.url
-    toast.add({ title: 'Wgrano na Cloudinary — zapisz zmiany na koncie', color: 'success' })
+    const url = (res.url || '').trim()
+    if (!url) {
+      toast.add({ title: 'Serwer nie zwrócił adresu obrazka', color: 'warning' })
+      return
+    }
+    form.avatar_url = url
+    await persistAvatarToAccount(url)
+    toast.add({ title: 'Zdjęcie wgrane i zapisane na koncie', color: 'success' })
   } catch (err) {
     toast.add({
       title: 'Upload nie powiódł się',
@@ -103,6 +101,17 @@ onMounted(() => {
   }
 })
 
+/** Zapis `users.avatar_url` w backendzie (sam upload na Cloudinary tego nie robi). */
+async function persistAvatarToAccount(url: string) {
+  const trimmed = url.trim()
+  if (!trimmed) return
+  await apiFetch('/api/auth/profile', {
+    method: 'PATCH',
+    body: { avatar_url: trimmed }
+  })
+  await auth.fetchMe()
+}
+
 async function save() {
   if (form.newPassword && form.newPassword !== form.confirmPassword) {
     toast.add({ title: 'Hasła się nie zgadzają', color: 'warning' })
@@ -115,8 +124,9 @@ async function save() {
     payload.email = em
     const av = form.avatar_url.trim()
     payload.avatar_url = av
-    if (form.newPassword) {
-      payload.password = form.newPassword
+    const pw = form.newPassword.trim()
+    if (pw) {
+      payload.password = pw
     }
     await apiFetch('/api/auth/profile', { method: 'PATCH', body: payload })
     await auth.fetchMe()
@@ -208,7 +218,7 @@ async function save() {
                 Zdjęcie profilowe
               </h2>
               <p class="mt-2 text-[11px] leading-snug text-muted">
-                Podgląd aktualizuje się przy zmianie adresu URL — dopiero „Zapisz zmiany” zapisuje je na koncie.
+                Podgląd pokazuje zdjęcie konta lub — jeśli nie ma — zdjęcie z karty zawodnika. Adres URL zapisuje się przyciskiem „Zapisz zmiany”; wgrywanie pliku zapisuje od razu.
               </p>
             </div>
 
@@ -260,7 +270,7 @@ async function save() {
                 Wgraj z urządzenia
               </UButton>
               <p class="text-xs leading-relaxed text-muted">
-                Service worker i funkcje PWA są wyłączone dla stabilniejszego działania aplikacji web.
+                Po wgraniu pliku adres zapisuje się od razu na koncie (odświeżenie strony nie straci zdjęcia).
               </p>
             </div>
           </UCard>

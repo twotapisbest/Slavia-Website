@@ -14,8 +14,8 @@
  * `NUXT_PUBLIC_EXPERIMENTAL_KILL_SWITCH` — lista `id` rozdzielonych przecinkami, które są
  * **zawsze wyłączone** (ignoruje localStorage i „włączone” domyślnie). Ratunek przy problemach na produkcji.
  *
- * Przykład wyłączenia PWA i analizy sztangi:
- * `NUXT_PUBLIC_EXPERIMENTAL_KILL_SWITCH=pwa_service_worker,barbell_pose_analysis`
+ * Przykład wyłączenia analizy sztangi na deployu:
+ * `NUXT_PUBLIC_EXPERIMENTAL_KILL_SWITCH=barbell_pose_analysis`
  */
 
 export const EXPERIMENTAL_FEATURES_STORAGE_KEY = 'slavia-experimental-features'
@@ -38,13 +38,6 @@ export const EXPERIMENTAL_FEATURES: ExperimentalFeatureDefinition[] = [
     defaultEnabled: true
   },
   {
-    id: 'pwa_service_worker',
-    label: 'PWA — service worker i cache offline',
-    description:
-      'Rejestracja service workera (Vite PWA): aktualizacje w tle, cache, tryb offline. Wyłącz przy problemach z wdrożeniem lub „zaciętym” cache.',
-    defaultEnabled: true
-  },
-  {
     id: 'barbell_pose_analysis',
     label: 'Analiza ruchu sztangi (overlay + heurystyki)',
     description:
@@ -55,5 +48,4 @@ export const EXPERIMENTAL_FEATURES: ExperimentalFeatureDefinition[] = [
 
 export type ExperimentalFeatureId =
   | 'club_notification_bell'
-  | 'pwa_service_worker'
   | 'barbell_pose_analysis'

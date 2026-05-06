@@ -3,6 +3,11 @@ import type { Athlete, RecoveryLog } from '~/types/models'
 
 definePageMeta({ middleware: 'trainer' })
 
+useSeoMeta({
+  title: 'Regeneracja zawodników — trener',
+  robots: 'noindex, nofollow'
+})
+
 const apiFetch = useApi()
 const NO_ATHLETE = '__none__'
 
@@ -32,29 +37,87 @@ async function loadLogs() {
 watch(selectedAthleteId, () => {
   void loadLogs()
 })
+
+const selectedName = computed(() => {
+  const id = selectedAthleteId.value
+  if (id === NO_ATHLETE) return ''
+  return (athletes.value || []).find(a => a.id === id)?.full_name || ''
+})
 </script>
 
 <template>
-  <UContainer class="py-8">
-    <h1 class="mb-5 text-2xl font-bold text-highlighted">Regeneracja zawodników</h1>
+  <UContainer class="max-w-5xl py-8 sm:py-12">
+    <header class="mb-10">
+      <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
+        Dobrostan kadry
+      </p>
+      <h1 class="mt-2 text-3xl font-black tracking-tight text-highlighted sm:text-4xl">
+        Regeneracja zawodników
+      </h1>
+      <p class="mt-3 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
+        Podgląd check-inów zawodników (sen, skale subiektywne, notatki). Dane pochodzą z ich wpisów — możesz reagować planem treningowym lub rozmową.
+      </p>
+    </header>
 
-    <UCard class="mb-6">
-      <USelect
-        v-model="selectedAthleteId"
-        :items="[{ label: 'Wybierz zawodnika', value: NO_ATHLETE }, ...((athletes || []).map(a => ({ label: a.full_name, value: a.id })))]"
-      />
+    <UCard class="mb-10 border-default/70 shadow-sm ring-1 ring-default/40">
+      <UFormField label="Zawodnik" description="Lista aktywnych profili dostępnych dla kadry">
+        <USelect
+          v-model="selectedAthleteId"
+          value-key="value"
+          size="lg"
+          class="w-full"
+          :items="[{ label: '— wybierz zawodnika —', value: NO_ATHLETE }, ...((athletes || []).map(a => ({ label: a.full_name, value: a.id })))]"
+        />
+      </UFormField>
+      <p v-if="selectedAthleteId !== NO_ATHLETE" class="mt-3 text-xs text-muted">
+        Wybrano: <span class="font-semibold text-highlighted">{{ selectedName }}</span>
+      </p>
     </UCard>
 
-    <div v-if="loading" class="text-sm text-muted">Ładowanie check-inów…</div>
-    <div v-else class="space-y-3">
-      <UCard v-for="r in logs" :key="r.id">
-        <p class="font-semibold text-highlighted">{{ r.date }}</p>
-        <p class="text-sm text-muted">
-          Sen: {{ r.sleep_hours }}h · Zmęczenie: {{ r.fatigue_level }}/10 · Ból: {{ r.soreness_level }}/10 · Gotowość: {{ r.readiness_level }}/10
+    <section>
+      <h2 class="mb-4 flex items-center gap-2 text-lg font-bold text-highlighted">
+        <UIcon name="i-lucide-line-chart" class="size-5 text-muted" />
+        Log check-inów
+      </h2>
+      <div v-if="loading" class="flex items-center gap-2 text-sm text-muted">
+        <UIcon name="i-lucide-loader-2" class="size-4 animate-spin" />
+        Ładowanie…
+      </div>
+      <div v-else class="space-y-3">
+        <UCard
+          v-for="r in logs"
+          :key="r.id"
+          class="border-default/60"
+        >
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <p class="font-bold tabular-nums text-highlighted">
+              {{ r.date }}
+            </p>
+            <UBadge variant="subtle" color="primary" size="sm">
+              sen {{ r.sleep_hours }}h
+            </UBadge>
+          </div>
+          <div class="mt-3 grid gap-2 text-sm text-muted sm:grid-cols-3">
+            <span>Zmęczenie <strong class="text-highlighted">{{ r.fatigue_level }}</strong>/10</span>
+            <span>Ból <strong class="text-highlighted">{{ r.soreness_level }}</strong>/10</span>
+            <span>Gotowość <strong class="text-highlighted">{{ r.readiness_level }}</strong>/10</span>
+          </div>
+          <p v-if="r.note" class="mt-3 rounded-lg bg-muted/15 px-3 py-2 text-sm text-muted">
+            {{ r.note }}
+          </p>
+        </UCard>
+        <template v-if="selectedAthleteId === NO_ATHLETE">
+          <p class="rounded-xl border border-dashed border-default/70 px-4 py-10 text-center text-sm text-muted">
+            Wybierz zawodnika, aby wczytać historię check-inów.
+          </p>
+        </template>
+        <p
+          v-else-if="logs.length === 0"
+          class="rounded-xl border border-dashed border-default/70 px-4 py-10 text-center text-sm text-muted"
+        >
+          Brak wpisów regeneracji dla tego zawodnika.
         </p>
-        <p v-if="r.note" class="mt-1 text-sm text-muted">{{ r.note }}</p>
-      </UCard>
-      <p v-if="logs.length === 0" class="text-sm text-muted">Brak wpisów dla wybranego zawodnika.</p>
-    </div>
+      </div>
+    </section>
   </UContainer>
 </template>

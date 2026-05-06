@@ -1,5 +1,12 @@
 <script setup lang="ts">
 import { apiRoutes, urlAdminPlayer } from '~/config/api'
+import {
+  formatPzpcWeightCategory,
+  parsePzpcWeightCategoryStored,
+  PZPC_AGE_GROUPS,
+  pzpcWeightClassLabels,
+  type PzpcAgeGroupId
+} from '~/data/pzpcWeightCategories'
 import type { Competition, Player } from '~/types/models'
 
 const api = useApi()
@@ -28,7 +35,9 @@ const form = reactive<{
   full_name: string
   birth_year: number | null
   gender: string
-  weight_category: string | undefined
+  pzpc_age_group: PzpcAgeGroupId
+  /** Pusta wartość — brak wyboru kategorii startowej (np. tylko masa ciała). */
+  pzpc_weight_class: string
   bodyweight: number | null
   best_snatch_kg: number | null
   best_clean_jerk_kg: number | null
@@ -45,7 +54,8 @@ const form = reactive<{
   full_name: '',
   birth_year: null,
   gender: 'male',
-  weight_category: undefined,
+  pzpc_age_group: 'Senior',
+  pzpc_weight_class: '',
   bodyweight: null,
   best_snatch_kg: null,
   best_clean_jerk_kg: null,
@@ -62,6 +72,49 @@ const form = reactive<{
 })
 
 const uploadLoading = ref(false)
+
+/** Surowy tekst kategorii z bazy — jeśli nie da się sparsować (stary format), zachowujemy przy zapisie. */
+const legacyWeightCategoryRaw = ref('')
+
+const pzpcAgeSelectItems = PZPC_AGE_GROUPS.map(x => ({ label: x.label, value: x.id }))
+
+const pzpcWeightSelectItems = computed(() => {
+  const g = form.gender === 'female' ? 'female' : 'male'
+  return pzpcWeightClassLabels(form.pzpc_age_group, g).map(k => ({
+    label: k.startsWith('+') ? `${k} kg` : `${k} kg`,
+    value: k
+  }))
+})
+
+const legacyWeightCategoryHint = computed(() => {
+  const raw = legacyWeightCategoryRaw.value.trim()
+  if (!raw) return ''
+  if (parsePzpcWeightCategoryStored(raw)) return ''
+  return `W bazie jest wpis „${raw}”. Wybierz kategorię z listy PZPC — przy zapisie bez wyboru pozostawimy ten tekst.`
+})
+
+watch(
+  () => [form.pzpc_age_group, form.gender] as const,
+  () => {
+    const ok = pzpcWeightSelectItems.value.some(i => i.value === form.pzpc_weight_class)
+    if (!ok) {
+      form.pzpc_weight_class = ''
+    }
+  }
+)
+
+function resolvedWeightCategoryForSave(): string | null {
+  const cls = form.pzpc_weight_class.trim()
+  if (cls) {
+    return formatPzpcWeightCategory(
+      form.pzpc_age_group,
+      form.gender === 'female' ? 'female' : 'male',
+      cls
+    )
+  }
+  const leg = legacyWeightCategoryRaw.value.trim()
+  return leg || null
+}
 
 const competitionsCatalog = ref<Competition[]>([])
 const assignedCompetitionIds = ref<string[]>([])
@@ -99,10 +152,12 @@ watch(modalOpen, async (open) => {
 
 function resetForm() {
   editingId.value = null
+  legacyWeightCategoryRaw.value = ''
   form.full_name = ''
   form.birth_year = null
   form.gender = 'male'
-  form.weight_category = undefined
+  form.pzpc_age_group = 'Senior'
+  form.pzpc_weight_class = ''
   form.bodyweight = null
   form.best_snatch_kg = null
   form.best_clean_jerk_kg = null
@@ -165,10 +220,13 @@ function openCreate() {
 
 function openEdit(p: Player) {
   editingId.value = p.id
+  legacyWeightCategoryRaw.value = (p.weight_category ?? '').trim()
+  const parsed = parsePzpcWeightCategoryStored(p.weight_category ?? undefined)
   form.full_name = p.full_name
   form.birth_year = p.birth_year ?? null
-  form.gender = p.gender || 'male'
-  form.weight_category = p.weight_category ?? undefined
+  form.gender = (parsed?.gender ?? p.gender ?? 'male')
+  form.pzpc_age_group = parsed?.age ?? 'Senior'
+  form.pzpc_weight_class = parsed?.classLabel ?? ''
   form.bodyweight = p.bodyweight ?? null
   form.best_snatch_kg = p.best_snatch_kg ?? null
   form.best_clean_jerk_kg = p.best_clean_jerk_kg ?? null
@@ -230,7 +288,7 @@ async function savePlayer() {
       full_name: form.full_name.trim(),
       birth_year: form.birth_year,
       gender: form.gender,
-      weight_category: form.weight_category || null,
+      weight_category: resolvedWeightCategoryForSave(),
       bodyweight: form.bodyweight,
       best_snatch_kg: form.best_snatch_kg,
       best_clean_jerk_kg: form.best_clean_jerk_kg,
@@ -583,7 +641,7 @@ onMounted(() => {
                 </p>
               </div>
               <div class="slavia-form-panel__body">
-                <div class="grid gap-5 sm:grid-cols-3">
+                <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                   <UFormField label="Rok urodzenia">
                     <UInput
                       :model-value="form.birth_year === null || form.birth_year === undefined ? '' : String(form.birth_year)"
@@ -597,15 +655,34 @@ onMounted(() => {
                       @update:model-value="setBirthYear"
                     />
                   </UFormField>
-                  <UFormField label="Kategoria wagowa">
-                    <UInput
-                      v-model="form.weight_category"
-                      placeholder="np. 73 kg"
+                  <UFormField
+                    label="Grupa wiekowa (PZPC)"
+                    description="Lista klas wagowych zależy od grupy i płci."
+                  >
+                    <USelect
+                      v-model="form.pzpc_age_group"
+                      value-key="value"
+                      :items="pzpcAgeSelectItems"
                       size="lg"
                       class="w-full"
                     />
                   </UFormField>
-                  <UFormField label="Waga ciała (kg)">
+                  <UFormField
+                    label="Kategoria wagowa (startowa)"
+                    description="Z aktualnych widełek PZPC dla wybranej grupy."
+                  >
+                    <USelect
+                      v-model="form.pzpc_weight_class"
+                      value-key="value"
+                      :items="[{ label: '— wybierz —', value: '' }, ...pzpcWeightSelectItems]"
+                      size="lg"
+                      class="w-full"
+                    />
+                  </UFormField>
+                  <UFormField
+                    label="Aktualna masa ciała (kg)"
+                    description="Rzeczywisty pomiar, nie limit kategorii."
+                  >
                     <UInputNumber
                       v-model="form.bodyweight"
                       :min="0"
@@ -617,6 +694,12 @@ onMounted(() => {
                     />
                   </UFormField>
                 </div>
+                <p
+                  v-if="legacyWeightCategoryHint"
+                  class="text-xs leading-snug text-amber-700 dark:text-amber-400"
+                >
+                  {{ legacyWeightCategoryHint }}
+                </p>
                 <div class="grid gap-5 sm:grid-cols-3">
                   <UFormField label="Rwanie (kg)">
                     <UInputNumber

@@ -5,9 +5,20 @@ defineOptions({
 
 const error = useError()
 
+/** Runtime (router) ustawia `url`; typ `NuxtError` tego nie deklaruje. */
+function errorRequestUrl(e: typeof error.value): string | undefined {
+  if (!e || typeof e !== 'object') {
+    return undefined
+  }
+  const url = (e as { url?: unknown }).url
+  return typeof url === 'string' ? url : undefined
+}
+
+const errorPageUrl = computed(() => errorRequestUrl(error.value))
+
 const fingerprint = computed(
   () =>
-    `${error.value?.statusCode ?? 0}-${error.value?.statusMessage ?? ''}-${error.value?.url ?? ''}-${error.value?.message ?? ''}`
+    `${error.value?.statusCode ?? 0}-${error.value?.statusMessage ?? ''}-${errorPageUrl.value}-${error.value?.message ?? ''}`
 )
 
 function stablePick(arr: string[], seed: string) {
@@ -66,6 +77,12 @@ const statusLabel = computed(() => {
 function handleHome() {
   clearError({ redirect: '/' })
 }
+
+function reloadPage() {
+  if (import.meta.client) {
+    globalThis.location?.reload()
+  }
+}
 </script>
 
 <template>
@@ -114,10 +131,10 @@ function handleHome() {
           {{ error.statusMessage || error.message }}
         </p>
         <p
-          v-if="error?.url"
+          v-if="errorPageUrl"
           class="mt-2 truncate font-mono text-[11px] text-muted"
         >
-          {{ error.url }}
+          {{ errorPageUrl }}
         </p>
       </div>
     </div>
@@ -137,7 +154,7 @@ function handleHome() {
         color="neutral"
         icon="i-lucide-refresh-ccw"
         class="font-bold"
-        @click="() => window.location.reload()"
+        @click="reloadPage"
       >
         Odśwież stronę
       </UButton>

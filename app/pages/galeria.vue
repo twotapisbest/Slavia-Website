@@ -120,7 +120,7 @@ async function onFileChange(e: Event) {
     toast.add({ title: isVideo ? 'Film przesłany' : 'Zdjęcie przesłane', color: 'success' })
   } catch (err) {
     console.error('[gallery] upload failed', err)
-    toast.add({ title: 'Błąd uploadu', description: String(err), color: 'error' })
+    toast.add({ title: 'Błąd uploadu', description: getApiErrorMessage(err), color: 'error' })
   } finally {
     uploadLoading.value = false
   }

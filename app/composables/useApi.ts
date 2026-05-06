@@ -13,6 +13,10 @@ export function useApi() {
       if (!headers.has('Accept')) {
         headers.set('Accept', 'application/json')
       }
+      /** Multipart: granica musi ustawić przeglądarka — nie wysyłaj application/json. */
+      if (options.body instanceof FormData) {
+        headers.delete('Content-Type')
+      }
       options.headers = headers
     },
     onResponseError({ response }) {

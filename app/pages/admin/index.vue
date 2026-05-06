@@ -209,39 +209,8 @@ const quickLinks = computed(() => {
       </p>
     </div>
 
-    <!-- SuperAdmin Banner -->
-    <div
-      v-if="isSuperAdmin"
-      class="mb-8 flex flex-col gap-4 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 to-purple-500/10 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
-    >
-      <div class="flex items-start gap-3 sm:items-center sm:gap-4">
-        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/20 text-primary sm:h-12 sm:w-12">
-          <UIcon
-            name="i-lucide-shield-check"
-            class="size-6"
-          />
-        </div>
-        <div class="min-w-0">
-          <p class="text-xs font-bold uppercase tracking-wider text-primary sm:text-sm">
-            Tryb SuperAdmin
-          </p>
-          <p class="mt-0.5 text-sm text-muted">
-            Masz dostęp do zaawansowanych narzędzi systemowych.
-          </p>
-        </div>
-      </div>
-      <UButton
-        to="/superadmin"
-        trailing-icon="i-lucide-arrow-right"
-        size="lg"
-        class="min-h-11 w-full shrink-0 justify-center sm:w-auto"
-      >
-        Panel SuperAdmin
-      </UButton>
-    </div>
-
-    <!-- Statystyki -->
-    <div class="mb-12 grid grid-cols-1 gap-4 sm:grid-cols-3 lg:gap-6">
+    <!-- Statystyki — nad banerami i skrótami -->
+    <div class="mb-10 grid grid-cols-1 gap-4 sm:grid-cols-3 lg:gap-6">
       <UCard>
         <div class="flex items-center gap-4">
           <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
@@ -296,6 +265,68 @@ const quickLinks = computed(() => {
           </div>
         </div>
       </UCard>
+    </div>
+
+    <!-- SuperAdmin Banner -->
+    <div
+      v-if="isSuperAdmin"
+      class="mb-10 flex flex-col gap-4 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 to-purple-500/10 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
+    >
+      <div class="flex items-start gap-3 sm:items-center sm:gap-4">
+        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/20 text-primary sm:h-12 sm:w-12">
+          <UIcon
+            name="i-lucide-shield-check"
+            class="size-6"
+          />
+        </div>
+        <div class="min-w-0">
+          <p class="text-xs font-bold uppercase tracking-wider text-primary sm:text-sm">
+            Tryb SuperAdmin
+          </p>
+          <p class="mt-0.5 text-sm text-muted">
+            Masz dostęp do zaawansowanych narzędzi systemowych.
+          </p>
+        </div>
+      </div>
+      <UButton
+        to="/superadmin"
+        trailing-icon="i-lucide-arrow-right"
+        size="lg"
+        class="min-h-11 w-full shrink-0 justify-center sm:w-auto"
+      >
+        Panel SuperAdmin
+      </UButton>
+    </div>
+
+    <h2 class="mb-4 text-xl font-semibold text-highlighted">
+      Moduły
+    </h2>
+    <div class="mb-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:gap-8">
+      <NuxtLink
+        v-for="link in quickLinks"
+        :key="link.to"
+        :to="link.to"
+        class="group block transition-transform hover:-translate-y-1"
+      >
+        <UCard class="h-full border border-default transition-colors group-hover:border-primary/50 group-hover:shadow-md">
+          <div class="flex items-start gap-4">
+            <div :class="['flex h-10 w-10 shrink-0 items-center justify-center rounded-lg', link.bg, link.color]">
+              <UIcon
+                :name="link.icon"
+                class="size-5"
+              />
+            </div>
+            <div>
+              <h3 class="font-medium text-highlighted group-hover:text-primary transition-colors">
+                {{ link.title }}
+              </h3>
+              <p class="mt-1 text-sm text-muted">
+                {{ link.description }}
+              </p>
+            </div>
+          </div>
+        </UCard>
+      </NuxtLink>
     </div>
 
     <!-- Wyniki oczekujące — kotwica działa także przy 0 pozycjach -->
@@ -370,37 +401,6 @@ const quickLinks = computed(() => {
           </UButton>
         </div>
       </div>
-    </div>
-
-    <h2 class="mb-4 text-xl font-semibold text-highlighted">
-      Szybki dostęp
-    </h2>
-    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:gap-8">
-      <NuxtLink
-        v-for="link in quickLinks"
-        :key="link.to"
-        :to="link.to"
-        class="group block transition-transform hover:-translate-y-1"
-      >
-        <UCard class="h-full border border-default transition-colors group-hover:border-primary/50 group-hover:shadow-md">
-          <div class="flex items-start gap-4">
-            <div :class="['flex h-10 w-10 shrink-0 items-center justify-center rounded-lg', link.bg, link.color]">
-              <UIcon
-                :name="link.icon"
-                class="size-5"
-              />
-            </div>
-            <div>
-              <h3 class="font-medium text-highlighted group-hover:text-primary transition-colors">
-                {{ link.title }}
-              </h3>
-              <p class="mt-1 text-sm text-muted">
-                {{ link.description }}
-              </p>
-            </div>
-          </div>
-        </UCard>
-      </NuxtLink>
     </div>
   </UContainer>
 </template>

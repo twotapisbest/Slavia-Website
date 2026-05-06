@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { Athlete } from '~/types/models'
+import type { ChatMessage } from '~/composables/useChat'
 import { getApiErrorMessage } from '~/composables/useApi'
+import { resolveAuthProfilePhotoSrc } from '~/utils/profilePhoto'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -62,6 +64,13 @@ function userInitials(username?: string | null) {
   if (!v) return 'U'
   return v.slice(0, 2).toUpperCase()
 }
+
+function messageSenderPhotoSrc(m: ChatMessage): string | undefined {
+  const raw = m.sender_photo_url?.trim()
+  return raw || undefined
+}
+
+const selfChatAvatarSrc = computed(() => resolveAuthProfilePhotoSrc(auth.user.value ?? undefined))
 
 async function openThreadWithAthlete() {
   const athleteId = selectedAthleteId.value
@@ -156,9 +165,10 @@ async function sendMessage() {
           >
             <UAvatar
               v-if="m.sender_user_id !== auth.user.value?.id"
-              :alt="m.sender_user_id"
+              :src="messageSenderPhotoSrc(m)"
+              :alt="m.sender_username || 'Rozmówca'"
               size="2xs"
-              :text="m.sender_user_id === auth.user.value?.id ? userInitials(auth.user.value?.username) : 'KT'"
+              :text="messageSenderPhotoSrc(m) ? undefined : userInitials(m.sender_username)"
               class="mt-1 shrink-0"
             />
             <div
@@ -170,9 +180,10 @@ async function sendMessage() {
             </div>
             <UAvatar
               v-if="m.sender_user_id === auth.user.value?.id"
+              :src="selfChatAvatarSrc"
               :alt="auth.user.value?.username"
               size="2xs"
-              :text="userInitials(auth.user.value?.username)"
+              :text="selfChatAvatarSrc ? undefined : userInitials(auth.user.value?.username)"
               class="mt-1 shrink-0"
             />
           </div>

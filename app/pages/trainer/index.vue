@@ -71,15 +71,12 @@ const pendingCount = computed(() => (Array.isArray(pendingResults.value) ? pendi
 const competitionsCount = computed(() => (Array.isArray(competitions.value) ? competitions.value.length : 0))
 
 const quickLinks = computed(() => {
-  const admin = auth.isAdmin.value
   const links = [
     {
-      title: admin ? 'Zawodnicy (panel admina)' : 'Baza zawodników',
-      description: admin
-        ? 'Pełna edycja z możliwością tworzenia kont logowania'
-        : 'Edycja profili i zawodów — konto dla zawodnika tworzy administrator po Twojej prośbie',
+      title: 'Baza zawodników',
+      description: 'Edycja profili i zawodów — konta logowania zakłada administrator',
       icon: 'i-lucide-users',
-      to: admin ? '/admin/zawodnicy' : '/trainer/zawodnicy',
+      to: '/trainer/zawodnicy',
       color: 'text-blue-500',
       bg: 'bg-blue-500/10'
     },
@@ -93,9 +90,9 @@ const quickLinks = computed(() => {
     },
     {
       title: 'Zgłoszenia wyników',
-      description: 'Przejdź do listy oczekujących lub dodaj start na stronie „Wszystkie starty”',
+      description: 'Lista oczekujących na tej stronie (sekcja poniżej) lub dodaj start w „Wszystkie starty”',
       icon: 'i-lucide-check-circle',
-      to: admin ? '/admin#wyniki-oczekujace' : '/trainer#wyniki-oczekujace',
+      to: { path: '/trainer', hash: '#wyniki-oczekujace' },
       color: 'text-emerald-500',
       bg: 'bg-emerald-500/10'
     },
@@ -132,14 +129,6 @@ const quickLinks = computed(() => {
       bg: 'bg-rose-500/10'
     },
     {
-      title: 'Monitoring i logi',
-      description: 'Metryki systemowe i ostatnie zdarzenia',
-      icon: 'i-lucide-activity-square',
-      to: '/trainer/monitoring',
-      color: 'text-violet-600',
-      bg: 'bg-violet-500/10'
-    },
-    {
       title: 'Feed wydarzeń',
       description: 'Aktywności: wyniki, obecność, regeneracja',
       icon: 'i-lucide-list-collapse',
@@ -171,16 +160,6 @@ const quickLinks = computed(() => {
       color: 'text-amber-600',
       bg: 'bg-amber-500/10'
     },
-    ...(admin
-      ? [{
-          title: 'Changelog systemu',
-          description: 'Historia zmian widoczna dla administratorów',
-          icon: 'i-lucide-file-text',
-          to: '/admin/changelog',
-          color: 'text-emerald-600',
-          bg: 'bg-emerald-500/10'
-        }]
-      : []),
     {
       title: 'Moje konto',
       description: 'E-mail, avatar i hasło',
@@ -267,7 +246,7 @@ onMounted(() => {
       </p>
     </div>
 
-    <div class="mb-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div class="mb-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
       <UCard>
         <div class="flex items-center gap-4">
           <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
@@ -324,7 +303,36 @@ onMounted(() => {
       </UCard>
     </div>
 
-    <!-- Wyniki oczekujące — zawsze w DOM (kotwica z „Zgłoszenia wyników”), także przy 0 pozycji -->
+    <h2 class="mb-4 text-xl font-semibold text-highlighted">
+      Moduły i skróty
+    </h2>
+    <div class="mb-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <NuxtLink
+        v-for="link in quickLinks"
+        :key="link.title"
+        :to="link.to"
+        class="group block transition-transform hover:-translate-y-1"
+      >
+        <UCard class="h-full border border-default transition-colors group-hover:border-primary/50 group-hover:shadow-md">
+          <div class="flex flex-col items-center text-center p-4">
+            <div :class="['mb-3 flex h-14 w-14 items-center justify-center rounded-full', link.bg, link.color]">
+              <UIcon
+                :name="link.icon"
+                class="size-7"
+              />
+            </div>
+            <h3 class="font-medium text-highlighted group-hover:text-primary transition-colors">
+              {{ link.title }}
+            </h3>
+            <p class="mt-2 text-xs text-muted">
+              {{ link.description }}
+            </p>
+          </div>
+        </UCard>
+      </NuxtLink>
+    </div>
+
+    <!-- Wyniki oczekujące — pod skrótami; kotwica działa także przy 0 pozycjach -->
     <div
       id="wyniki-oczekujace"
       class="mb-12 scroll-mt-24 rounded-2xl border border-default bg-card p-6"
@@ -403,35 +411,6 @@ onMounted(() => {
           </UButton>
         </div>
       </div>
-    </div>
-
-    <h2 class="mb-4 text-xl font-semibold text-highlighted">
-      Szybki dostęp
-    </h2>
-    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-      <NuxtLink
-        v-for="link in quickLinks"
-        :key="link.to"
-        :to="link.to"
-        class="group block transition-transform hover:-translate-y-1"
-      >
-        <UCard class="h-full border border-default transition-colors group-hover:border-primary/50 group-hover:shadow-md">
-          <div class="flex flex-col items-center text-center p-4">
-            <div :class="['mb-3 flex h-14 w-14 items-center justify-center rounded-full', link.bg, link.color]">
-              <UIcon
-                :name="link.icon"
-                class="size-7"
-              />
-            </div>
-            <h3 class="font-medium text-highlighted group-hover:text-primary transition-colors">
-              {{ link.title }}
-            </h3>
-            <p class="mt-2 text-xs text-muted">
-              {{ link.description }}
-            </p>
-          </div>
-        </UCard>
-      </NuxtLink>
     </div>
 
     <div class="mt-12 rounded-2xl border border-default bg-card p-6">

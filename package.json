@@ -2,6 +2,7 @@
   "name": "Slavia-frontend",
   "private": true,
   "type": "module",
+  "version": "2.3.1-beta",
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
@@ -16,6 +17,7 @@
     "release:check": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release-check.ps1"
   },
   "dependencies": {
+    "@iconify-json/game-icons": "^1.2.4",
     "@iconify-json/lucide": "^1.2.105",
     "@iconify/utils": "^3.1.1",
     "@netlify/blobs": "^10.7.4",

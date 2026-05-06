@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { resolveAuthProfilePhotoSrc } from '~/utils/profilePhoto'
+
 const auth = useAuth()
 const route = useRoute()
 const appearance = useSlaviaAppearance()
@@ -47,10 +49,14 @@ const dashboardLink = computed(() => {
   return '/athlete'
 })
 
+/** Zdjęcie w navbarze: `avatar_url` konta lub zdjęcie profilu sportowego zawodnika. */
+const navAvatarSrc = computed(() => resolveAuthProfilePhotoSrc(auth.user.value ?? undefined))
+
 const title = 'CKS Slavia Ruda Śląska — podnoszenie ciężarów'
 const description = 'Klub sportowy Slavia Ruda Śląska: zawodnicy, wyniki i społeczność skupiona wokół sportów siłowych.'
 const siteUrl = computed(() => (config.public.siteUrl as string).replace(/\/$/, ''))
 const socialImage = computed(() => `${siteUrl.value}/logo.png`)
+const appReleaseLabel = computed(() => String(config.public.appVersion ?? ''))
 
 useHead({
   meta: [
@@ -61,7 +67,7 @@ useHead({
     { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' }
   ],
   link: [
-    { rel: 'icon', href: '/favicon.ico' },
+    { rel: 'icon', type: 'image/png', href: '/logo.png' },
     { rel: 'apple-touch-icon', href: '/logo.png' }
   ],
   htmlAttrs: {
@@ -178,6 +184,7 @@ watch(
                 :aria-label="`Panel: ${auth.user.value?.username ?? ''}`"
               >
                 <UAvatar
+                  :src="navAvatarSrc"
                   :alt="auth.user.value?.username"
                   size="xs"
                   class="ring-1 ring-primary/30"
@@ -189,6 +196,7 @@ watch(
                   class="group flex max-w-[11rem] items-center gap-2 rounded-full bg-primary/8 px-3 py-1.5 transition-all hover:bg-primary/14 ring-1 ring-primary/22 lg:max-w-[14rem] lg:px-4"
                 >
                   <UAvatar
+                    :src="navAvatarSrc"
                     :alt="auth.user.value?.username"
                     size="xs"
                     class="ring-1 ring-primary/20 shrink-0"
@@ -278,6 +286,12 @@ watch(
             </p>
             <p class="text-[10px] text-muted/50">
               Realizacja: Neution Studio · Jakub Gawron
+            </p>
+            <p
+              class="text-[10px] font-mono text-muted/70"
+              aria-label="Wersja aplikacji"
+            >
+              Wersja {{ appReleaseLabel }}
             </p>
           </div>
         </template>

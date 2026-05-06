@@ -35,9 +35,14 @@ export function useNotifications() {
     items.value = items.value.map(i => ({ ...i, is_read: true }))
   }
 
+  async function deleteAll() {
+    await api(apiRoutes.notifications.deleteAll, { method: 'DELETE' })
+    items.value = []
+  }
+
   function clearLocal() {
     items.value = []
   }
 
-  return { items, loading, refresh, remove, markRead, markAllRead, clearLocal }
+  return { items, loading, refresh, remove, markRead, markAllRead, deleteAll, clearLocal }
 }

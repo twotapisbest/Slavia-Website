@@ -45,6 +45,11 @@ export const SLAVIA_THEME_PRESETS = [
     id: 'neon',
     label: 'Neon gym',
     description: 'Jaskrawe neony i energia siłowni — widoczna zmiana.'
+  },
+  {
+    id: 'blackgym',
+    label: 'Black gym',
+    description: 'Czarna sala jako kolor przewodni — kontrast i spokój jak wieczorny trening.'
   }
 ] as const
 

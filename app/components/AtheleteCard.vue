@@ -149,7 +149,12 @@ function clearHover() {
             class="relative h-44 w-44 rounded-xl object-cover border-2 border-primary/20 group-hover:border-primary transition-all shadow-md"
           >
           <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-primary text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg whitespace-nowrap">
-            Kat. {{ athlete.weightCategory }}kg
+            <template v-if="athlete.weightCategory > 0">
+              Kat. {{ athlete.weightCategory }} kg
+            </template>
+            <template v-else>
+              Kat. —
+            </template>
           </div>
         </div>
 
@@ -168,7 +173,11 @@ function clearHover() {
       <div class="md:col-span-8 space-y-5">
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div class="min-h-28 rounded-xl border border-primary/20 bg-linear-to-br from-primary/5 to-primary/10 p-3 text-center flex flex-col justify-center gap-1">
-            <p class="text-[10px] uppercase tracking-wide text-primary/70 font-bold">
+            <p class="flex items-center justify-center gap-1 text-[10px] uppercase tracking-wide text-primary/70 font-bold">
+              <UIcon
+                name="i-game-icons-weight-lifting-up"
+                class="size-4 shrink-0 opacity-95"
+              />
               Rwanie
             </p>
             <p class="text-xl sm:text-2xl font-mono font-bold text-primary leading-none wrap-break-word">
@@ -180,7 +189,11 @@ function clearHover() {
           </div>
 
           <div class="min-h-28 rounded-xl border border-primary/20 bg-linear-to-br from-primary/5 to-primary/10 p-3 text-center flex flex-col justify-center gap-1">
-            <p class="text-[10px] uppercase tracking-wide text-primary/70 font-bold">
+            <p class="flex items-center justify-center gap-1 text-[10px] uppercase tracking-wide text-primary/70 font-bold">
+              <UIcon
+                name="i-game-icons-weight-lifting-down"
+                class="size-4 shrink-0 opacity-95"
+              />
               Podrzut
             </p>
             <p class="text-xl sm:text-2xl font-mono font-bold text-primary leading-none wrap-break-word">

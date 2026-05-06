@@ -4,7 +4,6 @@ import { pl } from 'date-fns/locale'
 import { useBrowserNotifications } from '~/composables/useBrowserNotifications'
 import type { DevSuperadminLogLevel } from '~/composables/useDevSuperadminLogs'
 import { useDevSuperadminLogs } from '~/composables/useDevSuperadminLogs'
-import { usePwaInstall } from '~/composables/usePwaInstall'
 import { DEV_TOOL_LINK_GROUPS } from '~/data/devToolsCatalog'
 import type { ExperimentalFeatureId } from '~/data/experimentalFeaturesCatalog'
 import {
@@ -139,9 +138,6 @@ function isExperimentalLocked(id: string) {
 }
 const config = useRuntimeConfig()
 const { enabled, permission, supported, requestPermission, setEnabled, notify } = useBrowserNotifications()
-const { supported: pwaSupported, canPrompt, promptInstall, installed, loopbackWithoutDev } = usePwaInstall()
-const pwaExperimentEnabled = useExperimentalFlag('pwa_service_worker')
-
 const userAgentDisplay = ref('')
 const systemLogs = useDevSuperadminLogs()
 
@@ -281,49 +277,6 @@ async function sendTestNotification() {
     icon: '/logo.png'
   })
   toast.add({ title: 'Testowe powiadomienie wysłane', color: 'success' })
-}
-
-async function installPwa() {
-  if (!import.meta.client) {
-    return
-  }
-  if (!pwaExperimentEnabled.value) {
-    toast.add({
-      title: 'PWA wyłączone',
-      description: 'Włącz funkcję „PWA — service worker” w sekcji eksperymentalnej lub usuń wpis z kill switcha deployu.',
-      color: 'warning'
-    })
-    return
-  }
-  if (installed.value) {
-    toast.add({ title: 'Aplikacja jest już zainstalowana', color: 'info' })
-    return
-  }
-  if (loopbackWithoutDev.value) {
-    toast.add({
-      title: 'PWA na localhost tylko w dev',
-      description:
-        'Przy `nuxt build` + podglądzie na 127.0.0.1 nie rejestrujemy SW. Uruchom `nuxt dev` albo HTTPS wdrożenia.',
-      color: 'warning'
-    })
-    return
-  }
-  if (!canPrompt.value) {
-    toast.add({
-      title: 'Instalacja z przycisku niedostępna',
-      description: pwaSupported.value
-        ? 'Manifest + service worker muszą być aktywne; w Chrome sprawdź ⋮ → Zainstaluj aplikację. Na iOS instalacja tylko z Udostępnij.'
-        : 'Potrzebny jest bezpieczny kontekst (HTTPS lub localhost w trybie dev). HTTP na samym IP w LAN blokuje PWA w Chromium.',
-      color: 'warning'
-    })
-    return
-  }
-
-  const accepted = await promptInstall()
-  toast.add({
-    title: accepted ? 'Aplikacja zainstalowana' : 'Instalacja anulowana',
-    color: accepted ? 'success' : 'info'
-  })
 }
 
 async function copyToClipboard(text: string, successTitle: string) {
@@ -496,13 +449,14 @@ async function copyMemoryHint() {
 async function pingApiLatency() {
   const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now()
   try {
-    await apiFetch('/api/posts').catch(() => [])
+    const ping = await apiFetch<{ ok?: boolean, instance?: string | null }>('/api/system/ping').catch(() => null)
     const ms = Math.round((typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0)
     apiPingMs.value = ms
+    const inst = ping?.instance ? ` · instance: ${ping.instance}` : ''
     systemLogs.push({
       level: 'info',
-      title: `Ping GET /api/posts`,
-      detail: `${ms} ms (czas do pierwszej odpowiedzi)`
+      title: `Ping GET /api/system/ping`,
+      detail: `${ms} ms${inst} (sprawdź log stdout backendu — println!)`
     })
     toast.add({ title: `API ~${ms} ms`, color: 'success' })
   } catch (e) {
@@ -803,7 +757,7 @@ function downloadDevSelftestFile() {
           Narzędzia superadmina
         </h1>
         <p class="mt-1 max-w-3xl text-xs leading-snug text-muted sm:text-sm">
-          Flagi, motyw, smoke API, PWA, schowek i mapa tras — zwarty układ pod szybki smoke test.
+          Flagi, motyw, smoke API, schowek i mapa tras — zwarty układ pod szybki smoke test.
         </p>
       </div>
       <UButton
@@ -818,8 +772,8 @@ function downloadDevSelftestFile() {
       </UButton>
     </div>
 
-    <!-- lg+: 12-kolumnowa siatka — API + eksperymentalne w jednym rzędzie, mniej „pustych” kolumn -->
-    <div class="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:gap-4">
+    <!-- Sekcja 1: statystyki / smoke API — zawsze nad narzędziami pomocniczymi -->
+    <section aria-label="Statystyki i backend" class="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:gap-4">
       <UCard class="rounded-2xl border-default/60 p-4 shadow-sm lg:col-span-7">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <p class="text-[10px] font-bold uppercase tracking-wider text-muted">
@@ -1178,7 +1132,7 @@ function downloadDevSelftestFile() {
         <div class="grid gap-4 lg:grid-cols-12 lg:items-start">
           <div class="space-y-3 lg:col-span-8">
             <div class="flex flex-wrap items-center gap-2">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-muted">Powiadomienia · PWA</span>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-muted">Powiadomienia systemowe</span>
               <UButton
                 color="primary"
                 size="xs"
@@ -1187,39 +1141,10 @@ function downloadDevSelftestFile() {
               >
                 Test notify
               </UButton>
-              <UButton
-                color="secondary"
-                size="xs"
-                class="touch-manipulation"
-                :disabled="!pwaExperimentEnabled || loopbackWithoutDev"
-                @click="installPwa"
-              >
-                Instaluj PWA
-              </UButton>
             </div>
             <p class="rounded-lg border border-default/50 bg-muted/10 px-2 py-1.5 font-mono text-[10px] leading-relaxed text-muted">
               obsługa: {{ supported ? 'tak' : 'nie' }} · upr.: {{ permission }} · sys.: {{ enabled ? 'tak' : 'nie' }}
-              · pwa: {{ pwaSupported ? 'tak' : 'nie' }} · prompt: {{ canPrompt ? 'tak' : 'nie' }} · app: {{ installed ? 'tak' : 'nie' }}
-              <span v-if="loopbackWithoutDev"> · localhost≠dev</span>
             </p>
-
-            <details class="mt-3 rounded-lg border border-default/55 bg-muted/5 px-3 py-2">
-              <summary class="cursor-pointer select-none text-[11px] font-bold uppercase tracking-wide text-muted">
-                Checklista wdrożenia PWA (Chrome / Brave / Android)
-              </summary>
-              <ul class="mt-2 list-disc space-y-1.5 pl-4 text-[11px] leading-snug text-muted">
-                <li>Origin z HTTPS (nie czyste HTTP na IP w LAN) — inaczej instalacja i część API przeglądarki są blokowane.</li>
-                <li>
-                  Flaga <span class="font-mono text-[10px]">pwa_service_worker</span> włączona; na deployu sprawdź brak wpisu w
-                  <span class="font-mono text-[10px]">NUXT_PUBLIC_EXPERIMENTAL_KILL_SWITCH</span>.
-                </li>
-                <li>Po wdrożeniu: wejście na stronę → odświeżenie z wyczyszczeniem cache → ponowna instalacja; na Androidzie Chrome menu ⋮ → „Zainstaluj aplikację”.</li>
-                <li>
-                  Aktualizacja: przy <span class="font-mono text-[10px]">registerType: autoUpdate</span> nowa wersja pobiera się w tle;
-                  drugie otwarcie aplikacji powinno już serwować świeży bundle (ew. zamknij kartę PWA i uruchom ponownie).
-                </li>
-              </ul>
-            </details>
 
             <div class="border-t border-default/40 pt-3">
               <p class="mb-2 text-[10px] font-bold uppercase text-muted">
@@ -1474,6 +1399,6 @@ function downloadDevSelftestFile() {
         </p>
       </div>
       </UCard>
-    </div>
+    </section>
   </UContainer>
 </template>

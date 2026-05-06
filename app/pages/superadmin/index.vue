@@ -168,8 +168,10 @@ const quickLinks = [
       </p>
     </div>
 
-    <!-- Statystyki -->
-    <div class="mb-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <h2 class="mb-3 text-lg font-semibold text-highlighted">
+      Statystyki
+    </h2>
+    <div class="mb-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
       <UCard>
         <div class="flex items-center gap-4">
           <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/10 text-red-500">
@@ -227,9 +229,9 @@ const quickLinks = [
     </div>
 
     <h2 class="mb-4 text-xl font-semibold text-highlighted">
-      Zarządzanie Ostateczne
+      Moduły i przejścia
     </h2>
-    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <NuxtLink
         v-for="link in quickLinks"
         :key="link.to"

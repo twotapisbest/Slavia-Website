@@ -190,63 +190,76 @@ const panelDropdownItems = computed(() =>
       />
 
       <template #body>
-        <nav class="flex flex-col gap-1 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-1 sm:px-4">
-          <UButton
+        <nav
+          class="flex flex-col gap-4 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 sm:px-4"
+          aria-label="Menu mobilne"
+        >
+          <NuxtLink
             to="/"
-            variant="ghost"
-            color="neutral"
-            block
-            class="min-h-12 justify-start rounded-xl text-base font-semibold"
+            class="flex min-h-13 items-center justify-between rounded-2xl border border-default/60 bg-muted/15 px-4 py-3 text-base font-bold text-highlighted ring-1 ring-transparent transition-colors hover:border-primary/35 hover:bg-primary/5"
+            active-class="border-primary/45 bg-primary/10 ring-primary/20"
           >
-            Strona główna
-          </UButton>
+            <span class="flex items-center gap-3">
+              <span class="flex size-9 items-center justify-center rounded-xl bg-background text-primary ring-1 ring-default/60">
+                <UIcon name="i-lucide-home" class="size-4" />
+              </span>
+              Strona główna
+            </span>
+            <UIcon name="i-lucide-chevron-right" class="size-4 text-muted" />
+          </NuxtLink>
 
-          <p class="mb-0 px-2 pt-2 text-[10px] font-bold uppercase tracking-wider text-muted">
-            Klub
-          </p>
-          <UButton
-            v-for="link in items.main"
-            :key="'drawer-main-' + link.to"
-            :to="link.to"
-            variant="ghost"
-            color="neutral"
-            block
-            class="min-h-11 justify-start rounded-xl text-[15px] font-semibold"
-          >
-            {{ link.label }}
-          </UButton>
+          <div class="rounded-2xl border border-default/50 bg-muted/10 p-2 ring-1 ring-default/30">
+            <p class="px-2 pb-2 pt-1 text-[10px] font-bold uppercase tracking-wider text-muted">
+              Strony klubu
+            </p>
+            <div class="flex flex-col gap-1">
+              <UButton
+                v-for="link in items.main"
+                :key="'drawer-main-' + link.to"
+                :to="link.to"
+                variant="ghost"
+                color="neutral"
+                block
+                class="min-h-11 justify-between rounded-xl px-2 text-[15px] font-semibold"
+              >
+                <span>{{ link.label }}</span>
+                <UIcon name="i-lucide-arrow-right" class="size-4 shrink-0 text-muted opacity-60" />
+              </UButton>
+            </div>
+          </div>
 
           <template v-if="items.panelSections.length > 0">
-            <USeparator class="my-3" />
             <template
               v-for="section in items.panelSections"
               :key="section.heading"
             >
-              <p class="mb-1 mt-2 px-2 text-[10px] font-bold uppercase tracking-wider text-muted first:mt-0">
-                {{ section.heading }}
-              </p>
-              <UButton
-                v-for="link in section.links"
-                :key="link.to + section.heading"
-                :to="link.to"
-                :icon="link.icon"
-                variant="outline"
-                color="neutral"
-                block
-                class="min-h-11 justify-start rounded-xl font-semibold shadow-none"
-                :class="
-                  link.emphasis
-                    ? 'border-primary/45 bg-primary/10 text-primary'
-                    : 'text-highlighted'
-                "
-                active-class="border-primary bg-primary/18 text-primary ring-1 ring-primary/25"
-              >
-                {{ link.label }}
-              </UButton>
+              <div class="rounded-2xl border border-primary/15 bg-primary/[0.04] p-2 ring-1 ring-primary/10 dark:bg-primary/10">
+                <p class="px-2 pb-2 pt-1 text-[10px] font-bold uppercase tracking-wider text-primary">
+                  {{ section.heading }}
+                </p>
+                <div class="flex flex-col gap-1">
+                  <UButton
+                    v-for="link in section.links"
+                    :key="link.to + section.heading"
+                    :to="link.to"
+                    :icon="link.icon"
+                    variant="outline"
+                    color="neutral"
+                    block
+                    class="min-h-11 justify-start rounded-xl border-default/60 font-semibold shadow-none"
+                    :class="
+                      link.emphasis
+                        ? 'border-primary/45 bg-primary/10 text-primary'
+                        : 'text-highlighted'
+                    "
+                    active-class="border-primary bg-primary/18 text-primary ring-1 ring-primary/25"
+                  >
+                    {{ link.label }}
+                  </UButton>
+                </div>
+              </div>
             </template>
           </template>
-
-          <USeparator class="my-4" />
 
           <template v-if="!auth.isLoggedIn.value">
             <UButton
@@ -254,25 +267,25 @@ const panelDropdownItems = computed(() =>
               icon="i-lucide-log-in"
               size="lg"
               block
-              class="min-h-12 rounded-xl justify-center font-bold"
+              class="min-h-12 rounded-2xl justify-center font-bold"
             >
               Zaloguj się
             </UButton>
           </template>
           <template v-else>
-            <div class="mb-3 rounded-xl bg-muted/35 px-3 py-3 ring-1 ring-default/40">
-              <p class="mb-1 text-[10px] font-bold uppercase tracking-wider text-muted">
+            <div class="rounded-2xl border border-default/60 bg-linear-to-br from-muted/40 to-muted/15 px-4 py-4 ring-1 ring-default/35">
+              <p class="text-[10px] font-bold uppercase tracking-wider text-muted">
                 Zalogowany jako
               </p>
-              <div class="flex items-center justify-between gap-2">
-                <p class="truncate font-semibold text-highlighted">
+              <div class="mt-2 flex flex-wrap items-center gap-2">
+                <p class="min-w-0 truncate text-lg font-bold text-highlighted">
                   {{ auth.user.value?.username }}
                 </p>
                 <UBadge
-                  size="xs"
+                  size="sm"
                   variant="subtle"
                   color="primary"
-                  class="shrink-0 text-[10px] font-semibold"
+                  class="shrink-0 font-semibold"
                 >
                   {{ auth.rolesDisplayShort }}
                 </UBadge>
@@ -284,7 +297,7 @@ const panelDropdownItems = computed(() =>
               icon="i-lucide-log-out"
               size="lg"
               block
-              class="min-h-12 rounded-xl justify-center font-semibold"
+              class="min-h-12 rounded-2xl justify-center font-semibold"
               @click="logoutFromMenu"
             >
               Wyloguj

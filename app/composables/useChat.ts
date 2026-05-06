@@ -15,6 +15,8 @@ export interface ChatMessage {
   sender_user_id: string
   body: string
   created_at: string
+  sender_username?: string | null
+  sender_photo_url?: string | null
 }
 
 export function useChat() {

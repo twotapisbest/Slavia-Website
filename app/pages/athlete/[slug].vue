@@ -4,6 +4,7 @@ import { pl } from 'date-fns/locale'
 import type { AthletePublicProfile, CompetitionResult } from '~/types/models'
 import type { SinclairGender } from '~/utils/sinclair'
 import { sinclairTotal } from '~/utils/sinclair'
+import { effectiveBodyweightKgForSinclair } from '~/utils/sinclairAthlete'
 import { parseSlugId } from '~/utils/slug'
 
 const route = useRoute()
@@ -94,8 +95,7 @@ const approvedSinclair = computed(() => {
     }
   }
   const totalKg = bestRow?.total ?? p.total_kg ?? 0
-  const weightNum = p.weight_category ? parseInt(String(p.weight_category).replace(/\D/g, ''), 10) : 0
-  const effectiveWeight = p.bodyweight || weightNum
+  const effectiveWeight = effectiveBodyweightKgForSinclair(p)
   if (totalKg <= 0 || effectiveWeight <= 0 || !sg) return null
   const calculated = sinclairTotal(totalKg, effectiveWeight, sg)
   if (Number.isNaN(calculated)) return null
@@ -228,7 +228,11 @@ const approvedSinclair = computed(() => {
               class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
             >
               <div class="rounded-2xl border border-primary/20 bg-linear-to-br from-primary/5 to-primary/10 p-4 text-center">
-                <p class="text-[10px] uppercase tracking-wide text-primary/75 font-bold">
+                <p class="flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-wide text-primary/75 font-bold">
+                  <UIcon
+                    name="i-game-icons-weight-lifting-up"
+                    class="size-4 shrink-0 text-primary/90"
+                  />
                   Rwanie
                 </p>
                 <p class="mt-2 font-mono text-2xl font-bold text-primary">
@@ -240,7 +244,11 @@ const approvedSinclair = computed(() => {
                 </p>
               </div>
               <div class="rounded-2xl border border-primary/20 bg-linear-to-br from-primary/5 to-primary/10 p-4 text-center">
-                <p class="text-[10px] uppercase tracking-wide text-primary/75 font-bold">
+                <p class="flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-wide text-primary/75 font-bold">
+                  <UIcon
+                    name="i-game-icons-weight-lifting-down"
+                    class="size-4 shrink-0 text-primary/90"
+                  />
                   Podrzut
                 </p>
                 <p class="mt-2 font-mono text-2xl font-bold text-primary">

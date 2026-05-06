@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { getApiErrorMessage } from '~/composables/useApi'
 import type { Athlete, CompetitionResult, MyCalendarEntry } from '~/types/models'
+import { resolveAuthProfilePhotoSrc } from '~/utils/profilePhoto'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -93,18 +95,36 @@ async function submitResult() {
     toast.add({ title: 'Brak profilu zawodnika', color: 'warning' })
     return
   }
-  if (!resultForm.snatch || !resultForm.clean_and_jerk) {
-    toast.add({ title: 'Podaj wynik', description: 'Wypełnij rwanie i podrzut.', color: 'warning' })
+  const hasOly =
+    (resultForm.snatch != null && resultForm.snatch > 0)
+    || (resultForm.clean_and_jerk != null && resultForm.clean_and_jerk > 0)
+  const hasSbd =
+    (resultForm.squat_kg != null && resultForm.squat_kg > 0)
+    || (resultForm.bench_kg != null && resultForm.bench_kg > 0)
+    || (resultForm.deadlift_kg != null && resultForm.deadlift_kg > 0)
+  if (!hasOly && !hasSbd) {
+    toast.add({
+      title: 'Uzupełnij formularz',
+      description: 'Podaj rwanie i/lub podrzut albo przynajmniej jedno ćwiczenie siłowe.',
+      color: 'warning'
+    })
     return
   }
 
   try {
     const body: Record<string, unknown> = {
       athlete_id: athlete.value.id,
-      snatch: resultForm.snatch,
-      clean_and_jerk: resultForm.clean_and_jerk,
-      total: resultForm.total,
       date: resultForm.date
+    }
+    if (resultForm.snatch != null && resultForm.snatch > 0) body.snatch = resultForm.snatch
+    if (resultForm.clean_and_jerk != null && resultForm.clean_and_jerk > 0) {
+      body.clean_and_jerk = resultForm.clean_and_jerk
+    }
+    if (
+      resultForm.snatch != null && resultForm.snatch > 0
+      && resultForm.clean_and_jerk != null && resultForm.clean_and_jerk > 0
+    ) {
+      body.total = resultForm.total
     }
     if (resultForm.squat_kg != null && resultForm.squat_kg > 0) body.squat_kg = resultForm.squat_kg
     if (resultForm.bench_kg != null && resultForm.bench_kg > 0) body.bench_kg = resultForm.bench_kg
@@ -124,7 +144,7 @@ async function submitResult() {
     resultForm.deadlift_kg = null
     await refreshResults()
   } catch (e) {
-    toast.add({ title: 'Błąd zgłoszenia', description: String(e), color: 'error' })
+    toast.add({ title: 'Błąd zgłoszenia', description: getApiErrorMessage(e), color: 'error' })
   }
 }
 
@@ -137,20 +157,28 @@ const welcomeName = computed(
   () => athlete.value?.full_name?.trim() || auth.user.value?.username || 'Zawodniku'
 )
 
+/** Avatar na dashboardzie: konto (`avatar_url` + opcjonalnie `athlete_image_url` z /me) albo `image_url` z API zawodnika. */
+const portalHeroAvatarSrc = computed(() => {
+  const fromAuth = resolveAuthProfilePhotoSrc(auth.user.value ?? undefined)
+  if (fromAuth) return fromAuth
+  const img = athlete.value?.image_url?.trim()
+  return img || undefined
+})
+
 const stats = computed(() => [
   {
     label: 'Najlepsze rwanie',
     shortLabel: 'Rwanie',
     value: athlete.value?.best_snatch_kg ? `${athlete.value.best_snatch_kg}` : '—',
     unit: athlete.value?.best_snatch_kg ? 'kg' : '',
-    icon: 'i-lucide-arrow-up'
+    icon: 'i-game-icons-weight-lifting-up'
   },
   {
     label: 'Najlepszy podrzut',
     shortLabel: 'Podrzut',
     value: athlete.value?.best_clean_jerk_kg ? `${athlete.value.best_clean_jerk_kg}` : '—',
     unit: athlete.value?.best_clean_jerk_kg ? 'kg' : '',
-    icon: 'i-lucide-arrow-down'
+    icon: 'i-game-icons-weight-lifting-down'
   },
   {
     label: 'Suma (dwubój)',
@@ -287,7 +315,7 @@ const pageLead = computed(() => {
           <div class="relative shrink-0">
             <div class="absolute -inset-1 rounded-full bg-linear-to-br from-primary/40 to-primary/5 opacity-80 blur-sm" />
             <UAvatar
-              :src="auth.user.value?.avatar_url || undefined"
+              :src="portalHeroAvatarSrc"
               :alt="welcomeName"
               size="xl"
               class="relative size-24 ring-2 ring-background shadow-lg sm:size-28"
@@ -388,13 +416,13 @@ const pageLead = computed(() => {
       </NuxtLink>
     </div>
 
-    <!-- Licznik startów + karty rekordów -->
+    <!-- Licznik startów (statystyki PB są wyżej w hero — bez duplikatu kart) -->
     <div
       v-if="auth.canAccessAthletePortal && athlete"
-      class="mb-10 grid gap-6 xl:grid-cols-12 xl:items-stretch"
+      class="mb-10"
     >
       <UCard
-        class="overflow-hidden border-primary/25 bg-linear-to-br from-primary/11 via-card to-card xl:col-span-5"
+        class="overflow-hidden border-primary/25 bg-linear-to-br from-primary/11 via-card to-card"
         :ui="{ body: 'sm:p-6 p-5' }"
       >
         <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
@@ -428,34 +456,6 @@ const pageLead = computed(() => {
           </UButton>
         </div>
       </UCard>
-
-      <div class="grid gap-4 sm:grid-cols-3 xl:col-span-7">
-        <UCard
-          v-for="s in stats"
-          :key="s.label"
-          class="relative overflow-hidden border-default/50 bg-muted/5 transition hover:border-primary/20 hover:bg-muted/10"
-        >
-          <div class="flex items-start gap-3">
-            <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
-              <UIcon
-                :name="s.icon"
-                class="size-[1.15rem]"
-              />
-            </div>
-            <div class="min-w-0 flex-1">
-              <p class="text-[10px] font-bold uppercase tracking-wider text-muted">
-                {{ s.label }}
-              </p>
-              <p class="mt-1.5 text-2xl font-black tabular-nums text-highlighted sm:text-3xl">
-                {{ s.value }}<span
-                  v-if="s.unit"
-                  class="ml-1 text-base font-bold text-primary sm:text-lg"
-                >{{ s.unit }}</span>
-              </p>
-            </div>
-          </div>
-        </UCard>
-      </div>
     </div>
 
     <div
@@ -558,7 +558,8 @@ const pageLead = computed(() => {
             Wynik startowy
           </div>
           <p class="slavia-form-panel__desc">
-            Trener zweryfikuje wpis — po akceptacji pojawi się na karcie i w rankingach. Pola przysiad / wycisk / martwy są opcjonalne.
+            Możesz zgłosić sam dwubój, same ćwiczenia siłowe albo oba naraz — brakujące rwanie/podrzut uzupełniamy wartościami z Twojego profilu w bazie.
+            Po akceptacji trenera wpis wejdzie do kart i rankingów.
           </p>
         </div>
         <div class="slavia-form-panel__body">

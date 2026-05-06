@@ -1,4 +1,20 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+
+function readPackageJsonVersion(): string {
+  const path = fileURLToPath(new URL('./package.json', import.meta.url))
+  const pkg = JSON.parse(readFileSync(path, 'utf-8')) as { version?: string }
+  return pkg.version?.trim() || '0.0.0'
+}
+
+/** Etykieta w UI — jak w package.json, z prefiksem `v`. */
+function formatPublicAppVersion(raw: string): string {
+  return raw.startsWith('v') ? raw : `v${raw}`
+}
+
+const packageJsonVersion = readPackageJsonVersion()
+
 export default defineNuxtConfig({
   // Najnowsze domyślne zachowanie Nitro / presetów modułów dla wybranej osi czasu (bump przy większych upgrade’ach Nuxt).
   compatibilityDate: '2026-05-03',
@@ -39,9 +55,11 @@ export default defineNuxtConfig({
        * Lista rozdzielona przecinkami: identyfikatory funkcji eksperymentalnych zawsze wyłączone na buildzie (deploy).
        * Nadpisuje localStorage i domyślne „włączone”. Zob. `app/data/experimentalFeaturesCatalog.ts`.
        *
-       * Przykład: `pwa_service_worker,barbell_pose_analysis,club_notification_bell`
+       * Przykład: `barbell_pose_analysis,club_notification_bell`
        */
-      experimentalKillSwitch: process.env.NUXT_PUBLIC_EXPERIMENTAL_KILL_SWITCH || ''
+      experimentalKillSwitch: process.env.NUXT_PUBLIC_EXPERIMENTAL_KILL_SWITCH || '',
+      /** Z pola `version` w `package.json` (build-time); stopka i nagłówek (Beta jeśli w nazwie jest „beta”). */
+      appVersion: formatPublicAppVersion(packageJsonVersion)
     }
   },
   vite: {

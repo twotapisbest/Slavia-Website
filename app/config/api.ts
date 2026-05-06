@@ -24,7 +24,8 @@ export const apiRoutes = {
     timeline: (id: string) => `/api/athletes/${encodeURIComponent(id)}/timeline`,
     trainingLogEntry: (athleteId: string, entryId: string) =>
       `/api/athletes/${encodeURIComponent(athleteId)}/training-log/${encodeURIComponent(entryId)}`,
-    link: (id: string) => `/api/athletes/${encodeURIComponent(id)}/link`
+    link: (id: string) => `/api/athletes/${encodeURIComponent(id)}/link`,
+    attachUser: (id: string) => `/api/athletes/${encodeURIComponent(id)}/attach-user`
   },
   players: {
     list: '/api/athletes'
@@ -86,6 +87,7 @@ export const apiRoutes = {
     athlete: (athleteId: string) => `/api/recovery/athlete/${encodeURIComponent(athleteId)}`
   },
   system: {
+    ping: '/api/system/ping',
     backendProvider: '/api/system/backend-provider',
     auditLogs: '/api/system/audit-logs',
     metrics: '/api/system/metrics',
@@ -96,7 +98,8 @@ export const apiRoutes = {
     collection: '/api/notifications',
     one: (id: string) => `/api/notifications/${encodeURIComponent(id)}`,
     markRead: (id: string) => `/api/notifications/${encodeURIComponent(id)}/read`,
-    markAllRead: '/api/notifications/read-all'
+    markAllRead: '/api/notifications/read-all',
+    deleteAll: '/api/notifications'
   },
   competitions: {
     collection: '/api/competitions',

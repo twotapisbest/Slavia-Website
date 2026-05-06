@@ -4,7 +4,22 @@ import { pl } from 'date-fns/locale'
 
 definePageMeta({ middleware: 'auth' })
 
-const { items, loading, refresh, markRead, markAllRead, remove } = useNotifications()
+const { items, loading, refresh, markRead, markAllRead, deleteAll, remove } = useNotifications()
+const toast = useToast()
+const deletingAll = ref(false)
+
+async function onDeleteAll() {
+  if (!items.value.length) return
+  deletingAll.value = true
+  try {
+    await deleteAll()
+    toast.add({ title: 'Usunięto wszystkie powiadomienia', color: 'success' })
+  } catch {
+    toast.add({ title: 'Nie udało się usunąć powiadomień', color: 'error' })
+  } finally {
+    deletingAll.value = false
+  }
+}
 const { resolveLink } = useNotificationLinks()
 
 function relative(iso: string) {
@@ -24,9 +39,19 @@ onMounted(() => {
   <UContainer class="py-8">
     <div class="mb-5 flex flex-wrap items-center justify-between gap-2">
       <h1 class="text-2xl font-bold text-highlighted">Powiadomienia</h1>
-      <div class="flex gap-2">
+      <div class="flex flex-wrap gap-2">
         <UButton variant="soft" icon="i-lucide-refresh-cw" @click="refresh">Odśwież</UButton>
         <UButton variant="soft" color="primary" icon="i-lucide-check-check" @click="markAllRead">Oznacz wszystko</UButton>
+        <UButton
+          variant="soft"
+          color="error"
+          icon="i-lucide-trash-2"
+          :loading="deletingAll"
+          :disabled="items.length === 0"
+          @click="onDeleteAll"
+        >
+          Usuń wszystkie
+        </UButton>
       </div>
     </div>
 

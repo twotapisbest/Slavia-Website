@@ -4,6 +4,7 @@ import { athleteProfilePath } from '~/utils/slug'
 import type { Athlete as AthleteModel, CompetitionResult } from '~/types/models'
 import type { SinclairGender } from '~/utils/sinclair'
 import { sinclairTotal } from '~/utils/sinclair'
+import { effectiveBodyweightKgForSinclair } from '~/utils/sinclairAthlete'
 
 function cardGender(g: string | null | undefined): SinclairGender | null {
   return g === 'male' || g === 'female' ? g : null
@@ -65,8 +66,9 @@ function mapToCard(p: AthleteModel, rb: Record<string, CompetitionResult[]>) {
   const cjKg = bestRow?.clean_and_jerk ?? 0
   const totalKg = bestRow?.total ?? 0
 
-  const weightNum = p.weight_category ? parseInt(p.weight_category.replace(/\D/g, '')) : (p.bodyweight || 0)
-  const effectiveWeight = p.bodyweight || weightNum
+  const effectiveWeight = effectiveBodyweightKgForSinclair(p)
+  const weightCategoryDisplay =
+    effectiveWeight > 0 ? Math.round(effectiveWeight) : 0
 
   const sg = cardGender(p.gender ?? undefined)
   let sc = 0
@@ -101,7 +103,7 @@ function mapToCard(p: AthleteModel, rb: Record<string, CompetitionResult[]>) {
     id: p.id,
     name: p.full_name,
     birthYear: p.birth_year || 0,
-    weightCategory: Math.round(weightNum),
+    weightCategory: weightCategoryDisplay,
     snatch: snatchKg,
     cleanAndJerk: cjKg,
     total: totalKg,

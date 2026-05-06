@@ -8,6 +8,17 @@ useSeoMeta({
 
 const updates = [
   {
+    version: 'v2.3.1',
+    date: '6 Maj 2026',
+    title: 'Własna strona błędów (404/5xx), porządki .npmrc oraz spójny wybór zawodnika w panelu trenera',
+    features: [
+      'Nuxt 4: globalny `error.vue` jest w katalogu `app/` (tam samo co `app.vue` i strony) — przy nieistniejących adresach i fatalnych błędach routingu wyświetla się przygotowany widok zamiast domyślnego fallbacku.',
+      '`.npmrc`: doprecyzowanie workflow pod pnpm (komentarze), bez zbędnego klucza powodującego ostrzeżenia przy wywołaniach przez npm/`npx`; zachowane `node-options` i `shamefully-hoist`.',
+      'Panel trenera: wspólna stała „brak wybranego zawodnika” zamiast pustego identyfikatora — spójniejsze filtry, dropdowny i podglądy na stronach trenera.'
+    ],
+    type: 'bugfix'
+  },
+  {
     version: 'v2.3.0',
     date: '6 Maj 2026',
     title: 'Finalizacja roadmapy 1-8: moduły treningowe, monitoring, hardening i release-check',
@@ -45,7 +56,7 @@ const updates = [
       'Katalog funkcji eksperymentalnych rozszerzony o PWA (service worker), analizę toru sztangi (TensorFlow) oraz dzwonek powiadomień — każda ma przełącznik na `/superadmin/developer`.',
       'Zmienna środowiskowa `NUXT_PUBLIC_EXPERIMENTAL_KILL_SWITCH` (lista id rozdzielonych przecinkami) trwale wyłącza wybrane funkcje na buildzie — ratunek na produkcji bez liczenia na localStorage użytkowników.',
       'Plugin startowy: najpierw hydracja nadpisań z localStorage, potem warunkowa rejestracja Vite PWA — spójna kolejność z flagami.',
-      'Profil: przycisk instalacji PWA widoczny tylko przy włączonej fladze `pwa_service_worker`; strony analizy sztangi pokazują komunikat, gdy wyłączono `barbell_pose_analysis`.',
+      'Profil: strony analizy sztangi pokazują komunikat, gdy wyłączono `barbell_pose_analysis`.',
       'Panel developera: ostrzeżenie przy aktywnym kill switchu, badge „deploy OFF”, zablokowane przełączniki dla wymuszonych wyłączeń.',
       'Developer tools — rozszerzone testy funkcjonalności: smoke czterech endpointów API do logów lokalnych, round-trip localStorage i sessionStorage, podsumowanie dostępności IDB/cache/share/geo/vibrate, preferencje wyświetlania i stan dokumentu, geometria ekranu, przełączanie pełnego ekranu, krótka wibracja, duplikat karty, pobranie pliku testowego z Blob.'
     ],

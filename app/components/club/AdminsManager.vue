@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { apiRoutes, urlAdminAccount, urlSuperadminAdmin } from '~/config/api'
-import type { AdminAccount, GroupedAdminAccounts, UserRole } from '~/types/models'
+import type { AdminAccount, Athlete, GroupedAdminAccounts, UserRole } from '~/types/models'
 
 const api = useApi()
 const auth = useAuth()
@@ -146,6 +146,9 @@ const modalOpen = ref(false)
 const saving = ref(false)
 const username = ref('')
 const password = ref('')
+/** Opcjonalnie: powiązanie nowego konta z profilem zawodnika bez `user_id` (rola Athlete). */
+const linkAthleteId = ref<string>('')
+const athletesForLink = ref<{ label: string, value: string }[]>([])
 /** Role początkowe nowego konta (backend domyślnie [`Admin`], jeśli nie wyślesz). */
 const createRoles = ref<UserRole[]>(['Admin'])
 
@@ -214,6 +217,9 @@ function removeCreateRole(r: UserRole) {
     return
   }
   createRoles.value = createRoles.value.filter(x => x !== r)
+  if (r === 'Athlete') {
+    linkAthleteId.value = ''
+  }
 }
 
 function clearFilters() {
@@ -309,11 +315,25 @@ async function loadAdmins() {
   }
 }
 
+async function loadAthletesForLink() {
+  try {
+    const list = await api<Athlete[]>(apiRoutes.athletes.listAdmin)
+    athletesForLink.value = (Array.isArray(list) ? list : [])
+      .filter(a => !(a.user_id && String(a.user_id).trim()))
+      .map(a => ({ label: a.full_name, value: a.id }))
+      .sort((x, y) => x.label.localeCompare(y.label, 'pl'))
+  } catch {
+    athletesForLink.value = []
+  }
+}
+
 function openCreate() {
   username.value = ''
   password.value = ''
   createRoles.value = ['Admin']
+  linkAthleteId.value = ''
   modalOpen.value = true
+  void loadAthletesForLink()
 }
 
 async function saveAdmin() {
@@ -327,7 +347,7 @@ async function saveAdmin() {
   }
   saving.value = true
   try {
-    await api(apiRoutes.superadmin.admins, {
+    const created = await api<{ id: string }>(apiRoutes.superadmin.admins, {
       method: 'POST',
       body: {
         username: username.value.trim(),
@@ -335,9 +355,16 @@ async function saveAdmin() {
         roles: createRoles.value
       }
     })
+    if (createRoles.value.includes('Athlete') && linkAthleteId.value.trim()) {
+      await api(apiRoutes.athletes.attachUser(linkAthleteId.value.trim()), {
+        method: 'POST',
+        body: { user_id: created.id }
+      })
+    }
     toast.add({ title: 'Dodano konto', color: 'success', icon: 'i-lucide-check' })
     modalOpen.value = false
     password.value = ''
+    linkAthleteId.value = ''
     await loadAdmins()
   } catch (e) {
     toast.add({
@@ -821,6 +848,19 @@ onMounted(() => {
                     </UButton>
                   </div>
                 </div>
+                <UFormField
+                  v-if="createRoles.includes('Athlete')"
+                  label="Przypisz profil zawodnika"
+                  description="Opcjonalnie — tylko rekordy bez wcześniejszego konta logowania."
+                >
+                  <USelect
+                    v-model="linkAthleteId"
+                    :items="[{ label: '— bez profilu —', value: '' }, ...athletesForLink]"
+                    value-key="value"
+                    size="lg"
+                    class="w-full rounded-xl"
+                  />
+                </UFormField>
               </div>
             </div>
             <div class="slavia-form-actions border-t border-default/60 pt-4">

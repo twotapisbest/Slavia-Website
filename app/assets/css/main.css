@@ -553,6 +553,62 @@ html.dark[data-slavia-preset='neon'] {
   --ui-text-highlighted: #faf5ff;
 }
 
+/** Black gym — jasny (minimalny glam; czarny jako akcent obramowań) */
+html[data-slavia-preset='blackgym']:not(.dark) body,
+html.light[data-slavia-preset='blackgym'] body {
+  background-image:
+    radial-gradient(ellipse 88% 45% at 50% -8%, rgb(15 23 42 / 0.06), transparent 52%),
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  background-color: #e8eef5;
+  background-attachment: fixed;
+}
+
+html[data-slavia-preset='blackgym']:not(.dark),
+html.light[data-slavia-preset='blackgym'] {
+  --ui-bg: #f8fafc;
+  --ui-bg-muted: #f1f5f9;
+  --ui-bg-elevated: #e9eef5;
+  --ui-border: #cbd5e1;
+  --ui-text-muted: #475569;
+  --ui-text-toned: #334155;
+  --ui-text: #0f172a;
+  --ui-text-highlighted: #020617;
+}
+
+/** Black gym — ciemny (dominanta: prawdziwa czerń #000) */
+html.dark[data-slavia-preset='blackgym'] body {
+  background-image: none;
+  background-color: #000000;
+  background-attachment: fixed;
+}
+
+html.dark[data-slavia-preset='blackgym'] {
+  --ui-bg: #000000;
+  --ui-bg-muted: #0a0a0a;
+  --ui-bg-elevated: #141414;
+  --ui-bg-accented: #1f1f1f;
+  --ui-border: #262626;
+  --ui-border-muted: #171717;
+  --ui-border-accented: #525252;
+  --ui-text-dimmed: #737373;
+  --ui-text-muted: #a3a3a3;
+  --ui-text-toned: #d4d4d4;
+  --ui-text: #e5e5e5;
+  --ui-text-highlighted: #fafafa;
+}
+
+html[data-slavia-preset='blackgym']:not(.dark) {
+  --color-green-400: #64748b;
+  --color-green-500: #334155;
+  --color-green-600: #0f172a;
+}
+
+html.dark[data-slavia-preset='blackgym'] {
+  --color-green-400: #94a3b8;
+  --color-green-500: #cbd5e1;
+  --color-green-600: #e2e8f0;
+}
+
 /**
  * Globalne mapowanie utility -> tokeny motywu.
  * Dzięki temu preset wpływa szerzej na karty, sekcje, obramowania i teksty.
