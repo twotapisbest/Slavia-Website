@@ -101,7 +101,7 @@ export interface CompetitionResult {
   snatch: number
   clean_and_jerk: number
   total: number
-  status: 'Pending' | 'Approved'
+  status: 'Pending' | 'Approved' | 'Rejected'
   date: string
   squat_kg?: number | null
   bench_kg?: number | null
@@ -118,6 +118,40 @@ export interface TrainingLogEntry {
   created_at: string
   author_user_id?: string | null
   author_username?: string | null
+}
+
+export interface TrainingPlan {
+  id: string
+  athlete_id: string
+  title: string
+  goal?: string | null
+  week_start: string
+  status: 'planned' | 'active' | 'completed' | 'paused'
+  coach_note?: string | null
+  athlete_note?: string | null
+  progress_percent: number
+  created_by?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface RecoveryLog {
+  id: string
+  athlete_id: string
+  date: string
+  sleep_hours: number
+  fatigue_level: number
+  soreness_level: number
+  readiness_level: number
+  note?: string | null
+  created_at: string
+}
+
+export interface OpsEvent {
+  source: string
+  at: string
+  title: string
+  detail: string
 }
 
 export interface AdminAccount extends AuthUser {

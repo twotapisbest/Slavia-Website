@@ -54,6 +54,11 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 const mediaPreviewOpen = ref(false)
 const mediaPreviewItem = ref<GalleryPhoto | null>(null)
 
+function videoPoster(url: string) {
+  if (!url.includes('/video/upload/')) return ''
+  return url.replace('/video/upload/', '/video/upload/so_1/').replace(/\.(mp4|mov|webm)(\?.*)?$/i, '.jpg$2')
+}
+
 function openCreate() {
   editingId.value = null
   draft.image_url = ''
@@ -258,6 +263,7 @@ const sortedPhotos = computed(() => {
           >
             <video
               :src="p.image_url"
+              :poster="videoPoster(p.image_url)"
               class="w-full object-cover"
               preload="metadata"
               muted
@@ -414,6 +420,7 @@ const sortedPhotos = computed(() => {
           <video
             v-else-if="mediaPreviewItem"
             :src="mediaPreviewItem.image_url"
+            :poster="videoPoster(mediaPreviewItem.image_url)"
             controls
             class="max-h-[75vh] w-full rounded-lg bg-black object-contain"
             autoplay

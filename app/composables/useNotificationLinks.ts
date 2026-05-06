@@ -48,6 +48,21 @@ export function useNotificationLinks() {
       return '/athlete'
     }
 
+    if (n.kind === 'training_plan_assigned' && auth.isAthlete.value) {
+      return '/athlete/plany'
+    }
+
+    if (
+      n.kind === 'training_plan_assigned_staff'
+      || n.kind === 'training_plan_progress'
+    ) {
+      return '/trainer/plany'
+    }
+
+    if (n.kind === 'recovery_checkin') {
+      return '/trainer/regeneracja'
+    }
+
     if (
       n.kind.startsWith('admin_')
       || n.kind.startsWith('blog_')

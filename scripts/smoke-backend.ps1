@@ -17,4 +17,19 @@ if ($r2.StatusCode -ne 200) {
   throw "GET /api/athletes zwróciło $($r2.StatusCode)"
 }
 
-Write-Host "Smoke OK: $BaseUrl/ oraz $BaseUrl/api/athletes (HTTP 200)."
+$r3 = Invoke-WebRequest -Uri "$BaseUrl/api/results/public-board-olympic" -UseBasicParsing -TimeoutSec 15
+if ($r3.StatusCode -ne 200) {
+  throw "GET /api/results/public-board-olympic zwróciło $($r3.StatusCode)"
+}
+
+try {
+  Invoke-WebRequest -Uri "$BaseUrl/api/system/metrics" -UseBasicParsing -TimeoutSec 15 | Out-Null
+  throw "GET /api/system/metrics bez tokenu powinno być zablokowane"
+} catch {
+  $code = $_.Exception.Response.StatusCode.value__
+  if ($code -ne 401) {
+    throw "GET /api/system/metrics bez tokenu zwróciło $code (oczekiwano 401)"
+  }
+}
+
+Write-Host "Smoke OK: publiczne endpointy działają, a /api/system/metrics wymaga autoryzacji."

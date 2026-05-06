@@ -23,7 +23,7 @@ const api = useApi()
 const toast = useToast()
 
 const selectedAthleteId = ref('')
-const status = ref<'obecny' | 'spóźniony' | 'nieobecny'>('obecny')
+const status = ref<'obecny' | 'nieobecny'>('obecny')
 const note = ref('')
 const sessionDate = ref(new Date().toISOString().slice(0, 10))
 const records = ref<AttendanceRecord[]>([])
@@ -86,7 +86,7 @@ function trainingStatusForDate(date: Date) {
 function openDay(date: Date) {
   sessionDate.value = format(date, 'yyyy-MM-dd')
   const rec = recordsByDate.value.get(sessionDate.value)
-  if (rec?.status === 'obecny' || rec?.status === 'spóźniony' || rec?.status === 'nieobecny') {
+  if (rec?.status === 'obecny' || rec?.status === 'nieobecny') {
     status.value = rec.status
   } else {
     status.value = 'obecny'
@@ -103,7 +103,6 @@ function openTrainingModal(date: Date) {
 
 function statusColor(s: string) {
   if (s === 'obecny') return 'success'
-  if (s === 'spóźniony') return 'warning'
   return 'error'
 }
 
@@ -161,7 +160,7 @@ onMounted(() => {
           <UInput v-model="sessionDate" type="date" />
         </UFormField>
         <UFormField label="Status">
-          <USelect v-model="status" :items="[{label:'Obecny',value:'obecny'},{label:'Spóźniony',value:'spóźniony'},{label:'Nieobecny',value:'nieobecny'}]" />
+          <USelect v-model="status" :items="[{label:'Obecny',value:'obecny'},{label:'Nieobecny',value:'nieobecny'}]" />
         </UFormField>
         <UFormField label="Notatka">
           <UInput v-model="note" placeholder="opcjonalnie" />
@@ -250,7 +249,6 @@ onMounted(() => {
               v-model="status"
               :items="[
                 { label: 'Obecny', value: 'obecny' },
-                { label: 'Spóźniony', value: 'spóźniony' },
                 { label: 'Nieobecny', value: 'nieobecny' }
               ]"
             />

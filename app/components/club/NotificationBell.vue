@@ -170,9 +170,14 @@ onBeforeUnmount(() => {
           <p class="text-xs font-semibold uppercase tracking-wide text-muted">
             Powiadomienia
           </p>
-          <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-check-check" @click="onMarkAllRead">
-            Oznacz wszystko
-          </UButton>
+          <div class="flex items-center gap-1.5">
+            <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-list" to="/powiadomienia">
+              Skrzynka
+            </UButton>
+            <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-check-check" @click="onMarkAllRead">
+              Oznacz wszystko
+            </UButton>
+          </div>
         </div>
       </div>
 

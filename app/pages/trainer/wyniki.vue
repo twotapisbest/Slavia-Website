@@ -55,12 +55,15 @@ const form = reactive({
   clean_and_jerk: 0,
   total: 0,
   date: '',
-  status: 'Approved' as 'Pending' | 'Approved',
+  status: 'Approved' as 'Pending' | 'Approved' | 'Rejected',
   squat_kg: null as number | null,
   bench_kg: null as number | null,
   deadlift_kg: null as number | null
 })
 const saving = ref(false)
+const comments = ref<Array<{ id: string, body: string, author_user_id: string, created_at: string }>>([])
+const commentDraft = ref('')
+const commentSaving = ref(false)
 
 const addModalOpen = ref(false)
 const savingAdd = ref(false)
@@ -146,6 +149,34 @@ function openEdit(r: CompetitionResult) {
   form.bench_kg = r.bench_kg ?? null
   form.deadlift_kg = r.deadlift_kg ?? null
   modalOpen.value = true
+  void loadComments(r.id)
+}
+
+async function loadComments(resultId: string) {
+  const q = new URLSearchParams({ target_type: 'result', target_id: resultId })
+  comments.value = await apiFetch<Array<{ id: string, body: string, author_user_id: string, created_at: string }>>(`/api/comments?${q.toString()}`).catch(() => [])
+}
+
+async function addComment() {
+  if (!editing.value || !commentDraft.value.trim()) return
+  commentSaving.value = true
+  try {
+    await apiFetch('/api/comments', {
+      method: 'POST',
+      body: {
+        target_type: 'result',
+        target_id: editing.value.id,
+        body: commentDraft.value.trim()
+      }
+    })
+    commentDraft.value = ''
+    await loadComments(editing.value.id)
+    toast.add({ title: 'Dodano komentarz', color: 'success' })
+  } catch (e) {
+    toast.add({ title: 'Błąd komentarza', description: getApiErrorMessage(e), color: 'error' })
+  } finally {
+    commentSaving.value = false
+  }
 }
 
 async function saveEdit() {
@@ -314,10 +345,10 @@ watch([() => formAdd.snatch, () => formAdd.clean_and_jerk], () => {
               </td>
               <td class="px-4 py-3">
                 <UBadge
-                  :color="r.status === 'Approved' ? 'success' : 'warning'"
+                  :color="r.status === 'Approved' ? 'success' : (r.status === 'Rejected' ? 'error' : 'warning')"
                   variant="subtle"
                 >
-                  {{ r.status === 'Approved' ? 'Zatwierdzony' : 'Oczekuje' }}
+                  {{ r.status === 'Approved' ? 'Zatwierdzony' : (r.status === 'Rejected' ? 'Odrzucony' : 'Oczekuje') }}
                 </UBadge>
               </td>
               <td class="hidden px-4 py-3 text-right text-[11px] tabular-nums text-muted lg:table-cell">
@@ -408,6 +439,9 @@ watch([() => formAdd.snatch, () => formAdd.clean_and_jerk], () => {
                   <option value="Approved">
                     Zatwierdzony
                   </option>
+                  <option value="Rejected">
+                    Odrzucony
+                  </option>
                 </select>
               </UFormField>
               <p class="text-xs text-muted">
@@ -448,6 +482,20 @@ watch([() => formAdd.snatch, () => formAdd.clean_and_jerk], () => {
               <p class="text-[11px] text-muted">
                 Puste lub 0 — kasuje zapis siłowy przy edycji (JSON null).
               </p>
+              <div class="rounded-xl border border-default/60 p-3">
+                <p class="mb-2 text-sm font-semibold text-highlighted">Komentarze trenera</p>
+                <div class="mb-2 space-y-2">
+                  <div v-for="c in comments" :key="c.id" class="rounded-lg bg-muted/20 px-3 py-2 text-sm">
+                    <p>{{ c.body }}</p>
+                    <p class="mt-1 text-[11px] text-muted">{{ c.created_at.slice(0, 16).replace('T', ' ') }}</p>
+                  </div>
+                  <p v-if="comments.length === 0" class="text-xs text-muted">Brak komentarzy.</p>
+                </div>
+                <div class="flex gap-2">
+                  <UInput v-model="commentDraft" class="min-w-0 flex-1" placeholder="Dodaj komentarz trenera..." />
+                  <UButton size="sm" :loading="commentSaving" @click="addComment">Dodaj</UButton>
+                </div>
+              </div>
             </div>
           </div>
           <div class="slavia-form-actions border-t border-default/60 pt-4">

@@ -31,7 +31,7 @@ const canEditResults = computed(() => auth.isTrainer.value)
 const { data: rows, pending } = await useAsyncData(
   'public-results-board',
   () =>
-    apiFetch<PublicResultBoardRow[]>('/api/results/public-board').catch(
+    apiFetch<PublicResultBoardRow[]>('/api/results/public-board-olympic').catch(
       () => [] as PublicResultBoardRow[]
     ),
   { default: () => [] as PublicResultBoardRow[] }
@@ -140,7 +140,7 @@ function formatPlTriple(r: PublicResultBoardRow) {
               {{ r.athlete_name }}
             </td>
             <td class="px-4 py-3 text-muted">
-              {{ r.competition_title || '—' }}
+              {{ r.competition_title || 'Wpis klubowy' }}
             </td>
             <td class="px-4 py-3 text-right tabular-nums">
               {{ r.snatch }} kg

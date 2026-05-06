@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "typecheck": "nuxt typecheck",
     "test:e2e": "playwright test",
-    "smoke:backend": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke-backend.ps1"
+    "smoke:backend": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke-backend.ps1",
+    "release:check": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release-check.ps1"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.105",

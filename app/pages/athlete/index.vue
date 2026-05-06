@@ -14,6 +14,13 @@ const isAthletePortalAsSuperAdminOnly = computed(
 )
 
 type AthleteBundle = { athlete: Athlete | null, results: CompetitionResult[], calendarEntries: MyCalendarEntry[] }
+type AttendanceSummary = {
+  athlete_id: string
+  present_count: number
+  absent_count: number
+  pending_count: number
+  attendance_percent: number
+}
 
 const { data: bundle, refresh: refreshAthletePage } = await useAsyncData(
   'athlete-page-bundle',
@@ -41,9 +48,19 @@ const { data: bundle, refresh: refreshAthletePage } = await useAsyncData(
 
 const athlete = computed(() => bundle.value?.athlete ?? null)
 const results = computed(() => bundle.value?.results ?? [])
+const attendanceSummary = ref<AttendanceSummary | null>(null)
 
 async function refreshResults() {
   await refreshAthletePage()
+  await refreshAttendanceSummary()
+}
+
+async function refreshAttendanceSummary() {
+  if (!athlete.value?.id) {
+    attendanceSummary.value = null
+    return
+  }
+  attendanceSummary.value = await apiFetch<AttendanceSummary>(`/api/attendance/summary/${athlete.value.id}`).catch(() => null)
 }
 
 const resultForm = reactive<{
@@ -200,6 +217,30 @@ const athleteDashboardTiles = [
     icon: 'i-lucide-user-check',
     ring: 'ring-indigo-500/25 hover:ring-indigo-500/45',
     iconBg: 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-400'
+  },
+  {
+    to: '/athlete/timeline',
+    title: 'Historia treningów',
+    desc: 'Oś czasu: wyniki, obecność, dziennik',
+    icon: 'i-lucide-timeline',
+    ring: 'ring-fuchsia-500/25 hover:ring-fuchsia-500/45',
+    iconBg: 'bg-fuchsia-500/15 text-fuchsia-700 dark:text-fuchsia-400'
+  },
+  {
+    to: '/athlete/plany',
+    title: 'Plany treningowe',
+    desc: 'Cele tygodnia i raport progresu',
+    icon: 'i-lucide-clipboard-list',
+    ring: 'ring-emerald-500/25 hover:ring-emerald-500/45',
+    iconBg: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
+  },
+  {
+    to: '/athlete/regeneracja',
+    title: 'Regeneracja',
+    desc: 'Dzienny check-in snu i zmęczenia',
+    icon: 'i-lucide-heart-pulse',
+    ring: 'ring-rose-500/25 hover:ring-rose-500/45',
+    iconBg: 'bg-rose-500/15 text-rose-700 dark:text-rose-400'
   }
 ] as const
 
@@ -213,6 +254,10 @@ const assignedCompetitionStartsCount = computed(() => {
     ids.add(e.competition.id)
   }
   return ids.size
+})
+
+onMounted(() => {
+  void refreshAttendanceSummary()
 })
 
 const pageHeading = computed(() => {
@@ -411,6 +456,38 @@ const pageLead = computed(() => {
           </div>
         </UCard>
       </div>
+    </div>
+
+    <div
+      v-if="auth.canAccessAthletePortal && athlete && attendanceSummary"
+      class="mb-10"
+    >
+      <UCard class="rounded-2xl border-default/70">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="text-lg font-black text-highlighted">Frekwencja treningowa</h2>
+          <UBadge color="primary" variant="subtle">
+            {{ attendanceSummary.attendance_percent }}%
+          </UBadge>
+        </div>
+        <div class="mt-4 grid gap-3 sm:grid-cols-4">
+          <div class="rounded-xl border border-default/50 p-3">
+            <p class="text-xs text-muted">Obecności</p>
+            <p class="text-2xl font-black text-success">{{ attendanceSummary.present_count }}</p>
+          </div>
+          <div class="rounded-xl border border-default/50 p-3">
+            <p class="text-xs text-muted">Nieobecności</p>
+            <p class="text-2xl font-black text-error">{{ attendanceSummary.absent_count }}</p>
+          </div>
+          <div class="rounded-xl border border-default/50 p-3">
+            <p class="text-xs text-muted">Oczekuje</p>
+            <p class="text-2xl font-black text-warning">{{ attendanceSummary.pending_count }}</p>
+          </div>
+          <div class="rounded-xl border border-default/50 p-3">
+            <p class="text-xs text-muted">Frekwencja</p>
+            <p class="text-2xl font-black text-primary">{{ attendanceSummary.attendance_percent }}%</p>
+          </div>
+        </div>
+      </UCard>
     </div>
 
     <div
@@ -621,7 +698,7 @@ const pageLead = computed(() => {
                 <td class="px-4 py-3 text-center font-bold">
                   {{ r.total }} kg
                 </td>
-                <td class="max-w-[10rem] px-4 py-3 text-center text-[11px] text-muted leading-snug">
+                <td class="max-w-40 px-4 py-3 text-center text-[11px] text-muted leading-snug">
                   <template v-if="r.squat_kg != null || r.bench_kg != null || r.deadlift_kg != null">
                     P {{ r.squat_kg ?? '—' }} · W {{ r.bench_kg ?? '—' }} · M {{ r.deadlift_kg ?? '—' }}
                   </template>
@@ -631,11 +708,11 @@ const pageLead = computed(() => {
                 </td>
                 <td class="px-4 py-3 text-center">
                   <UBadge
-                    :color="r.status === 'Approved' ? 'success' : 'warning'"
+                    :color="r.status === 'Approved' ? 'success' : (r.status === 'Rejected' ? 'error' : 'warning')"
                     variant="subtle"
                     size="sm"
                   >
-                    {{ r.status === 'Approved' ? 'Zatwierdzony' : 'Oczekujący' }}
+                    {{ r.status === 'Approved' ? 'Zatwierdzony' : (r.status === 'Rejected' ? 'Odrzucony' : 'Oczekujący') }}
                   </UBadge>
                 </td>
               </tr>

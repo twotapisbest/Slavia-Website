@@ -122,7 +122,7 @@ const experimentalResolved = computed(() => experimental.enabledMap.value)
 
 const experimentalKillDeploy = computed(() => experimental.killSwitchRaw.value)
 
-function setExperimentalFlag(id: string, value: boolean) {
+async function setExperimentalFlag(id: string, value: boolean) {
   if (experimental.isForcedOffByDeploy(id)) {
     toast.add({
       title: 'Funkcja wyłączona na deployu',
@@ -131,7 +131,7 @@ function setExperimentalFlag(id: string, value: boolean) {
     })
     return
   }
-  experimental.setFlag(id as ExperimentalFeatureId, value)
+  await experimental.setFlag(id as ExperimentalFeatureId, value)
 }
 
 function isExperimentalLocked(id: string) {
@@ -186,6 +186,7 @@ onMounted(() => {
       backendProviderServerUpdatedAt.value = res.updated_at ?? null
     })
     .catch(() => {})
+  void experimental.hydrateFromApi()
 })
 
 function formatLogTs(ts: number) {

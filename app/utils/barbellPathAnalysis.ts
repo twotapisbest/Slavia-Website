@@ -7,6 +7,12 @@ export interface BarbellSample {
   shoulderMidX: number
 }
 
+export interface BarbellTechniqueMetrics {
+  meanDeviation: number
+  trajectoryLength: number
+  stabilityScore: number
+}
+
 export function smoothSamples(samples: BarbellSample[], window = 3): BarbellSample[] {
   if (samples.length < window) {
     return samples
@@ -41,6 +47,12 @@ export function smoothSamples(samples: BarbellSample[], window = 3): BarbellSamp
   return out
 }
 
+export function smoothSamplesForFps(samples: BarbellSample[], fps = 30): BarbellSample[] {
+  const normalized = Number.isFinite(fps) ? Math.max(12, Math.min(120, Math.round(fps))) : 30
+  const window = normalized <= 24 ? 3 : normalized <= 50 ? 5 : 7
+  return smoothSamples(samples, window)
+}
+
 function std(nums: number[]): number {
   if (nums.length < 2) {
     return 0
@@ -63,7 +75,10 @@ export function buildBiomechanicalFeedback(samples: BarbellSample[]): string[] {
     return msgs
   }
 
-  const smooth = smoothSamples(samples, 5)
+  const estimatedFps = samples.length >= 2
+    ? Math.min(120, Math.max(12, Math.round((samples.length - 1) / Math.max(0.001, samples[samples.length - 1]!.t - samples[0]!.t))))
+    : 30
+  const smooth = smoothSamplesForFps(samples, estimatedFps)
   const relX = smooth.map((s) => s.barX - s.hipMidX)
   const spread = Math.max(...smooth.map((s) => s.barX)) - Math.min(...smooth.map((s) => s.barX))
   const verticalTravel = Math.min(...smooth.map((s) => s.barY)) - Math.max(...smooth.map((s) => s.barY))
@@ -117,4 +132,24 @@ export function buildBiomechanicalFeedback(samples: BarbellSample[]): string[] {
   }
 
   return msgs
+}
+
+export function buildTechniqueMetrics(samples: BarbellSample[]): BarbellTechniqueMetrics {
+  if (samples.length < 2) {
+    return { meanDeviation: 0, trajectoryLength: 0, stabilityScore: 0 }
+  }
+  const centerX = samples.reduce((acc, s) => acc + s.hipMidX, 0) / samples.length
+  const meanDeviation = samples.reduce((acc, s) => acc + Math.abs(s.barX - centerX), 0) / samples.length
+  let trajectoryLength = 0
+  for (let i = 1; i < samples.length; i++) {
+    const a = samples[i - 1]!
+    const b = samples[i]!
+    trajectoryLength += Math.hypot(b.barX - a.barX, b.barY - a.barY)
+  }
+  const stabilityScore = Math.max(0, Math.min(100, 100 - std(samples.map(s => s.barX)) * 1400))
+  return {
+    meanDeviation: Number(meanDeviation.toFixed(4)),
+    trajectoryLength: Number(trajectoryLength.toFixed(4)),
+    stabilityScore: Number(stabilityScore.toFixed(1))
+  }
 }

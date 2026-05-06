@@ -30,6 +30,22 @@ const { data: pendingResults, refresh: refreshPending } = await useAsyncData(
 const { data: competitions } = await useAsyncData('trainer-competitions', () => apiFetch('/api/competitions').catch(() => []))
 
 const toast = useToast()
+type AttendanceRecord = {
+  id: string
+  athlete_id: string
+  session_date: string
+  status: string
+  verification_state: string
+  note?: string | null
+}
+const attendanceFilters = reactive({
+  athlete_id: '',
+  status: '',
+  verification_state: '',
+  from_date: '',
+  to_date: ''
+})
+const attendanceRows = ref<AttendanceRecord[]>([])
 
 const athleteNameById = computed(() => {
   const m = new Map<string, string>()
@@ -97,6 +113,38 @@ const quickLinks = computed(() => {
       to: '/trainer/dziennik',
       color: 'text-cyan-600',
       bg: 'bg-cyan-500/10'
+    },
+    {
+      title: 'Plany treningowe',
+      description: 'Tworzenie planów i monitoring progresu',
+      icon: 'i-lucide-clipboard-list',
+      to: '/trainer/plany',
+      color: 'text-emerald-600',
+      bg: 'bg-emerald-500/10'
+    },
+    {
+      title: 'Regeneracja zawodników',
+      description: 'Check-in snu, zmęczenia i gotowości',
+      icon: 'i-lucide-heart-pulse',
+      to: '/trainer/regeneracja',
+      color: 'text-rose-600',
+      bg: 'bg-rose-500/10'
+    },
+    {
+      title: 'Monitoring i logi',
+      description: 'Metryki systemowe i ostatnie zdarzenia',
+      icon: 'i-lucide-activity-square',
+      to: '/trainer/monitoring',
+      color: 'text-violet-600',
+      bg: 'bg-violet-500/10'
+    },
+    {
+      title: 'Feed wydarzeń',
+      description: 'Aktywności: wyniki, obecność, regeneracja',
+      icon: 'i-lucide-list-collapse',
+      to: '/trainer/wydarzenia',
+      color: 'text-fuchsia-600',
+      bg: 'bg-fuchsia-500/10'
     },
     {
       title: 'Inne ćwiczenia',
@@ -173,6 +221,35 @@ async function approveResult(id: string) {
     })
   }
 }
+
+async function rejectResult(id: string) {
+  try {
+    await apiFetch(`/api/results/${id}/reject`, { method: 'PATCH' })
+    toast.add({ title: 'Wynik odrzucony', color: 'success' })
+    await refreshPending()
+  } catch (e) {
+    toast.add({
+      title: 'Nie udało się odrzucić',
+      description: getApiErrorMessage(e),
+      color: 'error'
+    })
+  }
+}
+
+async function loadAttendanceRows() {
+  const q = new URLSearchParams()
+  if (attendanceFilters.athlete_id) q.set('athlete_id', attendanceFilters.athlete_id)
+  if (attendanceFilters.status) q.set('status', attendanceFilters.status)
+  if (attendanceFilters.verification_state) q.set('verification_state', attendanceFilters.verification_state)
+  if (attendanceFilters.from_date) q.set('from_date', attendanceFilters.from_date)
+  if (attendanceFilters.to_date) q.set('to_date', attendanceFilters.to_date)
+  const path = q.toString() ? `/api/attendance?${q}` : '/api/attendance'
+  attendanceRows.value = await apiFetch<AttendanceRecord[]>(path).catch(() => [])
+}
+
+onMounted(() => {
+  void loadAttendanceRows()
+})
 </script>
 
 <template>
@@ -314,6 +391,15 @@ async function approveResult(id: string) {
           >
             Zatwierdź
           </UButton>
+          <UButton
+            size="sm"
+            color="error"
+            variant="soft"
+            class="shrink-0"
+            @click="rejectResult(result.id)"
+          >
+            Odrzuć
+          </UButton>
         </div>
       </div>
     </div>
@@ -345,6 +431,35 @@ async function approveResult(id: string) {
           </div>
         </UCard>
       </NuxtLink>
+    </div>
+
+    <div class="mt-12 rounded-2xl border border-default bg-card p-6">
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <h2 class="text-xl font-semibold text-highlighted">Obecności zawodników</h2>
+        <UButton size="sm" variant="soft" icon="i-lucide-refresh-cw" @click="loadAttendanceRows">Odśwież</UButton>
+      </div>
+      <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+        <USelect v-model="attendanceFilters.athlete_id" :items="[{label:'Wszyscy',value:''}, ...((athletes || []).map(a => ({label:a.full_name, value:a.id})))]" />
+        <USelect v-model="attendanceFilters.status" :items="[{label:'Każdy status',value:''},{label:'Obecny',value:'obecny'},{label:'Nieobecny',value:'nieobecny'}]" />
+        <USelect v-model="attendanceFilters.verification_state" :items="[{label:'Każdy stan',value:''},{label:'Zweryfikowane',value:'verified'},{label:'Oczekujące',value:'pending'}]" />
+        <UInput v-model="attendanceFilters.from_date" type="date" />
+        <UInput v-model="attendanceFilters.to_date" type="date" />
+      </div>
+      <div class="mt-2">
+        <UButton size="sm" color="primary" @click="loadAttendanceRows">Filtruj</UButton>
+      </div>
+      <div class="mt-4 space-y-2">
+        <div v-for="row in attendanceRows" :key="row.id" class="rounded-xl border border-default/60 px-3 py-2">
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <UBadge size="xs" variant="subtle">{{ athleteNameById.get(row.athlete_id) || row.athlete_id }}</UBadge>
+            <UBadge size="xs" variant="subtle" color="primary">{{ row.session_date }}</UBadge>
+            <UBadge size="xs" variant="subtle" :color="row.status === 'obecny' ? 'success' : 'error'">{{ row.status }}</UBadge>
+            <UBadge size="xs" variant="subtle" :color="row.verification_state === 'verified' ? 'success' : 'warning'">{{ row.verification_state }}</UBadge>
+          </div>
+          <p v-if="row.note" class="mt-1 text-sm text-muted">{{ row.note }}</p>
+        </div>
+        <p v-if="attendanceRows.length === 0" class="text-sm text-muted">Brak wpisów dla wybranego filtra.</p>
+      </div>
     </div>
   </UContainer>
 </template>

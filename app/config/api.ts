@@ -21,6 +21,7 @@ export const apiRoutes = {
     one: (id: string) => `/api/athletes/${encodeURIComponent(id)}`,
     competitions: (id: string) => `/api/athletes/${encodeURIComponent(id)}/competitions`,
     trainingLog: (id: string) => `/api/athletes/${encodeURIComponent(id)}/training-log`,
+    timeline: (id: string) => `/api/athletes/${encodeURIComponent(id)}/timeline`,
     trainingLogEntry: (athleteId: string, entryId: string) =>
       `/api/athletes/${encodeURIComponent(athleteId)}/training-log/${encodeURIComponent(entryId)}`,
     link: (id: string) => `/api/athletes/${encodeURIComponent(id)}/link`
@@ -62,16 +63,33 @@ export const apiRoutes = {
   },
   attendance: {
     collection: '/api/attendance',
-    athlete: (athleteId: string) => `/api/attendance/${encodeURIComponent(athleteId)}`
+    athlete: (athleteId: string) => `/api/attendance/${encodeURIComponent(athleteId)}`,
+    summary: (athleteId: string) => `/api/attendance/summary/${encodeURIComponent(athleteId)}`
   },
   chat: {
     threads: '/api/chat/threads',
     thread: (threadId: string) => `/api/chat/threads/${encodeURIComponent(threadId)}`,
     messages: (threadId: string) => `/api/chat/threads/${encodeURIComponent(threadId)}/messages`
   },
+  comments: {
+    collection: '/api/comments'
+  },
+  trainingPlans: {
+    collection: '/api/training-plans',
+    my: '/api/training-plans/my',
+    athlete: (athleteId: string) => `/api/training-plans/athlete/${encodeURIComponent(athleteId)}`,
+    one: (id: string) => `/api/training-plans/${encodeURIComponent(id)}`,
+    myProgress: (id: string) => `/api/training-plans/${encodeURIComponent(id)}/my-progress`
+  },
+  recovery: {
+    collection: '/api/recovery',
+    athlete: (athleteId: string) => `/api/recovery/athlete/${encodeURIComponent(athleteId)}`
+  },
   system: {
     backendProvider: '/api/system/backend-provider',
-    auditLogs: '/api/system/audit-logs'
+    auditLogs: '/api/system/audit-logs',
+    metrics: '/api/system/metrics',
+    eventFeed: '/api/system/event-feed'
   },
   upload: '/api/upload',
   notifications: {
@@ -93,13 +111,15 @@ export const apiRoutes = {
     collection: '/api/results',
     /** Publiczna tablica (JOIN zawodnik + zawody), bez mutacji. */
     publicBoard: '/api/results/public-board',
+    publicBoardOlympic: '/api/results/public-board-olympic',
     pending: '/api/results/pending',
     all: '/api/results/all',
     athlete: (id: string) => `/api/results/athlete/${encodeURIComponent(id)}`,
     athleteSubmissions: (id: string) =>
       `/api/results/athlete/${encodeURIComponent(id)}/submissions`,
     one: (id: string) => `/api/results/${encodeURIComponent(id)}`,
-    approve: (id: string) => `/api/results/${encodeURIComponent(id)}/approve`
+    approve: (id: string) => `/api/results/${encodeURIComponent(id)}/approve`,
+    reject: (id: string) => `/api/results/${encodeURIComponent(id)}/reject`
   },
   /** Zgłoszenia wyników (Pending) — osobna przestrzeń od zwykłych tras `results`. */
   submissions: {

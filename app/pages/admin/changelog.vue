@@ -8,6 +8,20 @@ useSeoMeta({
 
 const updates = [
   {
+    version: 'v2.3.0',
+    date: '6 Maj 2026',
+    title: 'Finalizacja roadmapy 1-8: moduły treningowe, monitoring, hardening i release-check',
+    features: [
+      'Nowe moduły dla zawodnika i trenera: oś czasu zawodnika, plany treningowe, progres planów, dziennik regeneracji oraz dedykowana skrzynka powiadomień.',
+      'Panel trenerski rozszerzony o monitoring systemu i feed wydarzeń operacyjnych (wyniki, obecności, regeneracja) z szybką diagnostyką aktywności klubu.',
+      'Backend: pełne API dla planów treningowych i regeneracji, nowe endpointy metryk oraz feedu zdarzeń, rozszerzony audit trail i notyfikacje deep-link.',
+      'Hardening testów: poprawiona stabilność testów integracyjnych (m.in. obsługa poisoned mutex i bardziej deterministyczne dane seedowe).',
+      'Release tooling: skrypty `release-check` dla backendu i frontendu (cargo check/test + typecheck + smoke), ujednolicone pod finalny przegląd wydania.',
+      'Optymalizacja kodu: usunięto martwy, nieużywany moduł logiki importu federacyjnego po trwałym wyłączeniu tej funkcji w API.'
+    ],
+    type: 'feature'
+  },
+  {
     version: 'v2.2.0',
     date: '5 Maj 2026',
     title: 'Ujednolicone źródła ćwiczeń, wyłączone PWA, nowe moduły i pełniejsze motywy UI',

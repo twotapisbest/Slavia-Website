@@ -4,7 +4,7 @@ import { computeExperimentalEnabled, parseExperimentalKillSwitch } from '~/utils
 /** Hydracja nadpisań flag z localStorage (musi być przed logiką zależną od stanu). */
 export default defineNuxtPlugin({
   name: 'slavia-experimental-bootstrap',
-  setup() {
+  async setup() {
     if (!import.meta.client) {
       return
     }
@@ -37,5 +37,9 @@ export default defineNuxtPlugin({
       overrides: overrides.value,
       defaultEnabled: EXPERIMENTAL_FEATURES.find(f => f.id === 'pwa_service_worker')?.defaultEnabled ?? true
     })
+
+    // Po starcie sesji nadpisz stan flag z backendu (główne źródło prawdy).
+    const experimental = useExperimentalFeatures()
+    await experimental.hydrateFromApi()
   }
 })

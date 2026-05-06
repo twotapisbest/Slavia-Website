@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Pose } from '@tensorflow-models/pose-detection'
-import { buildBiomechanicalFeedback, type BarbellSample } from '~/utils/barbellPathAnalysis'
+import { buildBiomechanicalFeedback, buildTechniqueMetrics, type BarbellSample } from '~/utils/barbellPathAnalysis'
 
 const toast = useToast()
 
@@ -18,6 +18,7 @@ const frameProgress = ref({ current: 0, total: 0 })
 const feedback = ref<string[]>([])
 const samplesCount = ref(0)
 const analyzedSamples = ref<BarbellSample[]>([])
+const metrics = ref<{ meanDeviation: number, trajectoryLength: number, stabilityScore: number } | null>(null)
 const playbackReady = computed(() => analyzedSamples.value.length >= 2 && !!videoRef.value)
 
 let detector: Awaited<
@@ -45,6 +46,7 @@ function onVideoFile(e: Event) {
   clipUrl.value = URL.createObjectURL(file)
   feedback.value = []
   samplesCount.value = 0
+  metrics.value = null
   progress.value = 0
   phaseStep.value = 0
   frameProgress.value = { current: 0, total: 0 }
@@ -423,6 +425,7 @@ async function analyzeVideo() {
     analyzedSamples.value = activeLift
     drawPath(activeLift)
     feedback.value = buildBiomechanicalFeedback(activeLift)
+    metrics.value = buildTechniqueMetrics(activeLift)
     toast.add({ title: 'Analiza zakończona', color: 'success' })
   } catch (e) {
     console.error(e)
@@ -435,6 +438,7 @@ async function analyzeVideo() {
       'Nie udało się dokończyć analizy.',
       'Typowe przyczyny: nietypowy kontener wideo, bardzo długi seek lub brak WebGL — odśwież stronę lub spróbuj krótszego nagrania MP4.'
     ]
+    metrics.value = null
   } finally {
     busy.value = false
     busyLabel.value = ''
@@ -685,6 +689,26 @@ onBeforeUnmount(() => {
             <span>{{ line }}</span>
           </li>
         </ul>
+      </div>
+    </UCard>
+
+    <UCard
+      v-if="metrics"
+      class="rounded-3xl border-default/60"
+    >
+      <div class="grid gap-3 sm:grid-cols-3">
+        <div class="rounded-xl border border-default/50 p-3">
+          <p class="text-xs text-muted">Śr. odchyłka</p>
+          <p class="text-xl font-black text-highlighted">{{ metrics.meanDeviation }}</p>
+        </div>
+        <div class="rounded-xl border border-default/50 p-3">
+          <p class="text-xs text-muted">Długość trajektorii</p>
+          <p class="text-xl font-black text-highlighted">{{ metrics.trajectoryLength }}</p>
+        </div>
+        <div class="rounded-xl border border-default/50 p-3">
+          <p class="text-xs text-muted">Stabilność ruchu</p>
+          <p class="text-xl font-black text-primary">{{ metrics.stabilityScore }}%</p>
+        </div>
       </div>
     </UCard>
   </div>

@@ -6,10 +6,20 @@ import {
 import { computeExperimentalEnabled, parseExperimentalKillSwitch } from '~/utils/experimentalEffective'
 
 const OVERRIDES_STATE_KEY = 'slavia-experimental-overrides'
+const HYDRATED_FROM_API_KEY = 'slavia-experimental-hydrated-api'
+
+type RemoteFlag = {
+  name: string
+  value: boolean
+  user_id?: string | null
+  updated_at: string
+}
 
 export function useExperimentalFeatures() {
   const runtimeConfig = useRuntimeConfig()
+  const auth = useAuth()
   const overrides = useState<Record<string, boolean>>(OVERRIDES_STATE_KEY, () => ({}))
+  const hydratedFromApi = useState<boolean>(HYDRATED_FROM_API_KEY, () => false)
 
   const killSwitch = computed(() =>
     parseExperimentalKillSwitch(String(runtimeConfig.public.experimentalKillSwitch ?? ''))
@@ -48,7 +58,41 @@ export function useExperimentalFeatures() {
     }
   }
 
-  function setFlag(id: ExperimentalFeatureId, enabled: boolean) {
+  async function persistRemote(id: ExperimentalFeatureId, enabled: boolean) {
+    if (!auth.isLoggedIn.value || !auth.token.value) {
+      return
+    }
+    await $fetch(`${auth.apiBase.value}/api/system/feature-flags/${encodeURIComponent(id)}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${auth.token.value}`
+      },
+      body: { value: enabled }
+    })
+  }
+
+  async function hydrateFromApi(force = false) {
+    if (!import.meta.client || !auth.isLoggedIn.value) return
+    if (hydratedFromApi.value && !force) return
+    try {
+      const remote = await $fetch<RemoteFlag[]>(`${auth.apiBase.value}/api/system/feature-flags`, {
+        headers: auth.token.value ? { Authorization: `Bearer ${auth.token.value}` } : undefined
+      })
+      const next = { ...overrides.value }
+      for (const row of remote || []) {
+        if (!EXPERIMENTAL_FEATURES.find(def => def.id === row.name)) continue
+        next[row.name] = !!row.value
+      }
+      overrides.value = next
+      persist()
+    } catch {
+      /* fallback na localStorage */
+    } finally {
+      hydratedFromApi.value = true
+    }
+  }
+
+  async function setFlag(id: ExperimentalFeatureId, enabled: boolean) {
     if (killSwitch.value.has(id)) {
       return
     }
@@ -64,6 +108,7 @@ export function useExperimentalFeatures() {
       overrides.value = { ...overrides.value, [id]: enabled }
     }
     persist()
+    await persistRemote(id, enabled)
   }
 
   function resetAllToDefaults() {
@@ -78,7 +123,8 @@ export function useExperimentalFeatures() {
     killSwitchRaw: computed(() => String(runtimeConfig.public.experimentalKillSwitch ?? '').trim()),
     isForcedOffByDeploy,
     setFlag,
-    resetAllToDefaults
+    resetAllToDefaults,
+    hydrateFromApi
   }
 }
 
