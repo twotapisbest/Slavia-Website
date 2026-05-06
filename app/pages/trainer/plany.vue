@@ -5,13 +5,14 @@ definePageMeta({ middleware: 'trainer' })
 
 const apiFetch = useApi()
 const toast = useToast()
+const NO_ATHLETE = '__none__'
 
 const { data: athletes } = await useAsyncData(
   'trainer-plans-athletes',
   () => apiFetch<Athlete[]>('/api/athletes').catch(() => [])
 )
 
-const selectedAthleteId = ref('')
+const selectedAthleteId = ref(NO_ATHLETE)
 const plans = ref<TrainingPlan[]>([])
 const loading = ref(false)
 const saving = ref(false)
@@ -25,7 +26,7 @@ const form = reactive({
 })
 
 async function loadPlans() {
-  if (!selectedAthleteId.value) {
+  if (selectedAthleteId.value === NO_ATHLETE) {
     plans.value = []
     return
   }
@@ -82,7 +83,7 @@ watch(selectedAthleteId, () => {
       <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <USelect
           v-model="selectedAthleteId"
-          :items="[{ label: 'Wybierz zawodnika', value: '' }, ...((athletes || []).map(a => ({ label: a.full_name, value: a.id })))]"
+          :items="[{ label: 'Wybierz zawodnika', value: NO_ATHLETE }, ...((athletes || []).map(a => ({ label: a.full_name, value: a.id })))]"
         />
         <UInput v-model="form.title" placeholder="Tytuł planu" />
         <UInput v-model="form.week_start" type="date" />

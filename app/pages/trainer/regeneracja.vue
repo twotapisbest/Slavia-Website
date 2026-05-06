@@ -4,6 +4,7 @@ import type { Athlete, RecoveryLog } from '~/types/models'
 definePageMeta({ middleware: 'trainer' })
 
 const apiFetch = useApi()
+const NO_ATHLETE = '__none__'
 
 const { data: athletes } = await useAsyncData(
   'trainer-recovery-athletes',
@@ -11,12 +12,12 @@ const { data: athletes } = await useAsyncData(
   { default: () => [] }
 )
 
-const selectedAthleteId = ref('')
+const selectedAthleteId = ref(NO_ATHLETE)
 const logs = ref<RecoveryLog[]>([])
 const loading = ref(false)
 
 async function loadLogs() {
-  if (!selectedAthleteId.value) {
+  if (selectedAthleteId.value === NO_ATHLETE) {
     logs.value = []
     return
   }
@@ -40,7 +41,7 @@ watch(selectedAthleteId, () => {
     <UCard class="mb-6">
       <USelect
         v-model="selectedAthleteId"
-        :items="[{ label: 'Wybierz zawodnika', value: '' }, ...((athletes || []).map(a => ({ label: a.full_name, value: a.id })))]"
+        :items="[{ label: 'Wybierz zawodnika', value: NO_ATHLETE }, ...((athletes || []).map(a => ({ label: a.full_name, value: a.id })))]"
       />
     </UCard>
 

@@ -11,6 +11,7 @@ useSeoMeta({
 
 const auth = useAuth()
 const apiFetch = useApi()
+const FILTER_ALL = '__all__'
 
 const { data: athletes } = await useAsyncData(
   'trainer-athletes',
@@ -39,9 +40,9 @@ type AttendanceRecord = {
   note?: string | null
 }
 const attendanceFilters = reactive({
-  athlete_id: '',
-  status: '',
-  verification_state: '',
+  athlete_id: FILTER_ALL,
+  status: FILTER_ALL,
+  verification_state: FILTER_ALL,
   from_date: '',
   to_date: ''
 })
@@ -238,9 +239,9 @@ async function rejectResult(id: string) {
 
 async function loadAttendanceRows() {
   const q = new URLSearchParams()
-  if (attendanceFilters.athlete_id) q.set('athlete_id', attendanceFilters.athlete_id)
-  if (attendanceFilters.status) q.set('status', attendanceFilters.status)
-  if (attendanceFilters.verification_state) q.set('verification_state', attendanceFilters.verification_state)
+  if (attendanceFilters.athlete_id !== FILTER_ALL) q.set('athlete_id', attendanceFilters.athlete_id)
+  if (attendanceFilters.status !== FILTER_ALL) q.set('status', attendanceFilters.status)
+  if (attendanceFilters.verification_state !== FILTER_ALL) q.set('verification_state', attendanceFilters.verification_state)
   if (attendanceFilters.from_date) q.set('from_date', attendanceFilters.from_date)
   if (attendanceFilters.to_date) q.set('to_date', attendanceFilters.to_date)
   const path = q.toString() ? `/api/attendance?${q}` : '/api/attendance'
@@ -439,9 +440,9 @@ onMounted(() => {
         <UButton size="sm" variant="soft" icon="i-lucide-refresh-cw" @click="loadAttendanceRows">Odśwież</UButton>
       </div>
       <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-        <USelect v-model="attendanceFilters.athlete_id" :items="[{label:'Wszyscy',value:''}, ...((athletes || []).map(a => ({label:a.full_name, value:a.id})))]" />
-        <USelect v-model="attendanceFilters.status" :items="[{label:'Każdy status',value:''},{label:'Obecny',value:'obecny'},{label:'Nieobecny',value:'nieobecny'}]" />
-        <USelect v-model="attendanceFilters.verification_state" :items="[{label:'Każdy stan',value:''},{label:'Zweryfikowane',value:'verified'},{label:'Oczekujące',value:'pending'}]" />
+        <USelect v-model="attendanceFilters.athlete_id" :items="[{label:'Wszyscy',value:FILTER_ALL}, ...((athletes || []).map(a => ({label:a.full_name, value:a.id})))]" />
+        <USelect v-model="attendanceFilters.status" :items="[{label:'Każdy status',value:FILTER_ALL},{label:'Obecny',value:'obecny'},{label:'Nieobecny',value:'nieobecny'}]" />
+        <USelect v-model="attendanceFilters.verification_state" :items="[{label:'Każdy stan',value:FILTER_ALL},{label:'Zweryfikowane',value:'verified'},{label:'Oczekujące',value:'pending'}]" />
         <UInput v-model="attendanceFilters.from_date" type="date" />
         <UInput v-model="attendanceFilters.to_date" type="date" />
       </div>
