@@ -223,10 +223,18 @@ watch(
               CKS Slavia Ruda Śląska
             </p>
             <div class="flex flex-col text-xs text-muted">
-              <span class="flex items-center gap-2"><UIcon
-                name="i-lucide-map-pin"
-                class="size-3"
-              /> ul. Konopnickiej 13, 41-700 Ruda Śląska</span>
+              <a
+                href="https://maps.app.goo.gl/zqGy466nizCv45c57"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex items-center gap-2 hover:text-highlighted transition-colors"
+              >
+                <UIcon
+                  name="i-lucide-map-pin"
+                  class="size-3"
+                />
+                ul. Konopnickiej 13, 41-700 Ruda Śląska
+              </a>
               <span class="flex items-center gap-2"><UIcon
                 name="i-lucide-calendar"
                 class="size-3"
