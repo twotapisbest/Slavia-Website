@@ -80,6 +80,15 @@ export function useChat() {
     await refreshThreads()
   }
 
+  async function deleteThread(threadId: string) {
+    await api(apiRoutes.chat.thread(threadId), { method: 'DELETE' })
+    if (activeThreadId.value === threadId) {
+      activeThreadId.value = null
+    }
+    await refreshThreads()
+    await refreshMessages()
+  }
+
   return {
     threads,
     activeThreadId,
@@ -89,6 +98,7 @@ export function useChat() {
     openThread,
     refreshMessages,
     sendMessage,
-    updateThreadTitle
+    updateThreadTitle,
+    deleteThread
   }
 }

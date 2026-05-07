@@ -110,6 +110,16 @@ export const apiRoutes = {
     one: (id: string) => `/api/competitions/${encodeURIComponent(id)}`,
     participants: (id: string) => `/api/competitions/${encodeURIComponent(id)}/participants`
   },
+  payments: {
+    my: '/api/payments/my',
+    myStatus: '/api/payments/my/status',
+    status: '/api/payments/status',
+    pending: '/api/payments/pending',
+    approve: (id: string) => `/api/payments/${encodeURIComponent(id)}/approve`,
+    reject: (id: string) => `/api/payments/${encodeURIComponent(id)}/reject`,
+    createApprovedForAthlete: (athleteId: string) =>
+      `/api/payments/athlete/${encodeURIComponent(athleteId)}/approved`
+  },
   results: {
     collection: '/api/results',
     /** Publiczna tablica (JOIN zawodnik + zawody), bez mutacji. */

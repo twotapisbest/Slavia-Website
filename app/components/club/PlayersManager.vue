@@ -12,6 +12,8 @@ import type { Competition, Player } from '~/types/models'
 const api = useApi()
 const toast = useToast()
 const auth = useAuth()
+const route = useRoute()
+const router = useRouter()
 
 /** Tworzenie konta `users` bezpośrednio — tylko Admin / SuperAdmin (spójnie z backendem). */
 const canManageAthleteLogin = computed(() => auth.isAdmin.value)
@@ -213,6 +215,17 @@ async function loadPlayers() {
   }
 }
 
+function tryOpenEditFromQuery() {
+  const raw = route.query.edit
+  const editId = typeof raw === 'string' ? raw.trim() : ''
+  if (!editId) return
+  const p = players.value.find(x => x.id === editId)
+  if (!p) return
+  openEdit(p)
+  const { edit, ...rest } = route.query
+  void router.replace({ query: rest })
+}
+
 function openCreate() {
   resetForm()
   modalOpen.value = true
@@ -385,9 +398,18 @@ async function confirmDelete() {
   }
 }
 
-onMounted(() => {
-  loadPlayers()
+onMounted(async () => {
+  await loadPlayers()
+  tryOpenEditFromQuery()
 })
+
+watch(
+  () => route.query.edit,
+  () => {
+    if (!players.value.length) return
+    tryOpenEditFromQuery()
+  }
+)
 </script>
 
 <template>

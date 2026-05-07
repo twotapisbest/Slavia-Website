@@ -36,6 +36,7 @@ function publicBase() {
 }
 
 const canManageEvents = computed(() => auth.isAdmin.value || auth.isTrainer.value || auth.isSuperAdmin.value)
+const canSyncExternalCalendars = computed(() => auth.isAdmin.value || auth.isSuperAdmin.value)
 
 const syncLoading = ref(false)
 
@@ -195,8 +196,20 @@ const getEventsForDay = (date: Date): CalendarEvent[] => {
   return [...getTrainingsForDay(date), ...comps]
 }
 
+const monthAgenda = computed(() => {
+  const start = startOfMonth(monthStart.value)
+  const end = endOfMonth(monthStart.value)
+  const days = eachDayOfInterval({ start, end })
+  return days
+    .map((d) => ({
+      day: d,
+      events: getEventsForDay(d)
+    }))
+    .filter(x => x.events.length > 0)
+})
+
 async function syncExternalCalendars() {
-  if (!canManageEvents.value) return
+  if (!canSyncExternalCalendars.value) return
   syncLoading.value = true
   try {
     const res = await apiFetch<{
@@ -529,7 +542,7 @@ function handleDayClick(day: Date) {
 
       <div class="flex w-full flex-col gap-2 sm:flex-row sm:justify-end md:w-auto md:flex-none">
         <UButton
-          v-if="canManageEvents"
+          v-if="canSyncExternalCalendars"
           icon="i-lucide-download-cloud"
           size="lg"
           color="neutral"
@@ -658,6 +671,73 @@ function handleDayClick(day: Date) {
       </div>
     </div>
 
+    <!-- Agenda (mobile) -->
+    <div class="mt-4 sm:hidden">
+      <UCard class="rounded-2xl border-default/70">
+        <div class="flex items-center justify-between gap-2">
+          <p class="text-xs font-bold uppercase tracking-[0.18em] text-muted">
+            Agenda miesiąca
+          </p>
+          <UBadge variant="subtle" color="neutral">
+            {{ monthAgenda.length }}
+          </UBadge>
+        </div>
+
+        <div class="mt-3 space-y-2">
+          <div
+            v-for="row in monthAgenda"
+            :key="row.day.toISOString()"
+            class="rounded-xl border border-default/60 bg-muted/10 p-3"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <p class="font-bold text-highlighted">
+                {{ format(row.day, 'EEEE · dd.MM', { locale: pl }) }}
+              </p>
+              <UButton
+                v-if="canManageEvents"
+                size="xs"
+                variant="ghost"
+                icon="i-lucide-plus"
+                @click="openModal(row.day)"
+              />
+            </div>
+            <div class="mt-2 space-y-1">
+              <button
+                v-for="event in row.events"
+                :key="event.id"
+                type="button"
+                class="flex w-full items-start justify-between gap-2 rounded-lg border px-2.5 py-2 text-left text-xs"
+                :class="getEventClasses(event)"
+                @click="openModal(undefined, event)"
+              >
+                <span class="min-w-0">
+                  <span class="block truncate font-bold">
+                    {{ event.title }}
+                  </span>
+                  <span class="block truncate opacity-70">
+                    {{ event.time || event.location || '—' }}
+                  </span>
+                </span>
+                <UIcon
+                  :name="getEventIcon(event)"
+                  class="size-4 shrink-0 opacity-80"
+                />
+              </button>
+            </div>
+          </div>
+
+          <UAlert
+            v-if="monthAgenda.length === 0"
+            icon="i-lucide-inbox"
+            title="Brak wydarzeń w tym miesiącu"
+            description="Przełącz miesiąc lub dodaj wydarzenie."
+            color="neutral"
+            variant="subtle"
+          />
+        </div>
+      </UCard>
+    </div>
+
     <!-- Legenda -->
     <div class="mt-6 grid grid-cols-1 gap-4 rounded-2xl border border-default bg-muted/10 p-4 sm:mt-8 sm:grid-cols-2 sm:gap-3 sm:p-5 lg:grid-cols-4">
       <div class="flex items-center gap-3">
@@ -756,8 +836,8 @@ function handleDayClick(day: Date) {
                     : cat.value === 'league' ? 'bg-amber-500/20 border-amber-500 text-amber-400'
                       : 'bg-teal-500/20 border-teal-500 text-teal-400'
                   : 'border-default bg-muted/10 text-muted hover:bg-muted/30'"
-                :disabled="readOnlyEvent || !!bannerEvent?.external_source || isEditingClubRecurringTraining"
-                @click="!readOnlyEvent && !bannerEvent?.external_source && !isEditingClubRecurringTraining && (formState.category = cat.value)"
+                :disabled="readOnlyEvent || isEditingClubRecurringTraining"
+                @click="!readOnlyEvent && !isEditingClubRecurringTraining && (formState.category = cat.value)"
               >
                 {{ cat.label }}
               </button>
@@ -865,7 +945,7 @@ function handleDayClick(day: Date) {
             </a>
           </div>
           <div class="mt-6 flex flex-col gap-3 border-t border-default/60 pt-6 sm:flex-row sm:items-center sm:justify-between">
-            <div class="min-h-[2.5rem] shrink-0">
+            <div class="min-h-10 shrink-0">
               <UButton
                 v-if="canShowCalendarDeleteButton"
                 color="error"

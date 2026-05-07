@@ -156,6 +156,30 @@ export interface OpsEvent {
   detail: string
 }
 
+export interface PaymentStatusResponse {
+  month: string
+  due_date: string // YYYY-MM-10
+  is_paid: boolean
+  is_overdue: boolean
+}
+
+export interface AthletePaymentStatusRow {
+  athlete_id: string
+  full_name: string
+  is_paid: boolean
+}
+
+export interface PendingPaymentRow {
+  id: string
+  athlete_id: string
+  athlete_name: string
+  month: string
+  amount_pln?: number | null
+  note?: string | null
+  created_at: string
+  created_by_user_id?: string | null
+}
+
 export interface AdminAccount extends AuthUser {
   created_at?: string
 }

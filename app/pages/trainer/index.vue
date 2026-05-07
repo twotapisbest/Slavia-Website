@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { Athlete, CompetitionResult } from '~/types/models'
+import type { Athlete, CompetitionResult, PendingPaymentRow } from '~/types/models'
+import { apiRoutes } from '~/config/api'
 import { getApiErrorMessage } from '~/composables/useApi'
 
 definePageMeta({ middleware: 'trainer' })
@@ -27,6 +28,12 @@ const { data: pendingResults, refresh: refreshPending } = await useAsyncData(
   'trainer-pending-results',
   async (): Promise<CompetitionResult[]> =>
     apiFetch<CompetitionResult[]>('/api/results/pending').catch(() => [])
+)
+
+const { data: pendingPayments, refresh: refreshPendingPayments } = await useAsyncData(
+  'trainer-pending-payments',
+  async (): Promise<PendingPaymentRow[]> =>
+    apiFetch<PendingPaymentRow[]>(apiRoutes.payments.pending).catch(() => [])
 )
 const { data: competitions } = await useAsyncData('trainer-competitions', () => apiFetch('/api/competitions').catch(() => []))
 
@@ -68,6 +75,7 @@ const athletesCount = computed(() => {
   return list.filter(a => a.is_active !== false).length
 })
 const pendingCount = computed(() => (Array.isArray(pendingResults.value) ? pendingResults.value.length : 0))
+const pendingPaymentsCount = computed(() => (Array.isArray(pendingPayments.value) ? pendingPayments.value.length : 0))
 const competitionsCount = computed(() => (Array.isArray(competitions.value) ? competitions.value.length : 0))
 
 const quickLinks = computed(() => {
@@ -210,6 +218,79 @@ async function rejectResult(id: string) {
   } catch (e) {
     toast.add({
       title: 'Nie udało się odrzucić',
+      description: getApiErrorMessage(e),
+      color: 'error'
+    })
+  }
+}
+
+async function approvePayment(id: string) {
+  try {
+    await apiFetch(apiRoutes.payments.approve(id), { method: 'PATCH' })
+    toast.add({ title: 'Zatwierdzono płatność', color: 'success' })
+    await refreshPendingPayments()
+  } catch (e) {
+    toast.add({
+      title: 'Nie udało się zatwierdzić płatności',
+      description: getApiErrorMessage(e),
+      color: 'error'
+    })
+  }
+}
+
+async function rejectPayment(id: string) {
+  try {
+    await apiFetch(apiRoutes.payments.reject(id), { method: 'PATCH' })
+    toast.add({ title: 'Odrzucono zgłoszenie płatności', color: 'success' })
+    await refreshPendingPayments()
+  } catch (e) {
+    toast.add({
+      title: 'Nie udało się odrzucić zgłoszenia',
+      description: getApiErrorMessage(e),
+      color: 'error'
+    })
+  }
+}
+
+const addApprovedPaymentForm = reactive<{
+  athlete_id: string
+  month: string
+  amount_pln: number | null
+  note: string
+}>({
+  athlete_id: '',
+  month: new Date().toISOString().slice(0, 7),
+  amount_pln: null,
+  note: ''
+})
+
+watch(
+  () => athletes.value,
+  (list) => {
+    if (!addApprovedPaymentForm.athlete_id && Array.isArray(list) && list.length > 0) {
+      addApprovedPaymentForm.athlete_id = list[0]!.id
+    }
+  },
+  { immediate: true }
+)
+
+async function createApprovedPayment() {
+  if (!addApprovedPaymentForm.athlete_id) return
+  try {
+    await apiFetch(apiRoutes.payments.createApprovedForAthlete(addApprovedPaymentForm.athlete_id), {
+      method: 'POST',
+      body: {
+        month: addApprovedPaymentForm.month,
+        amount_pln: addApprovedPaymentForm.amount_pln != null ? Number(addApprovedPaymentForm.amount_pln) : null,
+        note: addApprovedPaymentForm.note
+      }
+    })
+    toast.add({ title: 'Dodano zatwierdzoną płatność', color: 'success' })
+    addApprovedPaymentForm.note = ''
+    await refreshPendingPayments()
+  } catch (e) {
+    toast.add({
+      title: 'Nie udało się dodać płatności',
       description: getApiErrorMessage(e),
       color: 'error'
     })
@@ -409,6 +490,112 @@ onMounted(() => {
           >
             Odrzuć
           </UButton>
+        </div>
+      </div>
+    </div>
+
+    <!-- Składki do zatwierdzenia -->
+    <div
+      id="skladki-oczekujace"
+      class="mb-12 scroll-mt-24 rounded-2xl border border-default bg-card p-6"
+    >
+      <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 class="text-xl font-semibold text-highlighted">
+          <UIcon
+            name="i-lucide-banknote"
+            class="mr-2 inline"
+          />
+          Składki do zatwierdzenia ({{ pendingPaymentsCount }})
+        </h2>
+        <div class="flex flex-wrap gap-2">
+          <UButton
+            variant="soft"
+            size="sm"
+            icon="i-lucide-refresh-ccw"
+            @click="refreshPendingPayments()"
+          >
+            Odśwież listę
+          </UButton>
+        </div>
+      </div>
+
+      <UCard class="mb-5 border-default/60">
+        <div class="grid gap-3 md:grid-cols-12 md:items-end">
+          <UFormField label="Dodaj zatwierdzoną płatność" class="md:col-span-4">
+            <USelect
+              v-model="addApprovedPaymentForm.athlete_id"
+              :items="[{ label: 'Wybierz zawodnika', value: '' }, ...((athletes || []).map(a => ({ label: a.full_name, value: a.id })))]"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField label="Miesiąc" class="md:col-span-3">
+            <UInput v-model="addApprovedPaymentForm.month" type="month" class="w-full" />
+          </UFormField>
+          <UFormField label="Kwota (PLN)" description="Opcjonalnie" class="md:col-span-2">
+            <UInputNumber v-model="addApprovedPaymentForm.amount_pln" :min="0" :step="1" class="w-full" />
+          </UFormField>
+          <UFormField label="Opis" description="Opcjonalnie" class="md:col-span-3">
+            <UInput v-model="addApprovedPaymentForm.note" placeholder="np. gotówka / przelew" class="w-full" />
+          </UFormField>
+        </div>
+        <div class="mt-3">
+          <UButton
+            icon="i-lucide-check"
+            :disabled="!addApprovedPaymentForm.athlete_id"
+            @click="createApprovedPayment"
+          >
+            Dodaj jako zatwierdzone
+          </UButton>
+        </div>
+      </UCard>
+
+      <div
+        v-if="pendingPaymentsCount === 0"
+        class="rounded-xl border border-dashed border-default/70 bg-muted/10 px-4 py-8 text-center text-sm text-muted"
+      >
+        Brak zgłoszeń składek w statusie oczekującym.
+      </div>
+
+      <div
+        v-else
+        class="space-y-3"
+      >
+        <div
+          v-for="p in pendingPayments || []"
+          :key="p.id"
+          class="flex flex-col gap-3 rounded-xl border border-default/50 bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div class="min-w-0">
+            <p class="font-medium text-highlighted">
+              {{ p.athlete_name }}
+            </p>
+            <p class="text-sm text-muted">
+              Miesiąc: <span class="font-mono">{{ p.month }}</span>
+              <span v-if="p.amount_pln != null"> · Kwota: <span class="font-mono">{{ p.amount_pln }}</span> PLN</span>
+              <span v-if="p.note && p.note.trim()"> · {{ p.note }}</span>
+            </p>
+            <p class="mt-1 text-[11px] text-muted">
+              Zgłoszono: <span class="font-mono">{{ p.created_at }}</span>
+            </p>
+          </div>
+          <div class="flex shrink-0 flex-wrap gap-2">
+            <UButton
+              size="sm"
+              class="shrink-0"
+              @click="approvePayment(p.id)"
+            >
+              Zatwierdź
+            </UButton>
+            <UButton
+              size="sm"
+              color="error"
+              variant="soft"
+              class="shrink-0"
+              @click="rejectPayment(p.id)"
+            >
+              Odrzuć
+            </UButton>
+          </div>
         </div>
       </div>
     </div>

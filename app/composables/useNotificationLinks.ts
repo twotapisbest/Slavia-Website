@@ -63,6 +63,10 @@ export function useNotificationLinks() {
       return '/trainer/regeneracja'
     }
 
+    if (n.kind === 'announcement_published') {
+      return auth.isLoggedIn.value ? '/ogloszenia' : null
+    }
+
     if (
       n.kind.startsWith('admin_')
       || n.kind.startsWith('blog_')

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { getApiErrorMessage } from '~/composables/useApi'
-import type { Athlete, CompetitionResult, MyCalendarEntry } from '~/types/models'
+import type { Athlete, CompetitionResult, MyCalendarEntry, PaymentStatusResponse } from '~/types/models'
+import { apiRoutes } from '~/config/api'
 import { resolveAuthProfilePhotoSrc } from '~/utils/profilePhoto'
 
 definePageMeta({ middleware: 'auth' })
@@ -51,10 +52,22 @@ const { data: bundle, refresh: refreshAthletePage } = await useAsyncData(
 const athlete = computed(() => bundle.value?.athlete ?? null)
 const results = computed(() => bundle.value?.results ?? [])
 const attendanceSummary = ref<AttendanceSummary | null>(null)
+const paymentStatus = ref<PaymentStatusResponse | null>(null)
+
+const paymentForm = reactive<{
+  month: string
+  amount_pln: number | null
+  note: string
+}>({
+  month: new Date().toISOString().slice(0, 7),
+  amount_pln: null,
+  note: ''
+})
 
 async function refreshResults() {
   await refreshAthletePage()
   await refreshAttendanceSummary()
+  await refreshPaymentStatus()
 }
 
 async function refreshAttendanceSummary() {
@@ -63,6 +76,41 @@ async function refreshAttendanceSummary() {
     return
   }
   attendanceSummary.value = await apiFetch<AttendanceSummary>(`/api/attendance/summary/${athlete.value.id}`).catch(() => null)
+}
+
+async function refreshPaymentStatus() {
+  if (!auth.canAccessAthletePortal.value || !athlete.value?.id || !auth.isAthlete.value) {
+    paymentStatus.value = null
+    return
+  }
+  const q = paymentForm.month ? `?month=${encodeURIComponent(paymentForm.month)}` : ''
+  paymentStatus.value = await apiFetch<PaymentStatusResponse>(`${apiRoutes.payments.myStatus}${q}`).catch(() => null)
+}
+
+async function submitMembershipPayment() {
+  if (!auth.canAccessAthletePortal.value || !athlete.value?.id || !auth.isAthlete.value) return
+  try {
+    await apiFetch(apiRoutes.payments.my, {
+      method: 'POST',
+      body: {
+        month: paymentForm.month,
+        amount_pln: paymentForm.amount_pln != null ? Number(paymentForm.amount_pln) : null,
+        note: paymentForm.note
+      }
+    })
+    toast.add({
+      title: 'Zgłoszono płatność',
+      description: 'Zgłoszenie trafiło do weryfikacji przez kadrę.',
+      color: 'success'
+    })
+    await refreshPaymentStatus()
+  } catch (e) {
+    toast.add({
+      title: 'Błąd zgłoszenia płatności',
+      description: getApiErrorMessage(e),
+      color: 'error'
+    })
+  }
 }
 
 const resultForm = reactive<{
@@ -286,6 +334,7 @@ const assignedCompetitionStartsCount = computed(() => {
 
 onMounted(() => {
   void refreshAttendanceSummary()
+  void refreshPaymentStatus()
 })
 
 const pageHeading = computed(() => {
@@ -486,6 +535,96 @@ const pageLead = computed(() => {
             <p class="text-xs text-muted">Frekwencja</p>
             <p class="text-2xl font-black text-primary">{{ attendanceSummary.attendance_percent }}%</p>
           </div>
+        </div>
+      </UCard>
+    </div>
+
+    <!-- Płatność składki (tylko rola Athlete) -->
+    <div
+      v-if="auth.canAccessAthletePortal && athlete && isAthleteRole"
+      class="mb-10"
+    >
+      <UAlert
+        v-if="paymentStatus && paymentStatus.is_overdue && !paymentStatus.is_paid"
+        icon="i-lucide-alert-triangle"
+        title="Brak opłaconej składki"
+        :description="`Nie masz zatwierdzonej płatności za ${paymentStatus.month}. Termin płatności to 10.${paymentStatus.month.slice(5,7)}.${paymentStatus.month.slice(0,4)}.`"
+        color="error"
+        variant="subtle"
+        class="mb-4 rounded-2xl"
+      />
+
+      <UCard class="rounded-2xl border-default/70">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="text-lg font-black text-highlighted">Składka klubowa</h2>
+          <UBadge
+            v-if="paymentStatus"
+            :color="paymentStatus.is_paid ? 'success' : (paymentStatus.is_overdue ? 'error' : 'warning')"
+            variant="subtle"
+          >
+            {{ paymentStatus.is_paid ? 'Opłacona' : (paymentStatus.is_overdue ? 'Nieopłacona' : 'Niepotwierdzona') }}
+          </UBadge>
+        </div>
+
+        <p class="mt-2 text-sm text-muted">
+          Zgłoś płatność — kadra zatwierdzi ją w systemie. Termin płatności: <span class="font-bold">10</span> każdego miesiąca.
+        </p>
+
+        <div class="mt-5 grid gap-4 sm:grid-cols-3">
+          <UFormField label="Miesiąc">
+            <UInput
+              v-model="paymentForm.month"
+              type="month"
+              size="lg"
+              class="w-full"
+              @change="refreshPaymentStatus"
+            />
+          </UFormField>
+          <UFormField label="Kwota (PLN)" description="Opcjonalnie">
+            <UInputNumber
+              v-model="paymentForm.amount_pln"
+              :min="0"
+              :step="1"
+              size="lg"
+              class="w-full"
+              placeholder="np. 80"
+            />
+          </UFormField>
+          <UFormField label="Opis" description="Opcjonalnie">
+            <UInput
+              v-model="paymentForm.note"
+              size="lg"
+              class="w-full"
+              placeholder="np. składka maj / przelew"
+            />
+          </UFormField>
+        </div>
+
+        <div class="mt-5 flex flex-wrap items-center gap-2">
+          <UButton
+            color="primary"
+            variant="soft"
+            size="lg"
+            icon="i-lucide-banknote"
+            @click="submitMembershipPayment"
+          >
+            Zgłoś płatność
+          </UButton>
+          <UButton
+            color="neutral"
+            variant="ghost"
+            size="lg"
+            icon="i-lucide-refresh-cw"
+            @click="refreshPaymentStatus"
+          >
+            Odśwież status
+          </UButton>
+          <p
+            v-if="paymentStatus"
+            class="text-xs text-muted"
+          >
+            Termin: {{ paymentStatus.due_date }}
+          </p>
         </div>
       </UCard>
     </div>

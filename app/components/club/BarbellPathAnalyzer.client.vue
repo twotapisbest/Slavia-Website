@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Pose } from '@tensorflow-models/pose-detection'
-import { buildBiomechanicalFeedback, buildTechniqueMetrics, type BarbellSample } from '~/utils/barbellPathAnalysis'
+import { buildBiomechanicalFeedback, buildTechniqueMetrics, type BarbellSample, type BarbellTechniqueMetrics } from '~/utils/barbellPathAnalysis'
 
 const toast = useToast()
 
@@ -18,7 +18,8 @@ const frameProgress = ref({ current: 0, total: 0 })
 const feedback = ref<string[]>([])
 const samplesCount = ref(0)
 const analyzedSamples = ref<BarbellSample[]>([])
-const metrics = ref<{ meanDeviation: number, trajectoryLength: number, stabilityScore: number } | null>(null)
+const metrics = ref<BarbellTechniqueMetrics | null>(null)
+const stabilizeToHips = ref(true)
 const playbackReady = computed(() => analyzedSamples.value.length >= 2 && !!videoRef.value)
 
 let detector: Awaited<
@@ -188,6 +189,17 @@ function filterActiveLiftWindow(samples: BarbellSample[]): BarbellSample[] {
     }
   }
   return samples.slice(startIdx, stopIdx + 1)
+}
+
+function stabilizeSamplesToHipLine(samples: BarbellSample[]): BarbellSample[] {
+  if (samples.length < 2) return samples
+  const baseHip = samples.reduce((acc, s) => acc + s.hipMidX, 0) / samples.length
+  return samples.map(s => ({
+    ...s,
+    barX: clamp01((s.barX - s.hipMidX) + baseHip),
+    hipMidX: clamp01(baseHip),
+    shoulderMidX: clamp01((s.shoulderMidX - s.hipMidX) + baseHip)
+  }))
 }
 
 /** Klatki UI — bez blokady, jeśli zdarzenie już minęło */
@@ -409,7 +421,10 @@ async function analyzeVideo() {
       }
     }
 
-    const activeLift = filterActiveLiftWindow(raw)
+    let activeLift = filterActiveLiftWindow(raw)
+    if (stabilizeToHips.value) {
+      activeLift = stabilizeSamplesToHipLine(activeLift)
+    }
     samplesCount.value = activeLift.length
     if (activeLift.length < 8) {
       feedback.value = buildBiomechanicalFeedback([])
@@ -551,6 +566,11 @@ onBeforeUnmount(() => {
           >
             Uruchom analizę
           </UButton>
+          <div class="flex min-h-11 items-center rounded-2xl border border-default/60 bg-muted/10 px-4 text-sm">
+            <UCheckbox v-model="stabilizeToHips" class="mr-3" />
+            <span class="font-semibold text-highlighted">Stabilizuj względem bioder</span>
+            <span class="ml-2 text-xs text-muted">(redukuje „drgania” kamery)</span>
+          </div>
         </div>
 
         <!-- Kroki postępu -->
@@ -696,7 +716,7 @@ onBeforeUnmount(() => {
       v-if="metrics"
       class="rounded-3xl border-default/60"
     >
-      <div class="grid gap-3 sm:grid-cols-3">
+      <div class="grid gap-3 sm:grid-cols-5">
         <div class="rounded-xl border border-default/50 p-3">
           <p class="text-xs text-muted">Śr. odchyłka</p>
           <p class="text-xl font-black text-highlighted">{{ metrics.meanDeviation }}</p>
@@ -708,6 +728,14 @@ onBeforeUnmount(() => {
         <div class="rounded-xl border border-default/50 p-3">
           <p class="text-xs text-muted">Stabilność ruchu</p>
           <p class="text-xl font-black text-primary">{{ metrics.stabilityScore }}%</p>
+        </div>
+        <div class="rounded-xl border border-default/50 p-3">
+          <p class="text-xs text-muted">Max prędkość (|vY|)</p>
+          <p class="text-xl font-black text-highlighted">{{ metrics.maxVerticalSpeed }}</p>
+        </div>
+        <div class="rounded-xl border border-default/50 p-3">
+          <p class="text-xs text-muted">Max odchyłka X</p>
+          <p class="text-xl font-black text-highlighted">{{ metrics.maxHorizontalDeviation }}</p>
         </div>
       </div>
     </UCard>

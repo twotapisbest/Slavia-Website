@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import AtheleteCard from '~/components/AtheleteCard.vue'
 import { athleteProfilePath } from '~/utils/slug'
-import type { Athlete as AthleteModel, CompetitionResult } from '~/types/models'
+import type { Athlete as AthleteModel, AthletePaymentStatusRow, CompetitionResult } from '~/types/models'
 import type { SinclairGender } from '~/utils/sinclair'
 import { sinclairTotal } from '~/utils/sinclair'
 import { effectiveBodyweightKgForSinclair } from '~/utils/sinclairAthlete'
+import { apiRoutes } from '~/config/api'
 
 function cardGender(g: string | null | undefined): SinclairGender | null {
   return g === 'male' || g === 'female' ? g : null
 }
 
 const config = useRuntimeConfig()
+const auth = useAuth()
+const apiFetch = useApi()
 
 function publicBase() {
   return String(config.public.apiBase || '').replace(/\/$/, '')
@@ -36,6 +39,29 @@ const { data: pageBundle, status, error } = await useAsyncData(
 
 const players = computed(() => pageBundle.value?.players ?? [])
 const resultsByAthlete = computed(() => pageBundle.value?.resultsByAthlete ?? {})
+
+function currentMonth() {
+  return new Date().toISOString().slice(0, 7)
+}
+
+const { data: paymentStatuses } = await useAsyncData(
+  'players-payment-statuses',
+  async () => {
+    await auth.ensureSession()
+    if (!auth.isAthlete.value) return [] as AthletePaymentStatusRow[]
+    const q = `?month=${encodeURIComponent(currentMonth())}`
+    return await apiFetch<AthletePaymentStatusRow[]>(`${apiRoutes.payments.status}${q}`).catch(() => [])
+  },
+  { default: () => [] as AthletePaymentStatusRow[] }
+)
+
+const paidByAthleteId = computed(() => {
+  const map = new Map<string, boolean>()
+  for (const r of (paymentStatuses.value ?? [])) {
+    if (r?.athlete_id) map.set(r.athlete_id, !!r.is_paid)
+  }
+  return map
+})
 
 useSeoMeta({
   title: 'Zawodnicy i Ranking — Slavia Ruda Śląska',
@@ -108,6 +134,7 @@ function mapToCard(p: AthleteModel, rb: Record<string, CompetitionResult[]>) {
     cleanAndJerk: cjKg,
     total: totalKg,
     sinclair: Number(sc.toFixed(2)),
+    membershipPaid: auth.isAthlete.value ? (paidByAthleteId.value.get(p.id) ?? false) : null,
     description:
       (p.public_bio && String(p.public_bio).trim())
       || (p.profile_tagline && String(p.profile_tagline).trim())

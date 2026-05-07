@@ -18,6 +18,8 @@ export interface Athlete {
   sinclair: number
   description: string
   photo?: string
+  /** Widoczność tylko dla zalogowanych zawodników (kolory: zielony/czerwony). */
+  membershipPaid?: boolean | null
   chartHistory: AthleteChartPoint[]
   maxHistory: number
 }
@@ -158,6 +160,19 @@ function clearHover() {
           </div>
         </div>
 
+        <div
+          v-if="athlete.membershipPaid !== undefined && athlete.membershipPaid !== null"
+          class="mt-5"
+        >
+          <UBadge
+            :color="athlete.membershipPaid ? 'success' : 'error'"
+            variant="subtle"
+            size="sm"
+          >
+            {{ athlete.membershipPaid ? 'Opłacony' : 'Nieopłacony' }}
+          </UBadge>
+        </div>
+
         <h3 class="mt-7 text-xl font-bold text-highlighted leading-tight">
           {{ athlete.name }}
         </h3>
@@ -245,7 +260,7 @@ function clearHover() {
 
           <div
             v-if="chartPaths"
-            class="relative h-[7.25rem] w-full rounded-xl bg-linear-to-b from-primary/[0.07] via-muted/20 to-muted/5 ring-1 ring-inset ring-primary/10 overflow-visible"
+            class="relative h-29 w-full rounded-xl bg-linear-to-b from-primary/[0.07] via-muted/20 to-muted/5 ring-1 ring-inset ring-primary/10 overflow-visible"
             @mouseleave="clearHover"
           >
             <Transition

@@ -99,6 +99,21 @@ async function saveThreadTitle() {
   }
 }
 
+async function deleteActiveThread() {
+  const threadId = chat.activeThreadId.value
+  if (!threadId) return
+  const active = chat.threads.value.find(t => t.id === threadId)
+  const title = active?.title?.trim() || 'Konwersacja bez tytułu'
+  const ok = window.confirm(`Usunąć wątek „${title}” razem ze wszystkimi wiadomościami? Tej operacji nie da się cofnąć.`)
+  if (!ok) return
+  try {
+    await chat.deleteThread(threadId)
+    toast.add({ title: 'Usunięto wątek', color: 'success' })
+  } catch (e) {
+    toast.add({ title: 'Nie udało się usunąć wątku', description: getApiErrorMessage(e), color: 'error' })
+  }
+}
+
 async function sendMessage() {
   if (!messageDraft.value.trim()) return
   try {
@@ -155,6 +170,7 @@ async function sendMessage() {
             <UInput v-model="threadTitleDraft" class="w-full min-w-0" placeholder="Wpisz tytuł..." />
           </UFormField>
           <UButton icon="i-lucide-save" variant="soft" @click="saveThreadTitle">Zapisz tytuł</UButton>
+          <UButton icon="i-lucide-trash-2" color="error" variant="soft" @click="deleteActiveThread">Usuń wątek</UButton>
         </div>
         <div ref="messagesContainerRef" class="mb-3 max-h-[52vh] space-y-3 overflow-auto rounded-lg border border-default/60 bg-muted/10 p-3 sm:p-4">
           <div
@@ -175,7 +191,7 @@ async function sendMessage() {
               class="max-w-[88%] rounded-2xl px-3 py-2 sm:max-w-[78%]"
               :class="m.sender_user_id === auth.user.value?.id ? 'bg-primary/20 text-highlighted rounded-br-md' : 'bg-background text-highlighted rounded-bl-md border border-default/60'"
             >
-              <p class="whitespace-pre-wrap break-words text-sm">{{ m.body }}</p>
+              <p class="whitespace-pre-wrap wrap-break-word text-sm">{{ m.body }}</p>
               <p class="mt-1 text-right text-[10px] text-muted">{{ formatTimestamp(m.created_at) }}</p>
             </div>
             <UAvatar

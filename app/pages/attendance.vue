@@ -28,6 +28,7 @@ const note = ref('')
 const sessionDate = ref(new Date().toISOString().slice(0, 10))
 const records = ref<AttendanceRecord[]>([])
 const monthRef = ref(new Date())
+const calendarView = ref<'grid' | 'agenda'>('grid')
 const attendanceModalOpen = ref(false)
 const selectedTrainingDay = ref<Date | null>(null)
 
@@ -56,6 +57,7 @@ const monthEnd = computed(() => endOfMonth(monthRef.value))
 const gridStart = computed(() => startOfWeek(monthStart.value, { weekStartsOn: 1 }))
 const gridEnd = computed(() => endOfWeek(monthEnd.value, { weekStartsOn: 1 }))
 const days = computed(() => eachDayOfInterval({ start: gridStart.value, end: gridEnd.value }))
+const daysInMonth = computed(() => eachDayOfInterval({ start: monthStart.value, end: monthEnd.value }))
 const weekDays = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz']
 
 const recordsByDate = computed(() => {
@@ -99,6 +101,18 @@ function openTrainingModal(date: Date) {
   selectedTrainingDay.value = date
   openDay(date)
   attendanceModalOpen.value = true
+}
+
+function prevMonth() {
+  monthRef.value = new Date(monthRef.value.getFullYear(), monthRef.value.getMonth() - 1, 1)
+}
+
+function nextMonth() {
+  monthRef.value = new Date(monthRef.value.getFullYear(), monthRef.value.getMonth() + 1, 1)
+}
+
+function goToToday() {
+  monthRef.value = new Date()
 }
 
 function statusColor(s: string) {
@@ -150,7 +164,12 @@ onMounted(() => {
 
 <template>
   <UContainer class="py-6 sm:py-10">
-    <h1 class="mb-4 text-2xl font-bold text-highlighted">Obecność (kalendarz treningowy)</h1>
+    <div class="mb-6">
+      <h1 class="text-2xl font-black text-highlighted">Obecność (kalendarz treningowy)</h1>
+      <p class="mt-1 text-sm text-muted">
+        Kliknij dzień treningowy (Pn/Śr/Pt), aby szybko zgłosić obecność. Na telefonie możesz przełączyć widok na listę.
+      </p>
+    </div>
     <UCard class="mb-4">
       <div class="grid gap-3 md:grid-cols-4">
         <UFormField label="Zawodnik">
@@ -172,48 +191,122 @@ onMounted(() => {
     </UCard>
 
     <UCard>
-      <div class="mb-3 flex items-center justify-between gap-2">
-        <p class="text-xs font-semibold uppercase tracking-wider text-muted">Kalendarz obecności</p>
-        <div class="flex gap-2">
-          <UButton size="xs" variant="ghost" icon="i-lucide-chevron-left" @click="monthRef = new Date(monthRef.getFullYear(), monthRef.getMonth() - 1, 1)" />
-          <UButton size="xs" variant="ghost">{{ format(monthRef, 'LLLL yyyy', { locale: pl }) }}</UButton>
-          <UButton size="xs" variant="ghost" icon="i-lucide-chevron-right" @click="monthRef = new Date(monthRef.getFullYear(), monthRef.getMonth() + 1, 1)" />
+      <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider text-muted">Kalendarz obecności</p>
+          <p class="mt-1 text-lg font-black text-highlighted">
+            {{ format(monthRef, 'LLLL yyyy', { locale: pl }) }}
+          </p>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <div class="flex gap-1 rounded-xl border border-default/60 bg-muted/10 p-1">
+            <UButton
+              size="sm"
+              :variant="calendarView === 'grid' ? 'solid' : 'ghost'"
+              color="neutral"
+              icon="i-lucide-grid-3x3"
+              @click="calendarView = 'grid'"
+            >
+              Siatka
+            </UButton>
+            <UButton
+              size="sm"
+              :variant="calendarView === 'agenda' ? 'solid' : 'ghost'"
+              color="neutral"
+              icon="i-lucide-list"
+              @click="calendarView = 'agenda'"
+            >
+              Agenda
+            </UButton>
+          </div>
+          <UButton size="sm" variant="ghost" icon="i-lucide-chevron-left" @click="prevMonth" />
+          <UButton size="sm" variant="ghost" icon="i-lucide-calendar-days" @click="goToToday">Dzisiaj</UButton>
+          <UButton size="sm" variant="ghost" icon="i-lucide-chevron-right" @click="nextMonth" />
         </div>
       </div>
 
-      <div class="grid grid-cols-7 border border-default/60 text-center text-[10px] font-bold uppercase tracking-wide text-muted">
-        <div v-for="w in weekDays" :key="w" class="border-r border-default/40 py-2 last:border-r-0">{{ w }}</div>
-      </div>
-      <div class="grid grid-cols-7 border-x border-b border-default/60">
-        <button
-          v-for="day in days"
-          :key="day.toISOString()"
-          type="button"
-          class="min-h-[92px] border-r border-t border-default/40 p-2 text-left last:border-r-0"
-          :class="[
-            isSameMonth(day, monthStart) ? 'bg-card' : 'bg-muted/10 opacity-60',
-            isToday(day) ? 'ring-1 ring-primary/35' : ''
-          ]"
-          @click="openTrainingModal(day)"
-        >
-          <div class="mb-1 text-xs font-semibold text-highlighted">{{ format(day, 'd') }}</div>
-          <div v-if="isTrainingDay(day)" class="text-[10px] text-muted">
-            Trening:
-            <span :class="trainingStatusForDate(day) === 'scheduled' ? 'text-success' : 'text-warning'">
-              {{ trainingStatusForDate(day) === 'scheduled' ? 'planowy' : trainingStatusForDate(day) }}
-            </span>
-          </div>
-          <UBadge
-            v-if="recordsByDate.get(format(day, 'yyyy-MM-dd'))"
-            size="xs"
-            variant="subtle"
-            class="mt-2"
-            :color="statusColor(recordsByDate.get(format(day, 'yyyy-MM-dd'))?.status || 'nieobecny')"
+      <template v-if="calendarView === 'grid'">
+        <div class="grid grid-cols-7 border border-default/60 text-center text-[10px] font-bold uppercase tracking-wide text-muted">
+          <div v-for="w in weekDays" :key="w" class="border-r border-default/40 py-2 last:border-r-0">{{ w }}</div>
+        </div>
+        <div class="grid grid-cols-7 border-x border-b border-default/60">
+          <button
+            v-for="day in days"
+            :key="day.toISOString()"
+            type="button"
+            class="min-h-[92px] border-r border-t border-default/40 p-2 text-left last:border-r-0"
+            :class="[
+              isSameMonth(day, monthStart) ? 'bg-card' : 'bg-muted/10 opacity-60',
+              isToday(day) ? 'ring-1 ring-primary/35' : ''
+            ]"
+            @click="openTrainingModal(day)"
           >
-            {{ recordsByDate.get(format(day, 'yyyy-MM-dd'))?.status }}
-          </UBadge>
-        </button>
-      </div>
+            <div class="mb-1 text-xs font-semibold text-highlighted">{{ format(day, 'd') }}</div>
+            <div v-if="isTrainingDay(day)" class="text-[10px] text-muted">
+              Trening:
+              <span :class="trainingStatusForDate(day) === 'scheduled' ? 'text-success' : 'text-warning'">
+                {{ trainingStatusForDate(day) === 'scheduled' ? 'planowy' : trainingStatusForDate(day) }}
+              </span>
+            </div>
+            <UBadge
+              v-if="recordsByDate.get(format(day, 'yyyy-MM-dd'))"
+              size="xs"
+              variant="subtle"
+              class="mt-2"
+              :color="statusColor(recordsByDate.get(format(day, 'yyyy-MM-dd'))?.status || 'nieobecny')"
+            >
+              {{ recordsByDate.get(format(day, 'yyyy-MM-dd'))?.status }}
+            </UBadge>
+          </button>
+        </div>
+      </template>
+
+      <template v-else>
+        <div class="space-y-2">
+          <button
+            v-for="day in daysInMonth.filter(d => isTrainingDay(d))"
+            :key="day.toISOString()"
+            type="button"
+            class="flex w-full items-center justify-between gap-3 rounded-xl border border-default/60 bg-muted/10 px-4 py-3 text-left hover:bg-muted/20"
+            @click="openTrainingModal(day)"
+          >
+            <div class="min-w-0">
+              <p class="font-bold text-highlighted">
+                {{ format(day, 'EEEE · dd.MM', { locale: pl }) }}
+              </p>
+              <p class="text-xs text-muted">
+                Trening: {{ trainingStatusForDate(day) === 'scheduled' ? 'planowy' : trainingStatusForDate(day) }}
+              </p>
+            </div>
+            <div class="flex shrink-0 items-center gap-2">
+              <UBadge
+                size="xs"
+                variant="subtle"
+                :color="trainingStatusForDate(day) === 'scheduled' ? 'success' : 'warning'"
+              >
+                {{ trainingStatusForDate(day) === 'scheduled' ? 'planowy' : trainingStatusForDate(day) }}
+              </UBadge>
+              <UBadge
+                v-if="recordsByDate.get(format(day, 'yyyy-MM-dd'))"
+                size="xs"
+                variant="subtle"
+                :color="statusColor(recordsByDate.get(format(day, 'yyyy-MM-dd'))?.status || 'nieobecny')"
+              >
+                {{ recordsByDate.get(format(day, 'yyyy-MM-dd'))?.status }}
+              </UBadge>
+              <UBadge
+                v-else
+                size="xs"
+                variant="subtle"
+                color="neutral"
+              >
+                brak wpisu
+              </UBadge>
+            </div>
+          </button>
+        </div>
+      </template>
 
       <div class="mt-4 space-y-2">
         <div v-for="r in records" :key="r.id" class="rounded-lg border border-default/60 px-3 py-2 text-sm">

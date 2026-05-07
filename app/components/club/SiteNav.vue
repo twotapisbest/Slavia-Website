@@ -38,7 +38,7 @@ type PanelSection = {
 
 const items = computed(() => {
   const main = [
-    { label: 'Ogłoszenia', to: '/ogloszenia' },
+    ...(auth.isLoggedIn.value ? [{ label: 'Ogłoszenia', to: '/ogloszenia' }] : []),
     { label: 'Aktualności', to: '/aktualnosci' },
     { label: 'Galeria', to: '/galeria' },
     { label: 'Zawodnicy', to: '/zawodnicy' },
@@ -233,7 +233,7 @@ const panelDropdownItems = computed(() =>
               v-for="section in items.panelSections"
               :key="section.heading"
             >
-              <div class="rounded-2xl border border-primary/15 bg-primary/[0.04] p-2 ring-1 ring-primary/10 dark:bg-primary/10">
+              <div class="rounded-2xl border border-primary/15 bg-primary/4 p-2 ring-1 ring-primary/10 dark:bg-primary/10">
                 <p class="px-2 pb-2 pt-1 text-[10px] font-bold uppercase tracking-wider text-primary">
                   {{ section.heading }}
                 </p>

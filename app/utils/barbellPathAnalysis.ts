@@ -11,6 +11,8 @@ export interface BarbellTechniqueMetrics {
   meanDeviation: number
   trajectoryLength: number
   stabilityScore: number
+  maxVerticalSpeed: number
+  maxHorizontalDeviation: number
 }
 
 export function smoothSamples(samples: BarbellSample[], window = 3): BarbellSample[] {
@@ -136,20 +138,27 @@ export function buildBiomechanicalFeedback(samples: BarbellSample[]): string[] {
 
 export function buildTechniqueMetrics(samples: BarbellSample[]): BarbellTechniqueMetrics {
   if (samples.length < 2) {
-    return { meanDeviation: 0, trajectoryLength: 0, stabilityScore: 0 }
+    return { meanDeviation: 0, trajectoryLength: 0, stabilityScore: 0, maxVerticalSpeed: 0, maxHorizontalDeviation: 0 }
   }
   const centerX = samples.reduce((acc, s) => acc + s.hipMidX, 0) / samples.length
   const meanDeviation = samples.reduce((acc, s) => acc + Math.abs(s.barX - centerX), 0) / samples.length
+  const maxHorizontalDeviation = Math.max(...samples.map(s => Math.abs(s.barX - centerX)))
   let trajectoryLength = 0
+  let maxVerticalSpeed = 0
   for (let i = 1; i < samples.length; i++) {
     const a = samples[i - 1]!
     const b = samples[i]!
     trajectoryLength += Math.hypot(b.barX - a.barX, b.barY - a.barY)
+    const dt = Math.max(0.001, b.t - a.t)
+    const vY = Math.abs((b.barY - a.barY) / dt)
+    if (vY > maxVerticalSpeed) maxVerticalSpeed = vY
   }
   const stabilityScore = Math.max(0, Math.min(100, 100 - std(samples.map(s => s.barX)) * 1400))
   return {
     meanDeviation: Number(meanDeviation.toFixed(4)),
     trajectoryLength: Number(trajectoryLength.toFixed(4)),
-    stabilityScore: Number(stabilityScore.toFixed(1))
+    stabilityScore: Number(stabilityScore.toFixed(1)),
+    maxVerticalSpeed: Number(maxVerticalSpeed.toFixed(4)),
+    maxHorizontalDeviation: Number(maxHorizontalDeviation.toFixed(4))
   }
 }

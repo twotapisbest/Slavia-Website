@@ -9,8 +9,10 @@ import { parseSlugId } from '~/utils/slug'
 
 const route = useRoute()
 const apiFetch = useApi()
+const auth = useAuth()
 
 const athleteId = computed(() => parseSlugId(String(route.params.slug || '')))
+const canEditAthlete = computed(() => auth.isTrainer.value)
 
 const athleteDetailKey = computed(() => `athlete-detail-${athleteId.value}`)
 const { data: athlete, error } = await useAsyncData(
@@ -131,6 +133,15 @@ const approvedSinclair = computed(() => {
           icon="i-lucide-arrow-left"
         >
           Powrót do listy
+        </UButton>
+        <UButton
+          v-if="canEditAthlete && athleteId"
+          :to="`/trainer/zawodnicy?edit=${encodeURIComponent(String(athleteId))}`"
+          color="primary"
+          variant="soft"
+          icon="i-lucide-pencil"
+        >
+          Edytuj
         </UButton>
       </div>
     </div>
