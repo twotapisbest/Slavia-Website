@@ -49,15 +49,6 @@ const calculatedMaxPR = computed(() => {
   return Math.round(maxPR * 2) / 2 // Zaokrąglij do 0.5 kg
 })
 
-const exerciseLabel = computed(() => {
-  const labels: Record<string, string> = {
-    deadlift: 'Martwy',
-    bench: 'Wyciskanie',
-    squat: 'Przysiad'
-  }
-  return labels[calculatorForm.exercise]
-})
-
 onMounted(async () => {
   myAthlete.value = await apiFetch<{ id: string } | null>('/api/athletes/me').catch(() => null)
 })

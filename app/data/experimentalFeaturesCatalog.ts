@@ -43,9 +43,41 @@ export const EXPERIMENTAL_FEATURES: ExperimentalFeatureDefinition[] = [
     description:
       'Analiza toru sztangi w panelu trenera i zawodnika (MoveNet + nakładka toru + wskazówki techniczne).',
     defaultEnabled: true
+  },
+  {
+    id: 'admin_accounts_ban_ui',
+    label: 'Banowanie kont w panelu kont',
+    description:
+      'Przyciski ban/unban na liście kont + badge „Zbanowany” i powód w podpowiedzi.',
+    defaultEnabled: true
+  },
+  {
+    id: 'developer_tools_ban_panel',
+    label: 'Dev tools: banowanie kont',
+    description:
+      'Sekcja w /superadmin/developer z wyborem konta z listy i akcjami ban/unban (smoke).',
+    defaultEnabled: true
+  },
+  {
+    id: 'athlete_reverse_account_linking',
+    label: 'Zawodnik: przypięcie istniejącego konta',
+    description:
+      'W modalu edycji zawodnika pozwala przypiąć istniejące konto (Athlete) oraz odpiąć konto z profilu.',
+    defaultEnabled: true
+  },
+  {
+    id: 'ban_redirect_on_403',
+    label: 'Przekierowanie na /banned przy 403',
+    description:
+      'Dodatkowe przekierowanie na /banned w kliencie API przy odpowiedzi 403 (poza global middleware).',
+    defaultEnabled: true
   }
 ]
 
 export type ExperimentalFeatureId =
   | 'club_notification_bell'
   | 'barbell_pose_analysis'
+  | 'admin_accounts_ban_ui'
+  | 'developer_tools_ban_panel'
+  | 'athlete_reverse_account_linking'
+  | 'ban_redirect_on_403'

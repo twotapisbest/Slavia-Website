@@ -655,33 +655,6 @@ const pageLead = computed(() => {
     <div class="grid gap-10 xl:grid-cols-12 xl:gap-8">
       <!-- Lewa kolumna: formularze -->
       <div class="space-y-10 xl:col-span-7">
-    <section>
-      <h2 class="mb-5 flex items-center gap-3">
-        <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/15">
-          <UIcon
-            name="i-lucide-shield"
-            class="size-[1.35rem]"
-          />
-        </span>
-        <span class="text-lg font-black tracking-tight text-highlighted sm:text-xl">Ustawienia konta</span>
-      </h2>
-      <UCard class="rounded-2xl border-default/70 shadow-md ring-1 ring-default/40">
-        <div class="space-y-3 p-4 sm:p-6">
-          <p class="text-sm text-muted">
-            Edycja danych konta została przeniesiona do jednego miejsca, aby uniknąć duplikacji formularzy.
-          </p>
-          <UButton
-            to="/profil"
-            color="primary"
-            icon="i-lucide-user-round-cog"
-            size="lg"
-          >
-            Przejdź do „Moje konto”
-          </UButton>
-        </div>
-      </UCard>
-    </section>
-
     <section
       v-if="auth.canAccessAthletePortal && athlete"
     >

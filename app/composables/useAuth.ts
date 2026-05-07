@@ -94,7 +94,9 @@ export function useAuth() {
     user.value = {
       id: res.user_id,
       username,
-      roles: res.roles
+      roles: res.roles,
+      is_banned: false,
+      banned_reason: null
     }
     await fetchMe()
     return user.value

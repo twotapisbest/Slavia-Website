@@ -8,6 +8,17 @@ useSeoMeta({
 
 const updates = [
   {
+    version: 'v2.3.2',
+    date: '7 Maj 2026',
+    title: 'Banowanie kont, ochrona backendu i poprawki wpłat',
+    features: [
+      'Administracja: ban/unban kont (Admin/SuperAdmin) z opcjonalnym powodem; nie da się zbanować SuperAdmina.',
+      'Zbanowane konto widzi wyłącznie stronę „Konto zbanowane”; backend egzekwuje bana natychmiast (403) niezależnie od wieku tokena JWT.',
+      'Wpłaty: utwardzone odczyty kwoty (SQLite INTEGER/REAL) — bez panic w libsql przy liście zgłoszeń.'
+    ],
+    type: 'feature'
+  },
+  {
     version: 'v2.3.1',
     date: '6 Maj 2026',
     title: 'Własna strona błędów (404/5xx), porządki .npmrc oraz spójny wybór zawodnika w panelu trenera',

@@ -7,11 +7,12 @@ import {
   pzpcWeightClassLabels,
   type PzpcAgeGroupId
 } from '~/data/pzpcWeightCategories'
-import type { Competition, Player } from '~/types/models'
+import type { Competition, GroupedAdminAccounts, Player, UserRole } from '~/types/models'
 
 const api = useApi()
 const toast = useToast()
 const auth = useAuth()
+const expReverseLink = useExperimentalFlag('athlete_reverse_account_linking')
 const route = useRoute()
 const router = useRouter()
 
@@ -122,6 +123,93 @@ const competitionsCatalog = ref<Competition[]>([])
 const assignedCompetitionIds = ref<string[]>([])
 const assignmentsLoading = ref(false)
 
+const athleteAccountOptions = ref<{ label: string, value: string }[]>([])
+const athleteAccountSelected = ref<string>('')
+const athleteAccountSaving = ref(false)
+
+const editingPlayer = computed(() =>
+  editingId.value ? players.value.find(p => p.id === editingId.value) ?? null : null
+)
+
+async function refreshAthleteAccountCatalog() {
+  if (!canManageAthleteLogin.value) {
+    athleteAccountOptions.value = [{ label: '— tylko Admin/SuperAdmin —', value: '' }]
+    return
+  }
+  try {
+    const data = await api<GroupedAdminAccounts>(apiRoutes.superadmin.adminsGrouped)
+    const all = [
+      ...(data.admins ?? []),
+      ...(data.trainers ?? []),
+      ...(data.athletes ?? [])
+    ]
+    const seen = new Set<string>()
+    const items = all
+      .filter(u => {
+        if (!u?.id || seen.has(u.id)) return false
+        seen.add(u.id)
+        return true
+      })
+      .filter(u => Array.isArray(u.roles) && (u.roles as UserRole[]).includes('Athlete'))
+      .map(u => ({ label: `${u.username} · ${u.roles.join(', ')}`, value: u.id }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'pl'))
+    const linked = editingPlayer.value?.user_id ?? ''
+    athleteAccountOptions.value = [
+      { label: '— wybierz konto —', value: '' },
+      ...items.map(i => ({
+        ...i,
+        label: linked && i.value === linked ? `${i.label} (już przypięte)` : i.label
+      }))
+    ]
+  } catch {
+    athleteAccountOptions.value = [{ label: '— wybierz konto —', value: '' }]
+  }
+}
+
+async function attachExistingAccountToAthlete() {
+  if (!editingId.value) return
+  const uid = athleteAccountSelected.value.trim()
+  if (!uid) {
+    toast.add({ title: 'Wybierz konto z listy', color: 'warning' })
+    return
+  }
+  athleteAccountSaving.value = true
+  try {
+    await api(apiRoutes.athletes.attachUser(editingId.value), {
+      method: 'POST',
+      body: { user_id: uid }
+    })
+    toast.add({ title: 'Przypisano konto do zawodnika', color: 'success' })
+    await loadPlayers()
+  } catch (e) {
+    toast.add({
+      title: 'Nie udało się przypisać konta',
+      description: getApiErrorMessage(e),
+      color: 'error'
+    })
+  } finally {
+    athleteAccountSaving.value = false
+  }
+}
+
+async function detachAccountFromAthlete() {
+  if (!editingId.value) return
+  athleteAccountSaving.value = true
+  try {
+    await api(apiRoutes.athletes.detachUser(editingId.value), { method: 'POST' })
+    toast.add({ title: 'Odłączono konto od zawodnika', color: 'success' })
+    await loadPlayers()
+  } catch (e) {
+    toast.add({
+      title: 'Nie udało się odłączyć konta',
+      description: getApiErrorMessage(e),
+      color: 'error'
+    })
+  } finally {
+    athleteAccountSaving.value = false
+  }
+}
+
 async function loadAthleteAssignments(athleteId: string) {
   assignmentsLoading.value = true
   try {
@@ -141,8 +229,10 @@ watch(modalOpen, async (open) => {
   if (!editingId.value) {
     competitionsCatalog.value = []
     assignedCompetitionIds.value = []
+    athleteAccountSelected.value = ''
     return
   }
+  void refreshAthleteAccountCatalog()
   try {
     const rows = await api<Competition[]>(apiRoutes.competitions.collection)
     competitionsCatalog.value = [...rows].sort((a, b) => a.date.localeCompare(b.date))
@@ -173,6 +263,7 @@ function resetForm() {
   form.username = ''
   form.password = ''
   assignedCompetitionIds.value = []
+  athleteAccountSelected.value = ''
 }
 
 watch(() => [form.best_snatch_kg, form.best_clean_jerk_kg], ([snatch, cj]) => {
@@ -249,6 +340,7 @@ function openEdit(p: Player) {
   form.profile_tagline = p.profile_tagline ?? undefined
   form.public_bio = p.public_bio ?? undefined
   form.is_active = p.is_active !== false
+  athleteAccountSelected.value = p.user_id ?? ''
   modalOpen.value = true
 }
 
@@ -569,6 +661,7 @@ watch(
     <UModal
       v-model:open="modalOpen"
       :title="editingId ? 'Edycja zawodnika' : 'Nowy zawodnik'"
+      :ui="{ content: 'rounded-3xl sm:max-w-3xl md:max-w-4xl' }"
     >
       <template #content>
         <div class="slavia-form-modal">
@@ -601,7 +694,7 @@ watch(
                     class="w-full"
                   />
                 </UFormField>
-                <div class="grid gap-5 sm:grid-cols-2">
+                <div class="grid gap-5 md:grid-cols-2">
                   <UFormField
                     label="Płeć"
                     required
@@ -663,7 +756,7 @@ watch(
                 </p>
               </div>
               <div class="slavia-form-panel__body">
-                <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
                   <UFormField label="Rok urodzenia">
                     <UInput
                       :model-value="form.birth_year === null || form.birth_year === undefined ? '' : String(form.birth_year)"
@@ -722,7 +815,7 @@ watch(
                 >
                   {{ legacyWeightCategoryHint }}
                 </p>
-                <div class="grid gap-5 sm:grid-cols-3">
+                <div class="grid gap-5 md:grid-cols-3">
                   <UFormField label="Rwanie (kg)">
                     <UInputNumber
                       v-model="form.best_snatch_kg"
@@ -768,7 +861,56 @@ watch(
                 </div>
               </div>
               <div class="slavia-form-panel__body space-y-5">
-                <div v-if="!editingId || !(players.find(p => p.id === editingId)?.user_id)">
+                <div
+                  v-if="editingId && canManageAthleteLogin && expReverseLink"
+                  class="rounded-xl border border-default/70 bg-muted/10 p-4 dark:bg-muted/5"
+                >
+                  <p class="text-sm font-bold text-highlighted">
+                    Powiązane konto zawodnika
+                  </p>
+                  <p class="mt-1 text-xs text-muted">
+                    Wybierz istniejące konto z rolą „Athlete” i przypisz do tego profilu.
+                  </p>
+
+                  <div class="mt-4 grid gap-4 md:grid-cols-2">
+                    <UFormField label="Konto (Athlete)">
+                      <USelect
+                        v-model="athleteAccountSelected"
+                        :items="athleteAccountOptions"
+                        value-key="value"
+                        size="lg"
+                        class="w-full"
+                      />
+                    </UFormField>
+                    <div class="flex items-end gap-2">
+                      <UButton
+                        color="primary"
+                        size="lg"
+                        class="rounded-xl font-bold"
+                        :loading="athleteAccountSaving"
+                        @click="attachExistingAccountToAthlete"
+                      >
+                        Przypisz konto
+                      </UButton>
+                      <UButton
+                        v-if="editingPlayer?.user_id"
+                        color="neutral"
+                        variant="outline"
+                        size="lg"
+                        class="rounded-xl font-bold"
+                        :loading="athleteAccountSaving"
+                        @click="detachAccountFromAthlete"
+                      >
+                        Odłącz
+                      </UButton>
+                    </div>
+                  </div>
+                  <p v-if="editingPlayer?.user_id" class="mt-3 text-[11px] text-muted">
+                    Aktualnie przypięte user_id: <span class="font-mono">{{ editingPlayer.user_id }}</span>
+                  </p>
+                </div>
+
+                <div v-if="!editingId || !editingPlayer?.user_id">
                   <div class="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-default/60 bg-muted/20 px-4 py-3 dark:bg-muted/10">
                     <div>
                       <p class="text-sm font-bold text-highlighted">
