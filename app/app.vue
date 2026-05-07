@@ -241,7 +241,7 @@ watch(
               © {{ new Date().getFullYear() }} Slavia Ruda Śląska.
             </p>
             <p class="text-[10px] text-muted/50">
-              Realizacja: Neution Studio · Jakub Gawron
+              Realizacja: Neution Studio · Jakub Gawron · Dawid Węgrzyn
             </p>
             <p
               class="text-[10px] font-mono text-muted/70"
