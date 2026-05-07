@@ -33,6 +33,31 @@ const form = reactive({
   date: new Date().toISOString().slice(0, 10)
 })
 
+// Kalkulator max PR
+const calculatorForm = reactive({
+  exercise: 'deadlift' as 'deadlift' | 'bench' | 'squat',
+  weight: null as number | null,
+  reps: null as number | null
+})
+
+const calculatedMaxPR = computed(() => {
+  if (calculatorForm.weight === null || calculatorForm.reps === null || calculatorForm.weight <= 0 || calculatorForm.reps <= 0) {
+    return null
+  }
+  // Wzór Epley'a: 1RM = Weight × (1 + Reps/30)
+  const maxPR = calculatorForm.weight * (1 + calculatorForm.reps / 30)
+  return Math.round(maxPR * 2) / 2 // Zaokrąglij do 0.5 kg
+})
+
+const exerciseLabel = computed(() => {
+  const labels: Record<string, string> = {
+    deadlift: 'Martwy',
+    bench: 'Wyciskanie',
+    squat: 'Przysiad'
+  }
+  return labels[calculatorForm.exercise]
+})
+
 onMounted(async () => {
   myAthlete.value = await apiFetch<{ id: string } | null>('/api/athletes/me').catch(() => null)
 })
@@ -104,6 +129,38 @@ useSeoMeta({
         <div class="mt-3">
           <UButton icon="i-lucide-send" @click="submitStrengthResult">Wyślij do trenera</UButton>
         </div>
+      </UCard>
+
+      <UCard>
+        <h2 class="mb-3 text-lg font-semibold text-highlighted">Kalkulator Max PR (1RM)</h2>
+        <p class="text-sm text-muted">Oblicz szacunkowy maksymalny wynik na podstawie liczby powtórzeń</p>
+        <div class="mt-4 grid gap-3 sm:grid-cols-4">
+          <UFormField label="Ćwiczenie">
+            <select v-model="calculatorForm.exercise" class="w-full rounded-lg border border-default/60 bg-background px-3 py-2.5 text-sm text-highlighted">
+              <option value="deadlift">Martwy</option>
+              <option value="bench">Wyciskanie</option>
+              <option value="squat">Przysiad</option>
+            </select>
+          </UFormField>
+          <UFormField label="Ciężar (kg)">
+            <UInputNumber v-model="calculatorForm.weight" :min="0" :step="0.5" placeholder="np. 100" class="w-full" />
+          </UFormField>
+          <UFormField label="Ilość powtórzeń">
+            <UInputNumber v-model="calculatorForm.reps" :min="1" :step="1" placeholder="np. 5" class="w-full" />
+          </UFormField>
+          <div class="flex items-end">
+            <div v-if="calculatedMaxPR !== null" class="w-full rounded-lg bg-primary/10 px-3 py-2.5 text-center">
+              <p class="text-[10px] font-bold uppercase text-muted">Max PR</p>
+              <p class="mt-0.5 text-2xl font-black text-primary">{{ calculatedMaxPR }}<span class="text-sm"> kg</span></p>
+            </div>
+            <div v-else class="w-full rounded-lg bg-muted/10 px-3 py-2.5 text-center">
+              <p class="text-[10px] font-bold uppercase text-muted">Uzupełnij dane</p>
+            </div>
+          </div>
+        </div>
+        <p class="mt-3 text-[11px] text-muted">
+          <span class="font-semibold">Wzór Epley'a:</span> Szacunek bazuje na równaniu 1RM = ciężar × (1 + powtórzenia/30). Wynik jest przybliżony i może się różnić od faktycznego maksimum.
+        </p>
       </UCard>
 
       <UCard>
