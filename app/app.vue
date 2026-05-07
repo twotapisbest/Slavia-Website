@@ -141,24 +141,21 @@ watch(
         enter-to-class="opacity-100 scale-100"
       >
         <div class="relative flex flex-col items-center px-6">
-          <div class="absolute -inset-8 animate-pulse rounded-full bg-primary/20 blur-2xl" />
+          <div class="absolute -inset-8 rounded-full bg-primary/20 blur-2xl" />
           <img
             src="/logo.png"
             alt="Slavia Logo"
-            class="relative h-32 w-auto animate-bounce mb-8"
+            class="relative h-32 w-auto mb-8"
           >
           <div class="flex items-center gap-2">
             <div
-              class="h-2 w-2 animate-bounce rounded-full bg-primary"
-              style="animation-delay: 0.1s"
+              class="h-2 w-2 rounded-full bg-primary"
             />
             <div
-              class="h-2 w-2 animate-bounce rounded-full bg-primary"
-              style="animation-delay: 0.2s"
+              class="h-2 w-2 rounded-full bg-primary"
             />
             <div
-              class="h-2 w-2 animate-bounce rounded-full bg-primary"
-              style="animation-delay: 0.3s"
+              class="h-2 w-2 rounded-full bg-primary"
             />
           </div>
           <p class="mt-4 text-sm font-bold uppercase tracking-[0.3em] text-primary italic">
