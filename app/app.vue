@@ -127,49 +127,8 @@ watch(
 
 <template>
   <UApp>
-    <!-- Splash: pełna nieprzezroczysta warstwa; bez fade-out całego overlay (wtedy „przeświecał” tekst strony). -->
-    <div
-      v-if="isAppLoading"
-      class="fixed inset-0 z-[10050] flex flex-col items-center justify-center bg-[var(--ui-bg)]"
-      aria-busy="true"
-      aria-live="polite"
-    >
-      <Transition
-        appear
-        enter-active-class="transition duration-400 ease-out"
-        enter-from-class="opacity-0 scale-[0.97]"
-        enter-to-class="opacity-100 scale-100"
-      >
-        <div class="relative flex flex-col items-center px-6">
-          <div class="absolute -inset-8 rounded-full bg-primary/20 blur-2xl" />
-          <img
-            src="/logo.png"
-            alt="Slavia Logo"
-            class="relative h-32 w-auto mb-8"
-          >
-          <div class="flex items-center gap-2">
-            <div
-              class="h-2 w-2 rounded-full bg-primary"
-            />
-            <div
-              class="h-2 w-2 rounded-full bg-primary"
-            />
-            <div
-              class="h-2 w-2 rounded-full bg-primary"
-            />
-          </div>
-          <p class="mt-4 text-sm font-bold uppercase tracking-[0.3em] text-primary italic">
-            Ładowanie...
-          </p>
-        </div>
-      </Transition>
-    </div>
-
     <!-- Bez overflow-x na tym wrapperze: html/body już mają clip — podwójny clip ucinał obramowania / końcówki belki nawigacji (np. „Aktualności”). -->
-    <div
-      class="transition-opacity duration-300 ease-out min-w-0"
-      :class="isAppLoading ? 'opacity-0 pointer-events-none select-none' : 'opacity-100'"
-    >
+    <div class="transition-opacity duration-300 ease-out min-w-0 opacity-100">
       <ClubSiteHeader>
         <template #actions>
           <div class="flex shrink-0 items-center gap-1.5 sm:gap-3">
