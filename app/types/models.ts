@@ -180,6 +180,16 @@ export interface PendingPaymentRow {
   created_by_user_id?: string | null
 }
 
+export interface AthletePaymentOverviewRow {
+  athlete_id: string
+  full_name: string
+  month: string
+  has_approved: boolean
+  has_pending: boolean
+  approved_amount_pln: number
+  pending_amount_pln: number
+}
+
 export interface AdminAccount extends AuthUser {
   created_at?: string
 }

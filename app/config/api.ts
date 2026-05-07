@@ -114,6 +114,7 @@ export const apiRoutes = {
     my: '/api/payments/my',
     myStatus: '/api/payments/my/status',
     status: '/api/payments/status',
+    overview: '/api/payments/overview',
     pending: '/api/payments/pending',
     approve: (id: string) => `/api/payments/${encodeURIComponent(id)}/approve`,
     reject: (id: string) => `/api/payments/${encodeURIComponent(id)}/reject`,

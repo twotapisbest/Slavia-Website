@@ -239,6 +239,14 @@ const stats = computed(() => [
 
 const athleteDashboardTiles = [
   {
+    to: '/athlete/skladki',
+    title: 'Składka klubowa',
+    desc: 'Zgłoś płatność i sprawdź status',
+    icon: 'i-lucide-banknote',
+    ring: 'ring-green-500/25 hover:ring-green-500/45',
+    iconBg: 'bg-green-500/15 text-green-700 dark:text-green-400'
+  },
+  {
     to: '/athlete/kalendarz',
     title: 'Kalendarz startów',
     desc: 'Przypisania zawodów od kadry',
@@ -436,7 +444,7 @@ const pageLead = computed(() => {
     >
       <NuxtLink
         v-for="tile in athleteDashboardTiles"
-        :key="tile.to"
+        :key="tile.title"
         :to="tile.to"
         class="group relative overflow-hidden rounded-2xl border border-default/60 bg-card p-5 shadow-sm ring-1 ring-transparent transition duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         :class="tile.ring"
@@ -542,6 +550,7 @@ const pageLead = computed(() => {
     <!-- Płatność składki (tylko rola Athlete) -->
     <div
       v-if="auth.canAccessAthletePortal && athlete && isAthleteRole"
+      id="skladka-klubowa"
       class="mb-10"
     >
       <UAlert

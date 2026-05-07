@@ -105,6 +105,14 @@ const quickLinks = computed(() => {
       bg: 'bg-emerald-500/10'
     },
     {
+      title: 'Składki klubowe',
+      description: 'Oczekujące, opłacone i brak wpłaty (widok miesiąca)',
+      icon: 'i-lucide-banknote',
+      to: '/trainer/skladki',
+      color: 'text-green-600',
+      bg: 'bg-green-500/10'
+    },
+    {
       title: 'Wszystkie starty',
       description: 'Lista zapisanych startów z edycją',
       icon: 'i-lucide-list-checks',
@@ -253,12 +261,12 @@ async function rejectPayment(id: string) {
 }
 
 const addApprovedPaymentForm = reactive<{
-  athlete_id: string
+  athlete_id: string | null
   month: string
   amount_pln: number | null
   note: string
 }>({
-  athlete_id: '',
+  athlete_id: null,
   month: new Date().toISOString().slice(0, 7),
   amount_pln: null,
   note: ''
@@ -524,7 +532,7 @@ onMounted(() => {
           <UFormField label="Dodaj zatwierdzoną płatność" class="md:col-span-4">
             <USelect
               v-model="addApprovedPaymentForm.athlete_id"
-              :items="[{ label: 'Wybierz zawodnika', value: '' }, ...((athletes || []).map(a => ({ label: a.full_name, value: a.id })))]"
+              :items="[{ label: 'Wybierz zawodnika', value: null }, ...((athletes || []).map(a => ({ label: a.full_name, value: a.id })))]"
               class="w-full"
             />
           </UFormField>
