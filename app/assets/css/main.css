@@ -196,18 +196,19 @@ html:not(.dark) {
    * Tokeny Nuxt UI na jasnym tle — stonowany kontrast, bez „płowego” szarości;
    * presety nadpisują wybrane wartości niżej.
    */
-  --ui-bg: #f8fafc;
-  --ui-bg-muted: #f1f5f9;
-  --ui-bg-elevated: #eef2f7;
-  --ui-bg-accented: #e5eaf3;
-  --ui-border: #e2e8f0;
-  --ui-border-muted: #eceff4;
-  --ui-border-accented: #cbd5e1;
-  --ui-text-dimmed: #94a3b8;
-  --ui-text-muted: #64748b;
-  --ui-text-toned: #475569;
-  --ui-text: #334155;
-  --ui-text-highlighted: #0f172a;
+  /* delikatniej: mniej „szarych” płaszczyzn, czytelniejszy tekst */
+  --ui-bg: #f9fbff;
+  --ui-bg-muted: #f2f6fb;
+  --ui-bg-elevated: #eef3f9;
+  --ui-bg-accented: #e7edf7;
+  --ui-border: #dbe4f0;
+  --ui-border-muted: #edf2f8;
+  --ui-border-accented: #c5d2e2;
+  --ui-text-dimmed: #8fa1b5;
+  --ui-text-muted: #5b6c80;
+  --ui-text-toned: #415468;
+  --ui-text: #2b3f55;
+  --ui-text-highlighted: #0b1726;
 }
 
 html:not(.dark) .shadow-md {
@@ -243,10 +244,10 @@ html.light[data-slavia-preset='slavia'] {
 html.light body,
 html:not(.dark) body {
   background-image:
-    radial-gradient(ellipse 110% 70% at 50% -22%, color-mix(in oklab, var(--ui-primary, #00a155) 14%, transparent), transparent 58%),
-    radial-gradient(ellipse 80% 50% at 100% 12%, rgba(148, 163, 184, 0.22), transparent 55%),
-    linear-gradient(172deg, #f6f7fb 0%, #eef1f8 42%, #e6eaf3 100%);
-  background-color: #e8ecf5;
+    radial-gradient(ellipse 110% 70% at 50% -22%, color-mix(in oklab, var(--ui-primary, #00a155) 12%, transparent), transparent 58%),
+    radial-gradient(ellipse 80% 50% at 100% 12%, rgba(148, 163, 184, 0.18), transparent 55%),
+    linear-gradient(172deg, #f8faff 0%, #eff3fb 46%, #e7edf8 100%);
+  background-color: #e9effa;
   background-attachment: fixed;
 }
 
@@ -1050,7 +1051,7 @@ html.dark .slavia-select option,
   }
 
   .slavia-rich-content mark {
-    @apply rounded px-0.5 decoration-clone;
+    @apply rounded px-0.5 box-decoration-clone;
     box-decoration-break: clone;
   }
 

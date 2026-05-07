@@ -10,6 +10,8 @@ export interface AuthUser {
   email?: string | null
   avatar_url?: string | null
   roles: UserRole[]
+  is_banned: boolean
+  banned_reason?: string | null
   /** Preset kolorystyczny zapisany na koncie (`slavia`, `iron`, …). */
   ui_theme_preset?: string | null
   /** Jasny / ciemny / system — zsynchronizowany z backendem. */

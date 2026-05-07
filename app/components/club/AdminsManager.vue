@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { apiRoutes, urlAdminAccount, urlSuperadminAdmin } from '~/config/api'
+import { apiRoutes, urlAdminAccount, urlAdminBan, urlAdminUnban, urlSuperadminAdmin } from '~/config/api'
 import type { AdminAccount, Athlete, GroupedAdminAccounts, UserRole } from '~/types/models'
 
 const api = useApi()
 const auth = useAuth()
 const toast = useToast()
+const expBanUi = useExperimentalFlag('admin_accounts_ban_ui')
 
 /** Do szablonu (TS nie widzi auto-unwrap Ref z useState w zagnieżdżonym obiekcie). */
 const authUserId = computed(() => auth.user.value?.id ?? null)
@@ -166,6 +167,11 @@ const accountUsername = ref('')
 const accountEmail = ref('')
 const accountPassword = ref('')
 
+const banModalOpen = ref(false)
+const banSaving = ref(false)
+const banTarget = ref<AdminAccount | null>(null)
+const banReason = ref('')
+
 const rolesAvailableToAddInEdit = computed(() =>
   ALL_ROLES.filter(r => !roleEditValue.value.includes(r))
 )
@@ -186,6 +192,61 @@ function canEditRoleFor(a: AdminAccount) {
 
 function canDeleteAccount(a: AdminAccount) {
   return canSuper.value && auth.user.value?.id !== a.id
+}
+
+function canBanFor(a: AdminAccount) {
+  if (!expBanUi.value) return false
+  if (!canEditAccount.value) return false
+  if (auth.user.value?.id === a.id) return false
+  if (a.roles.includes('SuperAdmin')) return false
+  return true
+}
+
+function openBanModal(a: AdminAccount) {
+  if (!canBanFor(a)) return
+  banTarget.value = a
+  banReason.value = a.banned_reason ?? ''
+  banModalOpen.value = true
+}
+
+async function confirmBan() {
+  if (!banTarget.value) return
+  banSaving.value = true
+  try {
+    await api(urlAdminBan(banTarget.value.id), {
+      method: 'PATCH',
+      body: { reason: banReason.value.trim() || undefined }
+    })
+    toast.add({ title: 'Konto zbanowane', color: 'success' })
+    banModalOpen.value = false
+    await loadAdmins()
+  } catch (e) {
+    toast.add({
+      title: 'Nie udało się zbanować',
+      description: getApiErrorMessage(e),
+      color: 'error'
+    })
+  } finally {
+    banSaving.value = false
+  }
+}
+
+async function quickUnban(a: AdminAccount) {
+  if (!canBanFor(a)) return
+  banSaving.value = true
+  try {
+    await api(urlAdminUnban(a.id), { method: 'PATCH' })
+    toast.add({ title: 'Cofnięto bana', color: 'success' })
+    await loadAdmins()
+  } catch (e) {
+    toast.add({
+      title: 'Nie udało się odbanować',
+      description: getApiErrorMessage(e),
+      color: 'error'
+    })
+  } finally {
+    banSaving.value = false
+  }
 }
 
 function startRoleEdit(a: AdminAccount) {
@@ -500,7 +561,7 @@ onMounted(() => {
           v-for="r in ALL_ROLES"
           :key="r"
           type="button"
-          class="group flex min-h-[3.25rem] w-full touch-manipulation flex-col rounded-2xl border-2 px-4 py-3 text-left transition-all"
+          class="group flex min-h-13 w-full touch-manipulation flex-col rounded-2xl border-2 px-4 py-3 text-left transition-all"
           :class="[
             roleChecks[r]
               ? ROLE_FILTER_META[r].pillClass + ' ring-2 ring-primary/25 shadow-md'
@@ -601,6 +662,15 @@ onMounted(() => {
                   size="xs"
                 >
                   Ty
+                </UBadge>
+                <UBadge
+                  v-if="a.is_banned"
+                  color="warning"
+                  variant="subtle"
+                  size="xs"
+                  :title="a.banned_reason ? `Powód bana: ${a.banned_reason}` : 'Konto jest zbanowane'"
+                >
+                  Zbanowany
                 </UBadge>
               </div>
               <p
@@ -732,6 +802,18 @@ onMounted(() => {
 
           <!-- Akcje -->
           <div class="flex w-full shrink-0 flex-row gap-2 border-t border-default/50 pt-4 sm:w-auto sm:flex-col sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
+            <UButton
+              v-if="canBanFor(a)"
+              :color="a.is_banned ? 'success' : 'warning'"
+              variant="soft"
+              :icon="a.is_banned ? 'i-lucide-shield-check' : 'i-lucide-shield-ban'"
+              block
+              class="min-h-11 flex-1 touch-manipulation justify-center rounded-xl font-semibold sm:min-h-10 sm:min-w-34 sm:flex-none"
+              :loading="banSaving && banTarget?.id === a.id"
+              @click="a.is_banned ? quickUnban(a) : openBanModal(a)"
+            >
+              {{ a.is_banned ? 'Odbanuj' : 'Banuj' }}
+            </UButton>
             <UButton
               v-if="canEditAccountFor(a)"
               variant="soft"
@@ -998,6 +1080,61 @@ onMounted(() => {
               @click="confirmDelete"
             >
               Usuń na stałe
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal
+      v-model:open="banModalOpen"
+      title="Zbanować konto?"
+      :ui="{ content: 'rounded-3xl sm:max-w-md' }"
+    >
+      <template #content>
+        <div class="slavia-form-modal space-y-4">
+          <div
+            v-if="banTarget"
+            class="rounded-2xl border border-warning/25 bg-warning/5 px-4 py-3 text-sm text-highlighted"
+          >
+            <p class="font-semibold text-warning">
+              {{ banTarget.username }}
+            </p>
+            <p class="mt-2 text-muted">
+              Po banie konto będzie widzieć tylko stronę z komunikatem.
+            </p>
+          </div>
+
+          <UFormField
+            label="Powód (opcjonalnie)"
+            description="Jeśli podasz, pokażemy go na stronie „Konto zbanowane”."
+          >
+            <UTextarea
+              v-model="banReason"
+              :rows="4"
+              placeholder="np. Brak składek od 3 miesięcy"
+              class="w-full rounded-xl"
+            />
+          </UFormField>
+
+          <div class="slavia-form-actions border-t border-default/60 pt-4">
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="lg"
+              class="rounded-xl"
+              @click="banModalOpen = false"
+            >
+              Anuluj
+            </UButton>
+            <UButton
+              color="warning"
+              size="lg"
+              class="rounded-xl font-bold"
+              :loading="banSaving"
+              @click="confirmBan"
+            >
+              Zbanuj
             </UButton>
           </div>
         </div>

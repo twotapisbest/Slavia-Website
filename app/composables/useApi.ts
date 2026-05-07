@@ -2,6 +2,7 @@ import type { FetchError } from 'ofetch'
 
 export function useApi() {
   const auth = useAuth()
+  const expBanRedirect = useExperimentalFlag('ban_redirect_on_403')
 
   return $fetch.create({
     async onRequest({ options }) {
@@ -22,6 +23,13 @@ export function useApi() {
     onResponseError({ response }) {
       if (response?.status === 401) {
         auth.logout()
+      }
+      if (response?.status === 403) {
+        // Jeśli backend blokuje konto (ban), przekieruj na /banned.
+        // Nie rób tego dla SuperAdmin (konta super mają być odporne na flagę is_banned).
+        if (expBanRedirect.value && !auth.isSuperAdmin.value) {
+          navigateTo('/banned')
+        }
       }
     }
   })

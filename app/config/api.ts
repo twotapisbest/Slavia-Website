@@ -25,7 +25,8 @@ export const apiRoutes = {
     trainingLogEntry: (athleteId: string, entryId: string) =>
       `/api/athletes/${encodeURIComponent(athleteId)}/training-log/${encodeURIComponent(entryId)}`,
     link: (id: string) => `/api/athletes/${encodeURIComponent(id)}/link`,
-    attachUser: (id: string) => `/api/athletes/${encodeURIComponent(id)}/attach-user`
+    attachUser: (id: string) => `/api/athletes/${encodeURIComponent(id)}/attach-user`,
+    detachUser: (id: string) => `/api/athletes/${encodeURIComponent(id)}/detach-user`
   },
   players: {
     list: '/api/athletes'
@@ -157,4 +158,12 @@ export function urlSuperadminAdmin(id: string) {
 
 export function urlAdminAccount(id: string) {
   return `${apiRoutes.superadmin.admins}/${id}/account`
+}
+
+export function urlAdminBan(id: string) {
+  return `${apiRoutes.superadmin.admins}/${id}/ban`
+}
+
+export function urlAdminUnban(id: string) {
+  return `${apiRoutes.superadmin.admins}/${id}/unban`
 }

@@ -12,7 +12,7 @@ import {
   type SlaviaThemePreset
 } from '~/composables/useSlaviaAppearance'
 import { getApiDetailedErrorMessage, getApiErrorMessage } from '~/composables/useApi'
-import type { CompetitionResult } from '~/types/models'
+import type { CompetitionResult, GroupedAdminAccounts } from '~/types/models'
 
 definePageMeta({ middleware: 'superadmin' })
 
@@ -26,6 +26,7 @@ const backendProvider = useBackendProvider()
 const apiFetch = useApi()
 const toast = useToast()
 const experimental = useExperimentalFeatures()
+const expDevBanPanel = useExperimentalFlag('developer_tools_ban_panel')
 const {
   preset: themePreset,
   presets: themePresets,
@@ -40,6 +41,82 @@ const activePresetMeta = computed(() => {
 })
 
 const domDataPresetAttr = ref<string | null>(null)
+
+const banUserId = ref('')
+const banUserOptions = ref<{ label: string, value: string }[]>([])
+const banUserSelected = ref<string>('')
+const banReason = ref('')
+const banPending = ref(false)
+
+async function refreshBanUsersCatalog() {
+  try {
+    const data = await apiFetch<GroupedAdminAccounts>('/api/admins/grouped')
+    const all = [
+      ...(data.admins ?? []),
+      ...(data.trainers ?? []),
+      ...(data.athletes ?? [])
+    ]
+    const seen = new Set<string>()
+    const items = all
+      .filter(u => {
+        if (!u?.id || seen.has(u.id)) return false
+        seen.add(u.id)
+        return true
+      })
+      .map(u => {
+        const roles = Array.isArray(u.roles) ? u.roles.join(', ') : ''
+        const suffix = roles ? ` · ${roles}` : ''
+        return { label: `${u.username}${suffix}`, value: u.id }
+      })
+      .sort((a, b) => a.label.localeCompare(b.label, 'pl'))
+    banUserOptions.value = [{ label: '— wybierz konto —', value: '' }, ...items]
+  } catch {
+    banUserOptions.value = [{ label: '— wybierz konto —', value: '' }]
+  }
+}
+
+watch(banUserSelected, (id) => {
+  if (typeof id === 'string') {
+    banUserId.value = id
+  }
+})
+
+async function devBanUser() {
+  const id = banUserId.value.trim()
+  if (!id) {
+    toast.add({ title: 'Podaj user_id', color: 'warning' })
+    return
+  }
+  banPending.value = true
+  try {
+    await apiFetch(`/api/admins/${encodeURIComponent(id)}/ban`, {
+      method: 'PATCH',
+      body: { reason: banReason.value.trim() || undefined }
+    })
+    toast.add({ title: 'Zbanowano konto', color: 'success' })
+  } catch (e) {
+    toast.add({ title: 'Ban nieudany', description: getApiDetailedErrorMessage(e), color: 'error' })
+  } finally {
+    banPending.value = false
+  }
+}
+
+async function devUnbanUser() {
+  const id = banUserId.value.trim()
+  if (!id) {
+    toast.add({ title: 'Podaj user_id', color: 'warning' })
+    return
+  }
+  banPending.value = true
+  try {
+    await apiFetch(`/api/admins/${encodeURIComponent(id)}/unban`, { method: 'PATCH' })
+    toast.add({ title: 'Cofnięto bana', color: 'success' })
+  } catch (e) {
+    toast.add({ title: 'Unban nieudany', description: getApiDetailedErrorMessage(e), color: 'error' })
+  } finally {
+    banPending.value = false
+  }
+}
 
 function refreshDomPresetAttr() {
   if (!import.meta.client) {
@@ -171,6 +248,7 @@ onMounted(() => {
     userAgentDisplay.value = navigator.userAgent
     refreshDomPresetAttr()
   }
+  void refreshBanUsersCatalog()
   void $fetch<{ active_provider: 'leapcell' | 'render', updated_at?: string | null }>('/api/system/backend-provider', {
     headers: auth.token.value ? { Authorization: `Bearer ${auth.token.value}` } : undefined
   })
@@ -785,7 +863,7 @@ function downloadDevSelftestFile() {
             color="neutral"
             icon="i-lucide-refresh-cw"
             :loading="developerStatusPending"
-            @click="refreshDeveloperStatus()"
+            @click="refreshDeveloperStatus(); refreshBanUsersCatalog()"
           >
             Odśwież
           </UButton>
@@ -1398,6 +1476,46 @@ function downloadDevSelftestFile() {
           Brak wpisów.
         </p>
       </div>
+      </UCard>
+
+      <UCard v-if="expDevBanPanel" class="rounded-2xl border-default/60 p-4 shadow-sm lg:col-span-5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-muted">
+            Banowanie kont (dev)
+          </p>
+          <UBadge size="xs" variant="subtle" color="neutral">
+            /api/admins/:id/(un)ban
+          </UBadge>
+        </div>
+        <p class="mt-1 text-[11px] leading-snug text-muted">
+          Szybka akcja do smoke testu — w panelu kont masz już przyciski „Banuj / Odbanuj”.
+        </p>
+
+        <div class="mt-3 space-y-3">
+          <UFormField label="Konto (z listy)">
+            <USelect
+              v-model="banUserSelected"
+              :items="banUserOptions"
+              value-key="value"
+              size="lg"
+              class="w-full rounded-xl"
+            />
+          </UFormField>
+          <UFormField label="user_id (UUID)">
+            <UInput v-model="banUserId" placeholder="np. 2e0b...-..." class="w-full rounded-xl" />
+          </UFormField>
+          <UFormField label="Powód (opcjonalnie)">
+            <UTextarea v-model="banReason" :rows="3" placeholder="np. Brak składek" class="w-full rounded-xl" />
+          </UFormField>
+          <div class="flex flex-wrap gap-2">
+            <UButton color="warning" class="rounded-xl font-bold" :loading="banPending" @click="devBanUser">
+              Zbanuj
+            </UButton>
+            <UButton color="success" variant="soft" class="rounded-xl font-bold" :loading="banPending" @click="devUnbanUser">
+              Odbanuj
+            </UButton>
+          </div>
+        </div>
       </UCard>
     </section>
   </UContainer>
